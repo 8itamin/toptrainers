@@ -1,23 +1,229 @@
+---
+interface Props {
+	title?: string;
+	description?: string;
+}
+
+const {
+	title = 'TopTrainers — платформа для персональных тренеров и онлайн-коучей',
+	description = 'Онлайн-сервис для персональных тренеров, фитнес-коучей и студий: ведение клиентов, создание тренировочных программ, приём оплат и витрина тренера в одном месте.',
+} = Astro.props;
+
+const siteUrl = 'https://toptrainers.ru';
+const canonicalUrl = `${siteUrl}${Astro.url.pathname}`;
+const ogImage = `${siteUrl}/og-image.jpeg`;
+
+const orgSchema = {
+	'@context': 'https://schema.org',
+	'@graph': [
+		{
+			'@type': 'Organization',
+			'@id': `${siteUrl}/#organization`,
+			name: 'TopTrainers',
+			url: siteUrl,
+			logo: {
+				'@type': 'ImageObject',
+				url: `${siteUrl}/favicon.svg`,
+			},
+			description:
+				'Платформа для персональных тренеров, онлайн-коучей и фитнес-студий. Ведение клиентов, продажа тренировочных программ, приём оплат.',
+		},
+		{
+			'@type': 'SoftwareApplication',
+			'@id': `${siteUrl}/#software`,
+			name: 'TopTrainers',
+			url: siteUrl,
+			description:
+				'Онлайн-платформа для персональных тренеров и фитнес-коучей: ведение клиентов, создание тренировочных программ, приём оплат и витрина тренера.',
+			applicationCategory: 'BusinessApplication',
+			operatingSystem: 'Web',
+			inLanguage: 'ru-RU',
+			publisher: { '@id': `${siteUrl}/#organization` },
+			offers: {
+				'@type': 'Offer',
+				price: '0',
+				priceCurrency: 'RUB',
+				description: 'Бесплатный старт',
+			},
+		},
+		{
+			'@type': 'WebSite',
+			'@id': `${siteUrl}/#website`,
+			url: siteUrl,
+			name: 'TopTrainers',
+			inLanguage: 'ru-RU',
+			publisher: { '@id': `${siteUrl}/#organization` },
+		},
+	],
+};
+---
+
 <!doctype html>
-<html lang="en">
+<html lang="ru">
 	<head>
 		<meta charset="UTF-8" />
-		<meta name="viewport" content="width=device-width" />
+		<meta name="viewport" content="width=device-width, initial-scale=1" />
+		<link rel="canonical" href={canonicalUrl} />
 		<link rel="icon" type="image/svg+xml" href="/favicon.svg" />
 		<link rel="icon" href="/favicon.ico" />
 		<meta name="generator" content={Astro.generator} />
-		<title>Astro Basics</title>
+		<meta name="description" content={description} />
+		<meta name="robots" content="index, follow" />
+		<title>{title}</title>
+
+		<!-- Open Graph -->
+		<meta property="og:type" content="website" />
+		<meta property="og:url" content={canonicalUrl} />
+		<meta property="og:title" content={title} />
+		<meta property="og:description" content={description} />
+		<meta property="og:image" content={ogImage} />
+		<meta property="og:image:width" content="1200" />
+		<meta property="og:image:height" content="630" />
+		<meta property="og:locale" content="ru_RU" />
+		<meta property="og:site_name" content="TopTrainers" />
+
+		<!-- Twitter Card -->
+		<meta name="twitter:card" content="summary_large_image" />
+		<meta name="twitter:title" content={title} />
+		<meta name="twitter:description" content={description} />
+		<meta name="twitter:image" content={ogImage} />
+
+		<!-- Structured Data: Organization + SoftwareApplication + WebSite -->
+		<script is:inline type="application/ld+json" set:html={JSON.stringify(orgSchema)} />
+
+		<!-- Slot for page-specific structured data -->
+		<slot name="head" />
 	</head>
 	<body>
 		<slot />
 	</body>
 </html>
 
-<style>
-	html,
+<style is:global>
+	:root {
+		color-scheme: light;
+		--font-heading: 'Manrope', 'Segoe UI', 'Arial', sans-serif;
+		--font-body: 'Inter', 'Segoe UI', 'Arial', sans-serif;
+		--color-bg-dark: #0f172a;
+		--color-bg-dark-soft: #111827;
+		--color-bg-light: #f8fafc;
+		--color-surface: #ffffff;
+		--color-surface-muted: rgba(255, 255, 255, 0.08);
+		--color-border: rgba(15, 23, 42, 0.1);
+		--color-border-inverse: rgba(255, 255, 255, 0.16);
+		--color-text: #0b1220;
+		--color-text-muted: #64748b;
+		--color-text-white: #ffffff;
+		--color-accent: #14b8a6;
+		--color-accent-secondary: #3b82f6;
+		--shadow-card: 0 24px 60px rgba(15, 23, 42, 0.08);
+		--shadow-soft: 0 18px 40px rgba(8, 15, 30, 0.16);
+		--radius-xl: 28px;
+		--radius-lg: 22px;
+		--radius-md: 16px;
+		--radius-sm: 12px;
+		--container: 1180px;
+		--type-h1-size: 64px;
+		--type-h1-line: 72px;
+		--type-h1-space: -0.03em;
+		--type-h2-size: 44px;
+		--type-h2-line: 52px;
+		--type-h2-space: -0.02em;
+		--type-h3-size: 28px;
+		--type-h3-line: 36px;
+		--type-h3-space: -0.01em;
+		--type-lead-size: 20px;
+		--type-lead-line: 32px;
+		--type-body-lg-size: 18px;
+		--type-body-lg-line: 30px;
+		--type-body-size: 16px;
+		--type-body-line: 26px;
+		--type-body-md-size: 16px;
+		--type-body-md-line: 24px;
+		--type-button-size: 16px;
+		--type-button-line: 20px;
+		--type-small-size: 14px;
+		--type-small-line: 20px;
+	}
+
+	html {
+		scroll-behavior: smooth;
+	}
+
 	body {
 		margin: 0;
-		width: 100%;
-		height: 100%;
+		min-width: 320px;
+		font-family: var(--font-body);
+		font-size: var(--type-body-size);
+		line-height: var(--type-body-line);
+		font-weight: 400;
+		color: var(--color-text);
+		background:
+			radial-gradient(circle at top, rgba(20, 184, 166, 0.12), transparent 24%),
+			linear-gradient(180deg, #ffffff 0%, var(--color-bg-light) 100%);
+	}
+
+	*,
+	*::before,
+	*::after {
+		box-sizing: border-box;
+	}
+
+	a,
+	a:any-link,
+	a:link,
+	a:visited,
+	a:hover,
+	a:active,
+	a:focus {
+		color: inherit;
+		text-decoration: none !important;
+		-webkit-text-decoration: none !important;
+	}
+
+	img {
+		display: block;
+		max-width: 100%;
+	}
+
+	button,
+	a {
+		font: inherit;
+	}
+
+	@media (max-width: 1024px) {
+		:root {
+			--type-h1-size: 52px;
+			--type-h1-line: 60px;
+			--type-h2-size: 36px;
+			--type-h2-line: 44px;
+			--type-h3-size: 24px;
+			--type-h3-line: 32px;
+			--type-lead-size: 18px;
+			--type-lead-line: 28px;
+			--type-body-lg-size: 16px;
+			--type-body-lg-line: 26px;
+		}
+	}
+
+	@media (max-width: 560px) {
+		:root {
+			--type-h1-size: 38px;
+			--type-h1-line: 44px;
+			--type-h2-size: 30px;
+			--type-h2-line: 36px;
+			--type-h3-size: 22px;
+			--type-h3-line: 28px;
+			--type-lead-size: 18px;
+			--type-lead-line: 28px;
+			--type-body-lg-size: 16px;
+			--type-body-lg-line: 24px;
+			--type-body-size: 16px;
+			--type-body-line: 24px;
+			--type-body-md-size: 16px;
+			--type-body-md-line: 24px;
+			--type-small-size: 14px;
+			--type-small-line: 20px;
+		}
 	}
 </style>

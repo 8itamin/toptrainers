@@ -1,11 +1,1480 @@
----
-import Welcome from '../components/Welcome.astro';
+﻿---
 import Layout from '../layouts/Layout.astro';
+import '../styles/landing.css';
 
-// Welcome to Astro! Wondering what to do next? Check out the Astro documentation at https://docs.astro.build
-// Don't want to use any of this? Delete everything in this file, the `assets`, `components`, and `layouts` directories, and start fresh.
+const featureCards = [
+	{
+		title: 'Создавайте программы',
+		description:
+			'Групповые, частные, разовые и соревновательные форматы с пробным периодом, длительностью и понятной моделью оплаты.',
+		accent: 'Программы',
+	},
+	{
+		title: 'Ведите клиентов',
+		description:
+			'Статусы, активность, выполнение, настроение, энергия и приглашения в программы в одном рабочем пространстве.',
+		accent: 'Клиенты',
+	},
+	{
+		title: 'Собирайте результаты',
+		description:
+			'Замеры, оценки, сравнение прогресса и соревновательные механики, которые удерживают вовлечённость.',
+		accent: 'Прогресс',
+	},
+	{
+		title: 'Принимайте оплаты',
+		description:
+			'Подписки, разовые платежи, пробный доступ, купоны и история оплат без отдельного набора сервисов.',
+		accent: 'Оплаты',
+	},
+	{
+		title: 'Общайтесь внутри платформы',
+		description:
+			'Сообщения, уведомления, приветственные сценарии и входящие клиента, чтобы не дробить коммуникацию.',
+		accent: 'Коммуникации',
+	},
+	{
+		title: 'Продавайте через витрину',
+		description:
+			'Публичная страница тренера с программами, товарами, описанием, контактами и понятным путём к покупке.',
+		accent: 'Витрина',
+	},
+];
+
+const audiences = [
+	{
+		title: 'Персональный тренер',
+		description: 'Продавайте частные и групповые программы, ведите клиентов и собирайте оплату без ручной рутины.',
+	},
+	{
+		title: 'Онлайн-коуч',
+		description: 'Работайте удалённо, сопровождайте клиентов по календарю и масштабируйте подписочную модель.',
+	},
+	{
+		title: 'Студия / команда тренеров',
+		description: 'Стандартизируйте программы, управляйте клиентской базой и держите коммерцию в одном контуре.',
+	},
+];
+
+const steps = [
+	{
+		number: '01',
+		title: 'Создайте программу',
+		description: 'Добавьте описание, формат, цену, длительность, контент и правила доступа.',
+	},
+	{
+		number: '02',
+		title: 'Пригласите клиентов',
+		description: 'Подключайте по прямой ссылке или работайте со своей базой клиентов.',
+	},
+	{
+		number: '03',
+		title: 'Сопровождайте процесс',
+		description: 'Календарь, сообщения, уведомления, выполнение, замеры и соревнования в одном цикле работы.',
+	},
+	{
+		number: '04',
+		title: 'Масштабируйте продажи',
+		description: 'Развивайте витрину тренера, повторные оплаты, товары и подписки без новой сборки процессов.',
+	},
+];
+
+const revenueCards = [
+	'Подписки и разовые продажи',
+	'Публичная витрина тренера',
+	'Программы, товары и специальные предложения',
+];
+
+const coachSide = ['Программы', 'Клиенты', 'Замеры', 'Сообщения', 'Витрина', 'Оплаты'];
+const clientSide = ['Календарь', 'Активные программы', 'Результаты', 'Входящие', 'История оплат', 'Профиль'];
+
+const stories = [
+	{
+		title: 'Запуск онлайн-сопровождения',
+		text: 'Соберите первую программу, откройте доступ по ссылке и принимайте оплату без внешних сервисов.',
+	},
+	{
+		title: 'Продажа цифрового продукта',
+		text: 'Оформите витрину тренера и продавайте готовые программы, товары и спецпредложения.',
+	},
+	{
+		title: 'Работа со студией',
+		text: 'Ведите общую клиентскую базу, унифицируйте сценарии сопровождения и контролируйте повторные продажи.',
+	},
+];
+
+const faqs = [
+	{
+		question: 'Кому подходит TopTrainers?',
+		answer:
+			'Персональным тренерам, онлайн-коучам, фитнес-студиям и небольшим командам тренеров, которым нужен единый сервис для ведения клиентов, продажи программ и приёма оплат.',
+	},
+	{
+		question: 'Можно ли продавать тренировочные программы онлайн?',
+		answer:
+			'Да. Платформа поддерживает продажу программ, товаров, разовых предложений и подписок. Публичная витрина тренера позволяет принимать заказы напрямую без сторонних сервисов.',
+	},
+	{
+		question: 'Как клиент получает доступ к программе?',
+		answer:
+			'Клиент получает приглашение по прямой ссылке и открывает личный кабинет с календарём тренировок, активными программами, результатами замеров, сообщениями и историей оплат.',
+	},
+	{
+		question: 'Подходит ли платформа для фитнес-студии или команды тренеров?',
+		answer:
+			'Да. TopTrainers поддерживает формат студии и команды: общая клиентская база, стандартизированные программы и централизованное управление оплатами.',
+	},
+	{
+		question: 'Нужно ли устанавливать приложение?',
+		answer:
+			'Нет. TopTrainers работает в браузере на любом устройстве — тренер управляет кабинетом с компьютера или смартфона, клиент открывает программы без скачивания приложения.',
+	},
+	{
+		question: 'Сколько стоит TopTrainers?',
+		answer:
+			'Начать работу можно бесплатно: создать первую программу, пригласить клиентов и настроить приём оплат. Актуальные тарифы доступны на платформе при регистрации.',
+	},
+];
+const faqSchema = {
+	'@context': 'https://schema.org',
+	'@type': 'FAQPage',
+	mainEntity: faqs.map((faq) => ({
+		'@type': 'Question',
+		name: faq.question,
+		acceptedAnswer: {
+			'@type': 'Answer',
+			text: faq.answer,
+		},
+	})),
+};
 ---
 
-<Layout>
-	<Welcome />
+<Layout
+	title="TopTrainers — платформа для персональных тренеров и фитнес-коучей"
+	description="Онлайн-сервис для персональных тренеров, фитнес-коучей и студий: ведение клиентов, продажа тренировочных программ, приём оплат и витрина тренера. Бесплатный старт."
+>
+	<Fragment slot="head">
+		<script is:inline type="application/ld+json" set:html={JSON.stringify(faqSchema)} />
+	</Fragment>
+	<div class="page-shell">
+		<header class="site-header">
+			<div class="container header-row">
+				<a class="brand" href="#top"><span class="brand-wordmark"><span class="brand-top">Top</span><span class="brand-rest">Trainers.ru</span></span></a>
+				<nav class="main-nav">
+					<a href="#features">Возможности</a>
+					<a href="#audience">Для кого</a>
+					<a href="#flow">Как это работает</a>
+					<a href="#faq">FAQ</a>
+				</nav>
+				<div class="header-actions">
+					<a class="button ghost" href="#demo">Посмотреть демо</a>
+					<a class="button primary" href="#cta">Начать бесплатно</a>
+				</div>
+				<details class="mobile-menu">
+					<summary class="mobile-menu-toggle" aria-label="Открыть меню">
+						<span></span>
+						<span></span>
+						<span></span>
+					</summary>
+					<div class="mobile-menu-panel">
+						<nav class="mobile-nav">
+							<a href="#features">Возможности</a>
+							<a href="#audience">Для кого</a>
+							<a href="#flow">Как это работает</a>
+							<a href="#faq">FAQ</a>
+						</nav>
+						<div class="mobile-menu-actions">
+							<a class="button ghost" href="#demo">Посмотреть демо</a>
+							<a class="button primary" href="#cta">Начать бесплатно</a>
+						</div>
+					</div>
+				</details>
+			</div>
+		</header>
+
+		<main id="top">
+			<section class="hero-section">
+				<div class="container hero-grid">
+					<div class="hero-copy">
+						<span class="eyebrow">Сервис для персональных тренеров, онлайн-коучей и фитнес-студий</span>
+						<h1>
+							<span class="brand-inline"><span class="brand-top">Top</span><span class="brand-rest">Trainers</span></span> — платформа для тренеров, где можно вести клиентов, продавать
+							тренировочные программы и развивать <span>фитнес-бизнес онлайн</span>
+						</h1>
+						<p class="hero-text">
+							Создавайте тренировочные программы, подключайте клиентов по ссылке,
+							отслеживайте прогресс и замеры, принимайте оплаты онлайн и оформляйте
+							собственную витрину тренера — всё в одном сервисе.
+						</p>
+						<div class="hero-actions">
+							<a class="button primary large" href="#cta">Начать бесплатно</a>
+							<a class="button secondary large" href="#demo">Посмотреть демо</a>
+						</div>
+					</div>
+
+					<div class="hero-visual" aria-label="Примеры интерфейсов TopTrainers">
+						<div class="hero-window-stack">
+							<article class="hero-window trainer-window">
+								<div class="hero-window-top">
+									<div>
+										<p class="mockup-label">Для тренера</p>
+										<h3>Кабинет тренера</h3>
+									</div>
+									<span class="status-pill success">14 активных клиентов</span>
+								</div>
+								<div class="mini-chart">
+									<span style="height: 52%"></span>
+									<span style="height: 76%"></span>
+									<span style="height: 64%"></span>
+									<span style="height: 88%"></span>
+								</div>
+								<div class="mini-stats">
+									<div>
+										<strong>82%</strong>
+										<span>выполнение недели</span>
+									</div>
+									<div>
+										<strong>6</strong>
+										<span>новых оплат</span>
+									</div>
+								</div>
+							</article>
+
+							<article class="hero-window client-window">
+								<p class="mockup-label">Для клиента</p>
+								<h3>Экран клиента</h3>
+								<div class="client-calendar">
+									<span>Пн</span><span>Вт</span><span>Ср</span><span>Чт</span><span>Пт</span><span>Сб</span><span>Вс</span>
+									<b></b><b class="active"></b><b></b><b></b><b class="active"></b><b></b><b></b>
+								</div>
+								<div class="client-program-card">
+									<strong>Сила / неделя 4</strong>
+									<span>Следующая тренировка завтра в 09:00</span>
+								</div>
+							</article>
+
+							<article class="hero-window payment-window">
+								<p class="mockup-label">Оплаты</p>
+								<h3>Окно приема оплаты</h3>
+								<div class="payment-summary-row">
+									<span>Подписка Pro Coach</span>
+									<strong>4 900 RUB</strong>
+								</div>
+								<div class="payment-method">
+									<div class="card-chip"></div>
+									<div>
+										<strong>Visa 2048</strong>
+										<span>Автосписание включено</span>
+									</div>
+								</div>
+								<a class="button primary hero-pay-button" href="#cta">Оплатить</a>
+							</article>
+						</div>
+					</div>
+				</div>
+			</section>
+
+			<section class="trust-bar">
+				<div class="container trust-grid">
+					<div>
+						<p>Для онлайн-тренеров, фитнес-коучей и студий</p>
+					</div>
+					<div>
+						<p>Программы, клиенты, оплаты и витрина в одном месте</p>
+					</div>
+					<div>
+						<p>Быстрый старт без долгой настройки</p>
+					</div>
+				</div>
+			</section>
+
+			<section class="content-section" id="features">
+				<div class="container">
+					<div class="section-heading">
+						<span class="eyebrow dark">Что можно делать в <span class="brand-inline"><span class="brand-top">Top</span><span class="brand-rest">Trainers</span></span></span>
+						<h2>Возможности, собранные вокруг результата тренера, а не длинного списка модулей</h2>
+						<p>
+							Платформа закрывает основной цикл работы: запуск программы, ведение клиента,
+							коммуникации, прогресс и продажи.
+						</p>
+					</div>
+					<div class="feature-grid">
+						{featureCards.map((card) => (
+							<article class="feature-card">
+								<span class="feature-accent">{card.accent}</span>
+								<h3>{card.title}</h3>
+								<p>{card.description}</p>
+							</article>
+						))}
+					</div>
+				</div>
+			</section>
+
+			<section class="content-section alt" id="audience">
+				<div class="container">
+					<div class="section-heading compact">
+						<span class="eyebrow dark">Для кого</span>
+						<h2>Быстро понятно, как <span class="brand-inline"><span class="brand-top">Top</span><span class="brand-rest">Trainers</span></span> встраивается в ваш формат работы</h2>
+					</div>
+					<div class="audience-grid">
+						{audiences.map((item) => (
+							<article class="audience-card">
+								<h3>{item.title}</h3>
+								<p>{item.description}</p>
+							</article>
+						))}
+					</div>
+				</div>
+			</section>
+
+			<section class="content-section" id="flow">
+				<div class="container">
+					<div class="section-heading">
+						<span class="eyebrow dark">Как это работает</span>
+						<h2>Простой путь от первой программы до повторных продаж</h2>
+						<p><span class="brand-inline"><span class="brand-top">Top</span><span class="brand-rest">Trainers</span></span> связывает coaching и commerce в одну понятную операционную модель.</p>
+					</div>
+					<div class="steps-grid">
+						{steps.map((step) => (
+							<article class="step-card">
+								<span class="step-number">{step.number}</span>
+								<h3>{step.title}</h3>
+								<p>{step.description}</p>
+							</article>
+						))}
+					</div>
+				</div>
+			</section>
+
+			<section class="content-section revenue-section">
+				<div class="container revenue-grid">
+					<div class="section-heading compact inverse">
+						<span class="eyebrow">Рост бизнеса</span>
+						<h2>Не просто ведите клиентов - развивайте тренерский бизнес</h2>
+						<p>
+							<span class="brand-inline"><span class="brand-top">Top</span><span class="brand-rest">Trainers</span></span> помогает продавать не только персональное сопровождение, но и
+							масштабируемые цифровые продукты.
+						</p>
+					</div>
+					<div class="revenue-cards">
+						{revenueCards.map((item) => (
+							<article class="revenue-card">
+								<h3>{item}</h3>
+							</article>
+						))}
+					</div>
+				</div>
+			</section>
+
+			<section class="content-section">
+				<div class="container split-grid">
+					<article class="split-card dark-surface">
+						<span class="eyebrow">Для тренера</span>
+						<h2>Тренеру удобно</h2>
+						<ul class="capability-list">
+							{coachSide.map((item) => <li>{item}</li>)}
+						</ul>
+					</article>
+					<article class="split-card light-surface">
+						<span class="eyebrow dark">Для клиента</span>
+						<h2>Клиенту понятно</h2>
+						<ul class="capability-list light">
+							{clientSide.map((item) => <li>{item}</li>)}
+						</ul>
+					</article>
+				</div>
+			</section>
+
+			<section class="content-section alt">
+				<div class="container brand-grid">
+					<div class="section-heading compact">
+						<span class="eyebrow dark">Ваш бренд</span>
+						<h2>Ваш бренд - на первом плане</h2>
+						<p>
+							Оформите витрину тренера, добавьте фото, описание, контакты, программы и товары.
+							Клиент видит не безликий сервис, а ваш собственный coaching-продукт.
+						</p>
+					</div>
+					<article class="brand-card">
+						<div class="brand-preview-header">
+							<div class="avatar large"></div>
+							<div>
+								<strong>Тренер Алексей Орлов</strong>
+								<span>Растяжка · Онлайн + Зал</span>
+							</div>
+						</div>
+						<div class="brand-preview-body">
+							<div class="badge-line">
+								<span>Публичная витрина</span>
+								<span>Программы</span>
+								<span>Товары</span>
+							</div>
+							<div class="brand-panel">
+								<strong>Move better. Train stronger.</strong>
+								<p>Групповые программы, сопровождение и цифровые продукты в одном брендовом пространстве.</p>
+							</div>
+						</div>
+					</article>
+				</div>
+			</section>
+
+			<section class="content-section" id="demo">
+				<div class="container">
+					<div class="section-heading compact">
+						<span class="eyebrow dark">Сценарии запуска</span>
+						<h2>Что можно запустить за 1 день</h2>
+						<p>Пока реальные кейсы формируются, лендинг показывает самые понятные сценарии применения.</p>
+					</div>
+					<div class="stories-grid">
+						{stories.map((story) => (
+							<article class="story-card">
+								<h3>{story.title}</h3>
+								<p>{story.text}</p>
+							</article>
+						))}
+					</div>
+				</div>
+			</section>
+
+			<section class="content-section alt" id="faq">
+				<div class="container faq-grid">
+					<div class="section-heading compact">
+						<span class="eyebrow dark">FAQ</span>
+						<h2>Частые вопросы о платформе для тренеров</h2>
+					</div>
+					<div class="faq-list">
+						{faqs.map((item) => (
+							<details class="faq-item">
+								<summary>{item.question}</summary>
+								<p>{item.answer}</p>
+							</details>
+						))}
+					</div>
+				</div>
+			</section>
+
+			<section class="bottom-cta" id="cta">
+				<div class="container bottom-cta-inner">
+					<div>
+						<span class="eyebrow">Начните прямо сейчас</span>
+						<h2>Запустите тренерский бизнес в <span class="brand-inline"><span class="brand-top">Top</span><span class="brand-rest">Trainers</span></span></h2>
+						<p>
+							Создайте первую тренировочную программу, пригласите клиентов и настройте
+							приём оплат онлайн — без долгой настройки и лишних сервисов.
+						</p>
+					</div>
+					<div class="hero-actions bottom">
+						<a class="button primary large" href="#top">Начать бесплатно</a>
+						<a class="button secondary large" href="#demo">Запросить демо</a>
+					</div>
+				</div>
+			</section>
+		</main>
+
+		<footer class="site-footer">
+			<div class="container footer-row">
+				<p>&copy; 2026 <span class="brand-inline"><span class="brand-top">Top</span><span class="brand-rest">Trainers</span></span></p>
+				<div>
+					<a href="#features">Возможности</a>
+					<a href="#flow">Как это работает</a>
+					<a href="#faq">FAQ</a>
+				</div>
+			</div>
+		</footer>
+	</div>
 </Layout>
+
+<style>
+	.brand-wordmark,
+	.brand-inline {
+		display: inline-flex;
+		align-items: baseline;
+		gap: 0;
+	}
+
+	.brand-top {
+		color: var(--color-accent);
+	}
+
+	.brand-rest {
+		color: inherit;
+	}
+
+	.page-shell {
+		overflow-x: clip;
+	}
+
+	.container {
+		width: min(calc(100% - 32px), var(--container));
+		margin: 0 auto;
+	}
+
+	.site-header {
+		position: sticky;
+		top: 0;
+		z-index: 100;
+		backdrop-filter: none;
+		background: transparent;
+		border-bottom: none;
+	}
+
+	.site-header::before {
+		content: '';
+		position: absolute;
+		inset: 0;
+		z-index: -1;
+		backdrop-filter: blur(18px);
+		background: rgba(15, 23, 42, 0.72);
+		border-bottom: 1px solid rgba(255, 255, 255, 0.08);
+		pointer-events: none;
+	}
+
+	.header-row,
+	.footer-row,
+	.mockup-top,
+	.metric-row,
+	.client-row,
+	.price-row,
+	.payment-card,
+	.brand-preview-header,
+	.brand-preview-body,
+	.bottom-cta-inner {
+		display: flex;
+		justify-content: space-between;
+		gap: 16px;
+	}
+
+	.header-row,
+	.footer-row,
+	.mockup-top,
+	.brand-preview-header,
+	.payment-card {
+		align-items: center;
+	}
+
+	.header-row {
+		padding: 18px 0;
+	}
+
+	.brand,
+	h1,
+	h2,
+	h3 {
+		font-family: var(--font-heading);
+	}
+
+	a {
+		text-decoration: none;
+	}
+
+	.brand,
+	.main-nav a,
+	.footer-row a {
+		position: relative;
+	}
+
+	.brand::after,
+	.main-nav a::after,
+	.footer-row a::after {
+		content: '';
+		position: absolute;
+		left: 0;
+		bottom: -4px;
+		width: 100%;
+		height: 2px;
+		border-radius: 999px;
+		background: currentColor;
+		transform: scaleX(0);
+		transform-origin: left;
+		transition: transform 0.22s ease, opacity 0.22s ease;
+		opacity: 0.7;
+	}
+
+	.brand:hover::after,
+	.main-nav a:hover::after,
+	.footer-row a:hover::after,
+	.brand:focus-visible::after,
+	.main-nav a:focus-visible::after,
+	.footer-row a:focus-visible::after {
+		transform: scaleX(1);
+	}
+
+	.brand {
+		font-size: 24px;
+		line-height: 28px;
+		font-weight: 800;
+		letter-spacing: -0.03em;
+		color: var(--color-text-white);
+	}
+
+	.main-nav,
+	.header-actions,
+	.footer-row div,
+	.tag-row,
+	.badge-line,
+	.hero-actions {
+		display: flex;
+		align-items: center;
+		gap: 20px;
+	}
+
+	.main-nav a,
+	.footer-row a,
+	.site-footer p {
+		font-family: var(--font-body);
+		font-size: var(--type-body-lg-size);
+		line-height: var(--type-body-lg-line);
+		font-weight: 500;
+		color: rgba(255, 255, 255, 0.82);
+		transition: color 0.22s ease, opacity 0.22s ease;
+	}
+
+	.main-nav a:hover,
+	.footer-row a:hover,
+	.main-nav a:focus-visible,
+	.footer-row a:focus-visible {
+		color: var(--color-text-white);
+	}
+
+	.button {
+		display: inline-flex;
+		align-items: center;
+		justify-content: center;
+		border-radius: 999px;
+		padding: 12px 20px;
+		font-family: var(--font-body);
+		font-size: var(--type-button-size);
+		line-height: var(--type-button-line);
+		font-weight: 600;
+		transition: transform 0.2s ease, background-color 0.2s ease, border-color 0.2s ease, color 0.2s ease;
+	}
+
+	.button:hover {
+		transform: translateY(-1px);
+		text-decoration: none;
+	}
+
+	.button.primary {
+		background: linear-gradient(135deg, var(--color-accent), #0f9c90);
+		color: var(--color-text-white);
+		box-shadow: 0 18px 36px rgba(20, 184, 166, 0.24);
+	}
+
+	.button.secondary,
+	.button.ghost {
+		border: 1px solid var(--color-border-inverse);
+		color: var(--color-text-white);
+		background: rgba(255, 255, 255, 0.04);
+	}
+
+	.button.large {
+		min-height: 52px;
+		padding-inline: 24px;
+	}
+
+	.hero-section,
+	.bottom-cta {
+		color: var(--color-text-white);
+	}
+
+	.hero-section {
+		position: relative;
+		padding: 72px 0 48px;
+		background:
+			linear-gradient(90deg, rgba(15, 23, 42, 0.94) 0%, rgba(15, 23, 42, 0.78) 38%, rgba(15, 23, 42, 0.68) 58%, rgba(15, 23, 42, 0.84) 100%),
+			linear-gradient(180deg, rgba(15, 23, 42, 0.18) 0%, rgba(17, 24, 39, 0.7) 100%),
+			url('/hero.webp');
+		background-position: center;
+		background-repeat: no-repeat;
+		background-size: cover;
+	}
+
+	.hero-section::after {
+		content: '';
+		position: absolute;
+		inset: 0;
+		background:
+			radial-gradient(circle at 72% 20%, rgba(20, 184, 166, 0.22), transparent 22%),
+			radial-gradient(circle at 18% 28%, rgba(59, 130, 246, 0.12), transparent 18%);
+		pointer-events: none;
+	}
+
+	.bottom-cta {
+		background:
+			radial-gradient(circle at top right, rgba(59, 130, 246, 0.2), transparent 28%),
+			radial-gradient(circle at left top, rgba(20, 184, 166, 0.18), transparent 24%),
+			linear-gradient(180deg, var(--color-bg-dark) 0%, var(--color-bg-dark-soft) 100%);
+	}
+
+	.brand-grid,
+	.revenue-grid,
+	.split-grid,
+	.faq-grid {
+		display: grid;
+		gap: 32px;
+	}
+
+	.trust-grid,
+	.feature-grid,
+	.audience-grid,
+	.steps-grid,
+	.stories-grid,
+	.revenue-cards,
+	.capability-list,
+	.faq-list,
+	.client-list,
+	.calendar-grid,
+	.bars {
+		display: grid;
+	}
+
+
+
+	.hero-grid {
+		display: grid;
+		position: relative;
+		z-index: 1;
+		grid-template-columns: minmax(0, 0.92fr) minmax(0, 1.08fr);
+		align-items: center;
+		gap: 48px;
+		padding: 40px 0;
+	}
+
+	.hero-copy {
+		max-width: 34rem;
+	}
+
+	.eyebrow {
+		display: inline-flex;
+		align-items: center;
+		gap: 8px;
+		margin-bottom: 20px;
+		padding: 8px 14px;
+		border-radius: 999px;
+		background: rgba(255, 255, 255, 0.08);
+		font-family: var(--font-body);
+		font-size: var(--type-small-size);
+		line-height: var(--type-small-line);
+		font-weight: 600;
+		letter-spacing: 0.04em;
+		text-transform: uppercase;
+		color: rgba(255, 255, 255, 0.84);
+	}
+
+	.eyebrow.dark {
+		background: rgba(20, 184, 166, 0.1);
+		color: #0f766e;
+	}
+
+	.hero-copy h1 {
+		margin: 0 0 24px;
+		max-width: 11ch;
+		font-size: var(--type-h1-size);
+		line-height: var(--type-h1-line);
+		font-weight: 800;
+		letter-spacing: var(--type-h1-space);
+	}
+
+	.hero-copy h1 span {
+		color: #72f1dd;
+	}
+
+	.hero-text {
+		margin: 0;
+		max-width: 32rem;
+		font-family: var(--font-body);
+		font-size: var(--type-lead-size);
+		line-height: var(--type-lead-line);
+		font-weight: 400;
+		color: rgba(255, 255, 255, 0.84);
+	}
+
+	.section-heading p,
+	.revenue-section p,
+	.story-card p,
+	.faq-item p,
+	.brand-panel p,
+	.audience-card p,
+	.feature-card p,
+	.step-card p,
+	.bottom-cta p {
+		margin: 0;
+		font-family: var(--font-body);
+		font-size: var(--type-body-lg-size);
+		line-height: var(--type-body-lg-line);
+		font-weight: 400;
+		color: var(--color-text-muted);
+	}
+
+	.hero-actions {
+		flex-wrap: wrap;
+		gap: 14px;
+		margin-top: 32px;
+	}
+
+	.hero-visual {
+		position: relative;
+		min-height: 620px;
+		display: flex;
+		align-items: center;
+		justify-content: flex-end;
+	}
+
+
+
+	.glow {
+		position: absolute;
+		border-radius: 999px;
+		filter: blur(40px);
+		opacity: 0.8;
+	}
+
+	.glow-teal {
+		width: 260px;
+		height: 260px;
+		right: 40px;
+		top: 30px;
+		background: rgba(20, 184, 166, 0.24);
+	}
+
+	.glow-blue {
+		width: 220px;
+		height: 220px;
+		left: 40px;
+		bottom: 40px;
+		background: rgba(59, 130, 246, 0.2);
+	}
+
+	.hero-window-stack {
+		display: grid;
+		grid-template-columns: minmax(0, 1.15fr) minmax(0, 0.85fr);
+		gap: 18px;
+		width: min(100%, 680px);
+		margin-left: auto;
+	}
+
+	.hero-window {
+		border-radius: 28px;
+		padding: 22px;
+		background: rgba(255, 255, 255, 0.95);
+		border: 1px solid rgba(255, 255, 255, 0.3);
+		box-shadow: 0 28px 70px rgba(8, 15, 30, 0.24);
+		backdrop-filter: blur(14px);
+		color: var(--color-text);
+	}
+
+	.hero-window h3 {
+		margin: 0;
+		font-family: var(--font-heading);
+		font-size: clamp(1.35rem, 1.6vw, 1.75rem);
+		line-height: 1.2;
+		font-weight: 700;
+		letter-spacing: -0.02em;
+	}
+
+	.hero-window-top,
+	.mini-stats,
+	.payment-summary-row,
+	.payment-method {
+		display: flex;
+		justify-content: space-between;
+		gap: 16px;
+	}
+
+	.hero-window-top,
+	.payment-method {
+		align-items: center;
+	}
+
+	.trainer-window {
+		grid-row: span 2;
+		min-height: 420px;
+	}
+
+	.client-window,
+	.payment-window {
+		min-height: 200px;
+	}
+
+	.mini-chart {
+		display: grid;
+		grid-template-columns: repeat(4, 1fr);
+		align-items: end;
+		gap: 10px;
+		height: 148px;
+		margin-top: 24px;
+		padding: 18px;
+		border-radius: 22px;
+		background: #f8fafc;
+	}
+
+	.mini-chart span {
+		display: block;
+		border-radius: 999px 999px 12px 12px;
+		background: linear-gradient(180deg, #14b8a6 0%, #0f766e 100%);
+	}
+
+	.mini-stats {
+		margin-top: 18px;
+	}
+
+	.mini-stats strong,
+	.payment-summary-row strong,
+	.payment-method strong,
+	.client-program-card strong {
+		display: block;
+		font-family: var(--font-heading);
+		font-size: 1.15rem;
+		line-height: 1.25;
+		font-weight: 700;
+		color: var(--color-text);
+	}
+
+	.mini-stats span,
+	.payment-summary-row span,
+	.payment-method span,
+	.client-program-card span {
+		display: block;
+		margin-top: 6px;
+		font-family: var(--font-body);
+		font-size: var(--type-small-size);
+		line-height: var(--type-small-line);
+		font-weight: 500;
+		color: var(--color-text-muted);
+	}
+
+	.client-calendar {
+		display: grid;
+		grid-template-columns: repeat(7, 1fr);
+		gap: 8px;
+		margin-top: 18px;
+		text-align: center;
+	}
+
+	.client-calendar span {
+		font-family: var(--font-body);
+		font-size: 0.72rem;
+		line-height: 1;
+		font-weight: 600;
+		color: var(--color-text-muted);
+	}
+
+	.client-calendar b {
+		display: block;
+		height: 28px;
+		border-radius: 10px;
+		background: rgba(15, 23, 42, 0.08);
+	}
+
+	.client-calendar b.active {
+		background: linear-gradient(135deg, #14b8a6, #3b82f6);
+	}
+
+	.client-program-card,
+	.payment-method {
+		margin-top: 18px;
+		padding: 16px;
+		border-radius: 18px;
+		background: #f8fafc;
+	}
+
+	.card-chip {
+		width: 42px;
+		height: 28px;
+		border-radius: 8px;
+		background: linear-gradient(135deg, #0f172a, #334155);
+		flex-shrink: 0;
+	}
+
+	.hero-pay-button {
+		width: 100%;
+		margin-top: 18px;
+	}
+
+	.section-heading h2,
+	.split-card h2,
+	.bottom-cta h2 {
+		margin: 0 0 20px;
+		font-family: var(--font-heading);
+		font-size: var(--type-h2-size);
+		line-height: var(--type-h2-line);
+		font-weight: 700;
+		letter-spacing: var(--type-h2-space);
+	}
+
+	.feature-card h3,
+	.audience-card h3,
+	.step-card h3,
+	.revenue-card h3,
+	.story-card h3,
+	.brand-panel strong {
+		margin: 0 0 12px;
+		font-family: var(--font-heading);
+		font-size: var(--type-h3-size);
+		line-height: var(--type-h3-line);
+		font-weight: 700;
+		letter-spacing: var(--type-h3-space);
+	}
+
+	.revenue-card h3 {
+		margin-bottom: 0;
+		font-size: clamp(1.25rem, 1.05vw, 1.5rem);
+		line-height: 1.28;
+		max-width: 13ch;
+		text-wrap: balance;
+		overflow-wrap: anywhere;
+	}
+
+	.mockup-label {
+		margin: 0 0 8px;
+		font-family: var(--font-body);
+		font-size: var(--type-small-size);
+		line-height: var(--type-small-line);
+		font-weight: 600;
+		text-transform: uppercase;
+		letter-spacing: 0.08em;
+		color: #0f766e;
+	}
+
+	.status-pill {
+		display: inline-flex;
+		align-items: center;
+		padding: 8px 12px;
+		border-radius: 999px;
+		background: rgba(15, 23, 42, 0.06);
+		font-family: var(--font-body);
+		font-size: var(--type-small-size);
+		line-height: var(--type-small-line);
+		font-weight: 600;
+		color: var(--color-text);
+	}
+
+	.status-pill.success {
+		background: rgba(34, 197, 94, 0.14);
+		color: #166534;
+	}
+
+	.trust-bar {
+		padding: 24px 0;
+		border-bottom: 1px solid rgba(15, 23, 42, 0.08);
+		background: rgba(255, 255, 255, 0.82);
+		backdrop-filter: blur(12px);
+	}
+
+	.trust-grid > div {
+		display: flex;
+		align-items: center;
+		justify-content: center;
+		text-align: center;
+		min-height: 132px;
+		padding: 22px 24px;
+		border-radius: 20px;
+		background: #ffffff;
+		border: 1px solid rgba(15, 23, 42, 0.08);
+		box-shadow: 0 12px 30px rgba(15, 23, 42, 0.05);
+	}
+
+	.trust-grid,
+	.feature-grid,
+	.audience-grid,
+	.steps-grid,
+	.stories-grid,
+	.revenue-cards {
+		gap: 20px;
+	}
+
+	.trust-grid {
+		grid-template-columns: repeat(3, minmax(0, 1fr));
+	}
+
+	.trust-grid p {
+		margin: 0;
+		font-family: var(--font-body);
+		font-size: var(--type-body-md-size);
+		line-height: var(--type-body-md-line);
+		font-weight: 600;
+		color: #1e293b;
+	}
+
+	.content-section {
+		padding: 112px 0;
+	}
+
+	.content-section.alt {
+		background: rgba(255, 255, 255, 0.7);
+	}
+
+	.section-heading {
+		max-width: 760px;
+		margin-bottom: 48px;
+	}
+
+	.section-heading.compact {
+		margin-bottom: 32px;
+	}
+
+	.section-heading.inverse h2,
+	.section-heading.inverse p,
+	.bottom-cta p {
+		color: var(--color-text-white);
+	}
+
+	.feature-grid,
+	.audience-grid,
+	.stories-grid {
+		grid-template-columns: repeat(3, minmax(0, 1fr));
+	}
+
+	.steps-grid {
+		grid-template-columns: repeat(4, minmax(0, 1fr));
+	}
+
+	.feature-card,
+	.audience-card,
+	.step-card,
+	.story-card,
+	.faq-item,
+	.brand-card {
+		padding: 28px;
+		border-radius: var(--radius-lg);
+		background: var(--color-surface);
+		border: 1px solid var(--color-border);
+		box-shadow: var(--shadow-card);
+	}
+
+	.feature-accent,
+	.step-number {
+		display: inline-flex;
+		margin-bottom: 18px;
+		font-family: var(--font-body);
+		font-size: var(--type-body-md-size);
+		line-height: var(--type-body-md-line);
+		font-weight: 600;
+		color: #0f766e;
+	}
+
+	.revenue-section {
+		background:
+			radial-gradient(circle at top left, rgba(20, 184, 166, 0.24), transparent 26%),
+			linear-gradient(180deg, #0f172a 0%, #12213f 100%);
+	}
+
+	.brand-grid,
+	.faq-grid {
+		grid-template-columns: minmax(0, 0.9fr) minmax(0, 1.1fr);
+		align-items: start;
+	}
+
+	.revenue-cards {
+		grid-template-columns: repeat(3, minmax(240px, 1fr));
+	}
+
+	.revenue-card {
+		padding: 28px;
+		border-radius: var(--radius-lg);
+		background: rgba(255, 255, 255, 0.08);
+		border: 1px solid rgba(255, 255, 255, 0.12);
+		color: var(--color-text-white);
+		min-height: 180px;
+		display: flex;
+		align-items: flex-start;
+	}
+
+	.split-grid {
+		grid-template-columns: repeat(2, minmax(0, 1fr));
+	}
+
+	.split-card {
+		padding: 36px;
+		border-radius: var(--radius-xl);
+	}
+
+	.dark-surface {
+		background: linear-gradient(180deg, #0f172a, #111827);
+		color: var(--color-text-white);
+	}
+
+	.light-surface {
+		background: var(--color-surface);
+		border: 1px solid var(--color-border);
+		box-shadow: var(--shadow-card);
+	}
+
+	.capability-list {
+		grid-template-columns: repeat(2, minmax(0, 1fr));
+		gap: 14px;
+		margin: 28px 0 0;
+		padding: 0;
+		list-style: none;
+	}
+
+	.capability-list li {
+		padding: 16px 18px;
+		border-radius: var(--radius-md);
+		background: rgba(255, 255, 255, 0.08);
+		font-family: var(--font-body);
+		font-size: var(--type-body-md-size);
+		line-height: var(--type-body-md-line);
+		font-weight: 500;
+	}
+
+	.capability-list.light li {
+		background: #f8fafc;
+		color: var(--color-text);
+	}
+
+	.brand-card {
+		background: linear-gradient(180deg, #ffffff, #f8fafc);
+	}
+
+	.brand-preview-body {
+		flex-direction: column;
+		align-items: stretch;
+		margin-top: 24px;
+	}
+
+	.faq-list {
+		gap: 16px;
+	}
+
+	.faq-item summary {
+		cursor: pointer;
+		list-style: none;
+		font-family: var(--font-body);
+		font-size: var(--type-body-md-size);
+		line-height: var(--type-body-md-line);
+		font-weight: 600;
+		color: var(--color-text);
+	}
+
+	.faq-item summary::-webkit-details-marker {
+		display: none;
+	}
+
+	.faq-item p {
+		margin-top: 14px;
+	}
+
+	.bottom-cta {
+		padding: 96px 0;
+	}
+
+	.bottom-cta-inner {
+		align-items: end;
+		padding: 40px;
+		border-radius: var(--radius-xl);
+		border: 1px solid rgba(255, 255, 255, 0.12);
+		background: rgba(255, 255, 255, 0.05);
+	}
+
+	.bottom-cta p {
+		max-width: 54ch;
+	}
+
+	.site-footer {
+		padding: 28px 0 36px;
+		background: #0b1220;
+	}
+
+	@media (max-width: 1100px) {
+		.revenue-grid,
+		.brand-grid,
+		.faq-grid,
+		.split-grid {
+			grid-template-columns: 1fr;
+		}
+
+		.feature-grid,
+		.audience-grid,
+		.stories-grid,
+		.revenue-cards,
+		.steps-grid,
+		.trust-grid {
+			grid-template-columns: repeat(2, minmax(0, 1fr));
+		}
+
+		.hero-visual {
+			min-height: auto;
+		}
+
+		.bottom-cta-inner {
+			align-items: start;
+			flex-direction: column;
+		}
+	}
+
+	@media (max-width: 960px) {
+		.hero-grid {
+			grid-template-columns: 1fr;
+		}
+
+		.hero-visual {
+			min-height: auto;
+		}
+	}
+
+	@media (max-width: 1024px) {
+		.header-row {
+			flex-wrap: wrap;
+			row-gap: 14px;
+		}
+
+		.main-nav {
+			order: 3;
+			width: 100%;
+			justify-content: flex-start;
+			flex-wrap: wrap;
+			gap: 14px 18px;
+		}
+
+		.header-actions {
+			gap: 12px;
+		}
+
+		.main-nav a {
+			font-size: var(--type-body-size);
+			line-height: var(--type-body-line);
+		}
+	}
+
+	@media (max-width: 640px) {
+		.hero-window-stack {
+			grid-template-columns: 1fr;
+			width: 100%;
+		}
+
+		.trainer-window,
+		.client-window,
+		.payment-window {
+			grid-row: auto;
+			min-height: auto;
+		}
+
+		.site-header {
+			position: static;
+		}
+
+		.main-nav,
+		.header-actions {
+			display: none;
+		}
+
+		.hero-section {
+			padding-top: 40px;
+			background-position: 64% center;
+		}
+
+		.hero-copy h1,
+		.section-heading h2,
+		.split-card h2,
+		.bottom-cta h2 {
+			max-width: none;
+		}
+
+		.feature-grid,
+		.audience-grid,
+		.stories-grid,
+		.revenue-cards,
+		.steps-grid,
+		.trust-grid,
+		.capability-list {
+			grid-template-columns: 1fr;
+		}
+
+		.hero-visual {
+			min-height: auto;
+		}
+
+		.content-section,
+		.bottom-cta {
+			padding: 84px 0;
+		}
+	}
+
+	@media (max-width: 560px) {
+		.container {
+			width: min(calc(100% - 24px), var(--container));
+		}
+
+		.hero-window {
+			padding: 18px;
+			border-radius: 22px;
+		}
+
+		.hero-window-stack {
+			gap: 14px;
+		}
+
+		.mini-chart {
+			height: 120px;
+		}
+
+		.hero-section {
+			background-position: 70% center;
+		}
+
+		.hero-visual {
+			min-height: auto;
+		}
+
+		.bottom-cta-inner,
+		.split-card,
+		.feature-card,
+		.audience-card,
+		.step-card,
+		.story-card,
+		.faq-item,
+		.brand-card {
+			padding: 22px;
+		}
+
+		.footer-row {
+			flex-direction: column;
+			align-items: flex-start;
+		}
+
+		.footer-row div {
+			flex-wrap: wrap;
+			gap: 14px;
+		}
+	}
+</style>
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
