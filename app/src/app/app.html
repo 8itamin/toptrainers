@@ -1,0 +1,236 @@
+<main class="auth-shell">
+  <section class="auth-layout">
+    <aside class="auth-brand">
+      <span class="brand-chip">TopTrainers App</span>
+      <h1>Спортивная платформа для тренеров и клиентов</h1>
+      <p class="brand-copy">
+        Единая точка входа для тренировок, общения и прогресса. Подберите формат
+        доступа и продолжайте работу в одном аккуратном интерфейсе.
+      </p>
+
+      <div class="brand-points">
+        <article>
+          <span>01</span>
+          <h2>Регистрация</h2>
+          <p>Создайте аккаунт по почте и выберите роль тренера или клиента.</p>
+        </article>
+        <article>
+          <span>02</span>
+          <h2>Вход</h2>
+          <p>Возвращайтесь к расписанию, программам и текущим тренировочным целям.</p>
+        </article>
+        <article>
+          <span>03</span>
+          <h2>Восстановление</h2>
+          <p>Быстро запросите письмо для сброса пароля без перегруженного сценария.</p>
+        </article>
+      </div>
+    </aside>
+
+    <section class="auth-panel">
+      @if (authenticatedUser(); as user) {
+        <section class="auth-card auth-card--success" aria-live="polite">
+          <div class="auth-card__header">
+            <p class="eyebrow">Аккаунт активен</p>
+            <h2>Вы уже вошли</h2>
+            <p>
+              Почта: <strong>{{ user.email }}</strong>
+              @if (user.role) {
+                <span class="user-role">Роль: {{ user.role === 'trainer' ? 'Тренер' : 'Клиент' }}</span>
+              }
+            </p>
+          </div>
+
+          <button type="button" class="primary-action" (click)="logout()">
+            Выйти из аккаунта
+          </button>
+        </section>
+      }
+
+      @if (message()) {
+        <p class="feedback feedback--success" aria-live="polite">{{ message() }}</p>
+      }
+
+      @if (errorMessage()) {
+        <p class="feedback feedback--error" aria-live="polite">{{ errorMessage() }}</p>
+      }
+
+      @if (mode() === 'register') {
+        <form class="auth-card" aria-labelledby="register-title" (ngSubmit)="register()">
+          <div class="auth-card__header">
+            <p class="eyebrow">Новый аккаунт</p>
+            <h2 id="register-title">Регистрация</h2>
+            <p>Заполните форму, чтобы начать работу в TopTrainers.</p>
+          </div>
+
+          <label class="field">
+            <span>Почта</span>
+            <input
+              type="email"
+              name="registerEmail"
+              placeholder="name@example.com"
+              [(ngModel)]="registerData.email"
+            />
+          </label>
+
+          <label class="field">
+            <span>Пароль</span>
+            <input
+              type="password"
+              name="registerPassword"
+              placeholder="Введите пароль"
+              [(ngModel)]="registerData.password"
+            />
+          </label>
+
+          <fieldset class="role-grid">
+            <legend>Выберите роль</legend>
+
+            <label class="role-option" [class.is-selected]="registerData.role === 'trainer'">
+              <input
+                type="radio"
+                name="role"
+                value="trainer"
+                [(ngModel)]="registerData.role"
+              />
+              <span class="role-option__title">Тренер</span>
+              <span class="role-option__copy">Для ведения клиентов, программ и расписания.</span>
+            </label>
+
+            <label class="role-option" [class.is-selected]="registerData.role === 'client'">
+              <input
+                type="radio"
+                name="role"
+                value="client"
+                [(ngModel)]="registerData.role"
+              />
+              <span class="role-option__title">Клиент</span>
+              <span class="role-option__copy">Для доступа к планам, занятиям и обратной связи.</span>
+            </label>
+          </fieldset>
+
+          <button type="submit" class="primary-action" [disabled]="loading()">
+            {{ loading() ? 'Создаём аккаунт...' : 'Создать аккаунт' }}
+          </button>
+
+          <p class="form-footer">
+            Уже есть аккаунт?
+            <button type="button" class="inline-action" (click)="setMode('login')">
+              Войти
+            </button>
+          </p>
+        </form>
+      }
+
+      @if (mode() === 'login') {
+        <form class="auth-card" aria-labelledby="login-title" (ngSubmit)="login()">
+          <div class="auth-card__header">
+            <p class="eyebrow">Добро пожаловать</p>
+            <h2 id="login-title">Вход</h2>
+            <p>Введите данные аккаунта, чтобы вернуться к тренировочному процессу.</p>
+          </div>
+
+          <label class="field">
+            <span>Почта</span>
+            <input
+              type="email"
+              name="loginEmail"
+              placeholder="name@example.com"
+              [(ngModel)]="loginData.email"
+            />
+          </label>
+
+          <label class="field">
+            <span>Пароль</span>
+            <input
+              type="password"
+              name="loginPassword"
+              placeholder="Введите пароль"
+              [(ngModel)]="loginData.password"
+            />
+          </label>
+
+          <button type="submit" class="primary-action" [disabled]="loading()">
+            {{ loading() ? 'Входим...' : 'Войти в аккаунт' }}
+          </button>
+
+          <div class="auth-card__links">
+            <button type="button" class="inline-action" (click)="setMode('forgot')">
+              Забыли пароль?
+            </button>
+            <button type="button" class="inline-action" (click)="setMode('register')">
+              Создать новый аккаунт
+            </button>
+          </div>
+        </form>
+      }
+
+      @if (mode() === 'forgot') {
+        <form class="auth-card" aria-labelledby="forgot-title" (ngSubmit)="forgotPassword()">
+          <div class="auth-card__header">
+            <p class="eyebrow">Восстановление доступа</p>
+            <h2 id="forgot-title">Забыли пароль</h2>
+            <p>Укажите почту, и мы отправим ссылку для сброса пароля.</p>
+          </div>
+
+          <label class="field">
+            <span>Почта</span>
+            <input
+              type="email"
+              name="forgotEmail"
+              placeholder="name@example.com"
+              [(ngModel)]="forgotData.email"
+            />
+          </label>
+
+          <button type="submit" class="primary-action" [disabled]="loading()">
+            {{ loading() ? 'Отправляем...' : 'Отправить ссылку' }}
+          </button>
+
+          <div class="auth-card__links auth-card__links--stacked">
+            <button type="button" class="inline-action" (click)="setMode('login')">
+              Вернуться ко входу
+            </button>
+            <button type="button" class="inline-action" (click)="setMode('register')">
+              Создать аккаунт
+            </button>
+          </div>
+        </form>
+      }
+
+      @if (mode() === 'reset') {
+        <form class="auth-card" aria-labelledby="reset-title" (ngSubmit)="resetPassword()">
+          <div class="auth-card__header">
+            <p class="eyebrow">Новый пароль</p>
+            <h2 id="reset-title">Сброс пароля</h2>
+            <p>Введите новый пароль для аккаунта и завершите восстановление доступа.</p>
+          </div>
+
+          <label class="field">
+            <span>Новый пароль</span>
+            <input
+              type="password"
+              name="resetPassword"
+              placeholder="Введите новый пароль"
+              [(ngModel)]="resetData.password"
+            />
+          </label>
+
+          <label class="field">
+            <span>Подтвердите пароль</span>
+            <input
+              type="password"
+              name="resetConfirmPassword"
+              placeholder="Повторите новый пароль"
+              [(ngModel)]="resetData.confirmPassword"
+            />
+          </label>
+
+          <button type="submit" class="primary-action" [disabled]="loading()">
+            {{ loading() ? 'Сохраняем...' : 'Сохранить новый пароль' }}
+          </button>
+        </form>
+      }
+    </section>
+  </section>
+</main>
