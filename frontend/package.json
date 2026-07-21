@@ -1,0 +1,52 @@
+{
+  "name": "toptrainers-frontend",
+  "version": "0.1.0",
+  "private": true,
+  "packageManager": "pnpm@11.9.0",
+  "engines": {
+    "node": ">=22.0.0",
+    "pnpm": ">=11.9.0"
+  },
+  "scripts": {
+    "nx": "nx",
+    "serve:app": "nx serve app",
+    "serve:showcase": "nx serve showcase",
+    "build": "nx run-many -t build",
+    "test": "nx run-many -t test",
+    "lint": "eslint . --max-warnings=0",
+    "typecheck": "tsc --noEmit -p tsconfig.json",
+    "api:generate": "node tools/openapi/generate.mjs"
+  },
+  "dependencies": {
+    "@angular/common": "21.2.13",
+    "@angular/compiler": "21.2.13",
+    "@angular/core": "21.2.13",
+    "@angular/forms": "21.2.13",
+    "@angular/platform-browser": "21.2.13",
+    "@angular/platform-server": "21.2.13",
+    "@angular/router": "21.2.13",
+    "@angular/service-worker": "21.2.13",
+    "@angular/ssr": "21.2.13",
+    "dexie": "4.2.1",
+    "express": "5.1.0",
+    "rxjs": "7.8.2",
+    "tslib": "2.8.1"
+  },
+  "devDependencies": {
+    "@angular/build": "21.2.13",
+    "@angular/cli": "21.2.13",
+    "@angular/compiler-cli": "21.2.13",
+    "@nx/angular": "22.7.3",
+    "@nx/eslint-plugin": "22.7.3",
+    "@nx/js": "22.7.3",
+    "@types/express": "5.0.5",
+    "@types/node": "22.19.11",
+    "eslint": "9.29.0",
+    "jsdom": "28.0.0",
+    "nx": "22.7.3",
+    "prettier": "3.8.1",
+    "typescript": "5.9.2",
+    "typescript-eslint": "8.35.1",
+    "vitest": "4.0.8"
+  }
+}

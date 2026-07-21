@@ -1,0 +1,7 @@
+{
+  "$schema": "../../../node_modules/nx/schemas/project-schema.json",
+  "name": "pwa-feature-role-shell",
+  "projectType": "library",
+  "sourceRoot": "libs/pwa/feature-role-shell/src",
+  "tags": ["scope:pwa", "type:feature"]
+}

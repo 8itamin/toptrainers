@@ -1,0 +1,220 @@
+name: toptrainers
+
+x-api-environment: &api-environment
+  TT_ENVIRONMENT: ${TT_ENVIRONMENT:-production}
+  TT_LOG_LEVEL: ${TT_LOG_LEVEL:-INFO}
+  TT_ALLOWED_HOSTS: ${TT_ALLOWED_HOSTS:?Set TT_ALLOWED_HOSTS in the environment file}
+  TT_CORS_ORIGINS: ${TT_CORS_ORIGINS:?Set TT_CORS_ORIGINS in the environment file}
+  TT_DATABASE_URL: ${TT_DATABASE_URL:?Set TT_DATABASE_URL in the environment file}
+  TT_REDIS_URL: ${TT_REDIS_URL:?Set TT_REDIS_URL in the environment file}
+  TT_JWT_SIGNING_KEY: ${TT_JWT_SIGNING_KEY:?Set TT_JWT_SIGNING_KEY in the environment file}
+  TT_OPENAPI_ENABLED: ${TT_OPENAPI_ENABLED:-false}
+  TT_S3_ENDPOINT_URL: ${TT_S3_ENDPOINT_URL:-}
+  TT_S3_BUCKET: ${TT_S3_BUCKET:-}
+  TT_S3_REGION: ${TT_S3_REGION:-ru-1}
+  TT_S3_ACCESS_KEY_ID: ${TT_S3_ACCESS_KEY_ID:-}
+  TT_S3_SECRET_ACCESS_KEY: ${TT_S3_SECRET_ACCESS_KEY:-}
+
+services:
+  gateway:
+    build:
+      context: ./infra/nginx
+      dockerfile: Dockerfile
+    environment:
+      TT_PUBLIC_DOMAIN: ${TT_PUBLIC_DOMAIN:?Set TT_PUBLIC_DOMAIN in the environment file}
+    depends_on:
+      pwa:
+        condition: service_healthy
+      showcase:
+        condition: service_healthy
+      api:
+        condition: service_healthy
+    ports:
+      # The edge is deliberately loopback-only. Tailscale Serve owns tailnet exposure.
+      - "127.0.0.1:${TT_EDGE_PORT:-8080}:8080"
+    networks:
+      - edge
+    security_opt:
+      - no-new-privileges:true
+    healthcheck:
+      test: ["CMD-SHELL", "wget -q -O - http://127.0.0.1:8080/__gateway_health >/dev/null 2>&1"]
+      interval: 10s
+      timeout: 3s
+      retries: 5
+      start_period: 10s
+    restart: unless-stopped
+
+  pwa:
+    build:
+      context: ./frontend
+      dockerfile: ../infra/images/pwa.Dockerfile
+      args:
+        ALLOW_UNLOCKED_INSTALL: ${TT_ALLOW_UNLOCKED_FRONTEND_BUILD:-false}
+    expose:
+      - "8080"
+    networks:
+      - edge
+    security_opt:
+      - no-new-privileges:true
+    cap_drop:
+      - ALL
+    read_only: true
+    tmpfs:
+      - /var/cache/nginx
+      - /var/run
+      - /tmp
+    healthcheck:
+      test: ["CMD-SHELL", "wget -q -O - http://127.0.0.1:8080/__pwa_health >/dev/null 2>&1"]
+      interval: 10s
+      timeout: 3s
+      retries: 5
+      start_period: 10s
+    restart: unless-stopped
+
+  showcase:
+    build:
+      context: ./frontend
+      dockerfile: ../infra/images/showcase.Dockerfile
+      args:
+        ALLOW_UNLOCKED_INSTALL: ${TT_ALLOW_UNLOCKED_FRONTEND_BUILD:-false}
+    environment:
+      NODE_ENV: production
+      PORT: "4000"
+      # Angular SSR validates Host to prevent SSRF. Keep this explicit rather
+      # than allowing every host; Nginx is the only external entry point.
+      NG_ALLOWED_HOSTS: "${TT_PUBLIC_DOMAIN},www.${TT_PUBLIC_DOMAIN},*.${TT_PUBLIC_DOMAIN},localhost,127.0.0.1"
+    expose:
+      - "4000"
+    networks:
+      - edge
+    user: "node"
+    security_opt:
+      - no-new-privileges:true
+    cap_drop:
+      - ALL
+    read_only: true
+    tmpfs:
+      - /tmp
+    healthcheck:
+      test:
+        [
+          "CMD",
+          "node",
+          "-e",
+          "fetch('http://127.0.0.1:4000/').then((r) => process.exit(r.ok ? 0 : 1)).catch(() => process.exit(1))",
+        ]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+      start_period: 20s
+    restart: unless-stopped
+
+  api:
+    build:
+      context: ./backend
+      dockerfile: Dockerfile
+    environment: *api-environment
+    depends_on:
+      postgres:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+    expose:
+      - "8000"
+    networks:
+      - edge
+      - data
+    security_opt:
+      - no-new-privileges:true
+    cap_drop:
+      - ALL
+    read_only: true
+    tmpfs:
+      - /tmp
+    healthcheck:
+      test:
+        [
+          "CMD",
+          "python",
+          "-c",
+          "from urllib.request import urlopen; urlopen('http://127.0.0.1:8000/api/v1/health/live', timeout=3)",
+        ]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+      start_period: 20s
+    restart: unless-stopped
+
+  migrate:
+    build:
+      context: ./backend
+      dockerfile: Dockerfile
+    command: ["alembic", "upgrade", "head"]
+    environment: *api-environment
+    depends_on:
+      postgres:
+        condition: service_healthy
+    networks:
+      - data
+    security_opt:
+      - no-new-privileges:true
+    cap_drop:
+      - ALL
+    read_only: true
+    tmpfs:
+      - /tmp
+    restart: "no"
+    profiles:
+      - migrate
+
+  postgres:
+    image: postgres:17.5-alpine
+    environment:
+      POSTGRES_DB: ${POSTGRES_DB:?Set POSTGRES_DB in the environment file}
+      POSTGRES_USER: ${POSTGRES_USER:?Set POSTGRES_USER in the environment file}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:?Set POSTGRES_PASSWORD in the environment file}
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+    expose:
+      - "5432"
+    networks:
+      - data
+    security_opt:
+      - no-new-privileges:true
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U $$POSTGRES_USER -d $$POSTGRES_DB"]
+      interval: 10s
+      timeout: 5s
+      retries: 10
+      start_period: 10s
+    restart: unless-stopped
+
+  redis:
+    image: redis:7.4.2-alpine
+    command: ["redis-server", "--appendonly", "yes", "--save", "60", "1000"]
+    volumes:
+      - redis_data:/data
+    expose:
+      - "6379"
+    networks:
+      - data
+    security_opt:
+      - no-new-privileges:true
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 10s
+      timeout: 3s
+      retries: 10
+      start_period: 5s
+    restart: unless-stopped
+
+volumes:
+  postgres_data:
+  redis_data:
+
+networks:
+  edge:
+    driver: bridge
+  data:
+    driver: bridge
+    internal: true

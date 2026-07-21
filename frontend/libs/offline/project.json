@@ -1,0 +1,7 @@
+{
+  "$schema": "../../node_modules/nx/schemas/project-schema.json",
+  "name": "offline",
+  "projectType": "library",
+  "sourceRoot": "libs/offline/src",
+  "tags": ["scope:offline", "type:data-access"]
+}

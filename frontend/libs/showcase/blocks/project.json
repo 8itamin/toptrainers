@@ -1,0 +1,7 @@
+{
+  "$schema": "../../../node_modules/nx/schemas/project-schema.json",
+  "name": "showcase-blocks",
+  "projectType": "library",
+  "sourceRoot": "libs/showcase/blocks/src",
+  "tags": ["scope:showcase", "type:feature"]
+}

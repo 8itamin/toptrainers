@@ -1,0 +1,16 @@
+{
+  "name": "TopTrainers",
+  "short_name": "TopTrainers",
+  "start_url": "/trainer",
+  "display": "standalone",
+  "background_color": "#f4f7fb",
+  "theme_color": "#0d2235",
+  "icons": [
+    {
+      "src": "/icons/app-icon.svg",
+      "sizes": "any",
+      "type": "image/svg+xml",
+      "purpose": "any"
+    }
+  ]
+}

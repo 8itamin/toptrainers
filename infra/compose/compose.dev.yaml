@@ -1,0 +1,10 @@
+# Developer-only overlay. Never apply this file on the Tailnet host: it exposes
+# local dependency ports solely on loopback for a natively running FastAPI process.
+services:
+  postgres:
+    ports:
+      - "127.0.0.1:5432:5432"
+
+  redis:
+    ports:
+      - "127.0.0.1:6379:6379"

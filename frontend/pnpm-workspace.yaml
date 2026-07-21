@@ -1,0 +1,12 @@
+packages:
+  - apps/*
+  - libs/*
+  - libs/*/*
+
+onlyBuiltDependencies:
+  - '@parcel/watcher'
+  - esbuild
+  - less
+  - lmdb
+  - msgpackr-extract
+  - nx

@@ -1,0 +1,74 @@
+{
+  "$schema": "../../node_modules/nx/schemas/project-schema.json",
+  "name": "showcase",
+  "projectType": "application",
+  "sourceRoot": "apps/showcase/src",
+  "tags": ["scope:showcase", "type:app"],
+  "targets": {
+    "build": {
+      "executor": "@angular/build:application",
+      "options": {
+        "outputPath": "dist/apps/showcase",
+        "index": "apps/showcase/src/index.html",
+        "browser": "apps/showcase/src/main.ts",
+        "server": "apps/showcase/src/main.server.ts",
+        "ssr": {
+          "entry": "apps/showcase/src/server.ts"
+        },
+        "prerender": false,
+        "polyfills": [],
+        "tsConfig": "apps/showcase/tsconfig.app.json",
+        "assets": [
+          {
+            "glob": "**/*",
+            "input": "apps/showcase/public",
+            "output": "/"
+          }
+        ],
+        "styles": ["apps/showcase/src/styles.scss"]
+      },
+      "configurations": {
+        "production": {
+          "budgets": [
+            {
+              "type": "initial",
+              "maximumWarning": "500kB",
+              "maximumError": "1MB"
+            }
+          ],
+          "outputHashing": "all"
+        },
+        "development": {
+          "optimization": false,
+          "extractLicenses": false,
+          "sourceMap": true
+        }
+      },
+      "defaultConfiguration": "production"
+    },
+    "serve": {
+      "executor": "@angular/build:dev-server",
+      "configurations": {
+        "production": {
+          "buildTarget": "showcase:build:production"
+        },
+        "development": {
+          "buildTarget": "showcase:build:development"
+        }
+      },
+      "defaultConfiguration": "development"
+    },
+    "lint": {
+      "executor": "nx:run-commands",
+      "options": {
+        "command": "eslint apps/showcase --max-warnings=0"
+      }
+    },
+    "test": {
+      "executor": "nx:run-commands",
+      "options": {
+        "command": "vitest run --passWithNoTests"
+      }
+    }
+  }
+}

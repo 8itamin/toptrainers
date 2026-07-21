@@ -1,0 +1,83 @@
+map $http_upgrade $connection_upgrade {
+    default upgrade;
+    '' close;
+}
+
+server {
+    listen 8080 default_server;
+    server_name _;
+    server_tokens off;
+
+    location = /__gateway_health {
+        default_type text/plain;
+        add_header Cache-Control "no-store" always;
+        return 200 "ok\n";
+    }
+
+    location / {
+        return 444;
+    }
+}
+
+server {
+    listen 8080;
+    server_name app.${TT_PUBLIC_DOMAIN};
+    server_tokens off;
+
+    include /etc/nginx/snippets/toptrainers-proxy-headers.conf;
+
+    location = /__gateway_health {
+        default_type text/plain;
+        add_header Cache-Control "no-store" always;
+        return 200 "ok\n";
+    }
+
+    location /api/ {
+        proxy_pass http://api:8000;
+    }
+
+    location / {
+        proxy_pass http://pwa:8080;
+    }
+}
+
+server {
+    listen 8080;
+    server_name api.${TT_PUBLIC_DOMAIN};
+    server_tokens off;
+
+    include /etc/nginx/snippets/toptrainers-proxy-headers.conf;
+
+    location = /__gateway_health {
+        default_type text/plain;
+        add_header Cache-Control "no-store" always;
+        return 200 "ok\n";
+    }
+
+    location / {
+        proxy_pass http://api:8000;
+    }
+}
+
+server {
+    listen 8080;
+    # Exact app/api names above take precedence over this single-label wildcard.
+    server_name ${TT_PUBLIC_DOMAIN} www.${TT_PUBLIC_DOMAIN} *.${TT_PUBLIC_DOMAIN};
+    server_tokens off;
+
+    include /etc/nginx/snippets/toptrainers-proxy-headers.conf;
+
+    location = /__gateway_health {
+        default_type text/plain;
+        add_header Cache-Control "no-store" always;
+        return 200 "ok\n";
+    }
+
+    location /api/ {
+        proxy_pass http://api:8000;
+    }
+
+    location / {
+        proxy_pass http://showcase:4000;
+    }
+}

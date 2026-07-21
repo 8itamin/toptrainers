@@ -1,0 +1,1 @@
+"""Trainer programs vertical slice."""

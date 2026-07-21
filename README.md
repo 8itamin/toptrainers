@@ -1,46 +1,43 @@
-# Astro Starter Kit: Basics
+# TopTrainers
 
-```sh
-npm create astro@latest -- --template basics
-```
+TopTrainers is a mobile-first platform for fitness trainers and their clients.
 
-> 🧑‍🚀 **Seasoned astronaut?** Delete this file. Have fun!
-
-## 🚀 Project Structure
-
-Inside of your Astro project, you'll see the following folders and files:
+## Repository layout
 
 ```text
-/
-├── public/
-│   └── favicon.svg
-├── src
-│   ├── assets
-│   │   └── astro.svg
-│   ├── components
-│   │   └── Welcome.astro
-│   ├── layouts
-│   │   └── Layout.astro
-│   └── pages
-│       └── index.astro
-└── package.json
+frontend/  Nx + Angular 21: PWA (`app`) and SSR showcase (`showcase`)
+backend/   FastAPI modular monolith and Alembic migrations
+infra/     Docker Compose, Nginx gateway, deployment and recovery runbooks
+DOC/       project memory, architectural decisions and roadmap
+arc/       archived pre-rebuild files; never used by build or deployment
 ```
 
-To learn more about the folder structure of an Astro project, refer to [our guide on project structure](https://docs.astro.build/en/basics/project-structure/).
+The frontend and API are deliberately separated runtimes. FastAPI/OpenAPI is the sole source of API contracts; generated TypeScript contracts live in `frontend/libs/shared/contracts/src/generated/`.
 
-## 🧞 Commands
+## Local development
 
-All commands are run from the root of the project, from a terminal:
+1. Copy `.env.example` to a local, untracked `.env` and change all development passwords.
+2. For a natively running API, start PostgreSQL and Redis through the loopback-only developer overlay:
 
-| Command                   | Action                                           |
-| :------------------------ | :----------------------------------------------- |
-| `npm install`             | Installs dependencies                            |
-| `npm run dev`             | Starts local dev server at `localhost:4321`      |
-| `npm run build`           | Build your production site to `./dist/`          |
-| `npm run preview`         | Preview your build locally, before deploying     |
-| `npm run astro ...`       | Run CLI commands like `astro add`, `astro check` |
-| `npm run astro -- --help` | Get help using the Astro CLI                     |
+   ```powershell
+   docker compose --env-file .env -f infra/compose/compose.yaml -f infra/compose/compose.dev.yaml up -d postgres redis
+   ```
 
-## 👀 Want to learn more?
+3. In `backend/`, create a Python 3.13+ virtual environment and run `python -m pip install -e ".[dev]"`. For this native mode, set the local dependency URLs before starting the API:
 
-Feel free to check [our documentation](https://docs.astro.build) or jump into our [Discord server](https://astro.build/chat).
+   ```powershell
+   $env:TT_DATABASE_URL = 'postgresql+asyncpg://toptrainers:change-me@127.0.0.1:5432/toptrainers'
+   $env:TT_REDIS_URL = 'redis://127.0.0.1:6379/0'
+   ```
+4. In `frontend/`, run `pnpm install` and then `pnpm nx serve app` or `pnpm nx serve showcase`.
+
+`infra/compose/compose.dev.yaml` is deliberately a local-only overlay. The base Compose file used on the Tailnet host never publishes the data services.
+
+See [the deployment runbook](infra/README.md) before using the production host.
+
+## Production host
+
+`100.90.138.119` is in the Tailscale/CGNAT range. The default production Compose configuration therefore binds the gateway only to `127.0.0.1:8080`; Tailscale Serve may expose it to the tailnet. Do not point public DNS at this address or open databases to the network.
+
+When preparing `/etc/toptrainers/prod.env`, set `TT_ENVIRONMENT=production` and
+`TT_OPENAPI_ENABLED=false`; the deployment script rejects a production launch without them.

@@ -1,0 +1,38 @@
+{
+  "compileOnSave": false,
+  "compilerOptions": {
+    "baseUrl": ".",
+    "paths": {
+      "@toptrainers/ui": ["libs/ui/src/index.ts"],
+      "@toptrainers/shared/config": ["libs/shared/config/src/index.ts"],
+      "@toptrainers/shared/contracts": ["libs/shared/contracts/src/index.ts"],
+      "@toptrainers/shared/data-access": ["libs/shared/data-access/src/index.ts"],
+      "@toptrainers/shared/domain": ["libs/shared/domain/src/index.ts"],
+      "@toptrainers/offline": ["libs/offline/src/index.ts"],
+      "@toptrainers/pwa/feature-role-shell": ["libs/pwa/feature-role-shell/src/index.ts"],
+      "@toptrainers/showcase/blocks": ["libs/showcase/blocks/src/index.ts"]
+    },
+    "target": "ES2022",
+    "useDefineForClassFields": false,
+    "module": "ES2022",
+    "moduleResolution": "bundler",
+    "lib": ["ES2022", "DOM"],
+    "strict": true,
+    "noImplicitOverride": true,
+    "noPropertyAccessFromIndexSignature": true,
+    "noFallthroughCasesInSwitch": true,
+    "noImplicitReturns": true,
+    "noUncheckedIndexedAccess": true,
+    "isolatedModules": true,
+    "esModuleInterop": true,
+    "forceConsistentCasingInFileNames": true,
+    "importHelpers": true,
+    "skipLibCheck": true
+  },
+  "angularCompilerOptions": {
+    "strictInjectionParameters": true,
+    "strictInputAccessModifiers": true,
+    "strictTemplates": true,
+    "strictLiteralTypes": true
+  }
+}
