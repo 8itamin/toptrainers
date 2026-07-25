@@ -39,7 +39,7 @@ const CLIENT_WEEK: readonly WeekDay[] = [
     </p>
   `,
   styles: `
-    :host { display: grid; gap: 1rem; }
+    :host { display: grid; gap: 1rem; width: min(100%, 72rem); margin: 0 auto; padding: clamp(1rem, 4vw, 2rem); }
     .hero, .card { padding: clamp(1rem, 3vw, 1.5rem); border-radius: 1rem; }
     .hero { background: linear-gradient(135deg, #0d2235, #17456d); color: #fff; }
     .hero h1 { margin: 0.25rem 0 0.5rem; font-size: clamp(1.8rem, 5vw, 2.75rem); }

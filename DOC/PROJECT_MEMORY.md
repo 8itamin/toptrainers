@@ -1,5 +1,11 @@
 # TopTrainers — память проекта
 
+> Deployment update (2026-07-24): current local changes to the showcase landing, document metadata, and `favicon.svg` were installed on production. The independently rebuilt `showcase` service is healthy, and the gateway returns the expected page title for `toptrainers.ru`; API, PWA, database, and migrations were not changed.
+
+> CI/CD checkpoint (2026-07-24): GitHub Actions CI and a production CD receiver are prepared. The server runs the isolated `toptrainers-webhook` service on `127.0.0.1:9003`; Nginx exposes only `https://toptrainers.ru/deploy/github`, and invalid GitHub signatures are rejected with HTTP 401. The deployment job fetches `origin/main` without Git hooks or `git pull`, then runs the reviewed deployment script, migrations, Compose and health checks. A read-only server deploy key and webhook secret are stored outside Git under `/etc/toptrainers/`. Activation is pending repository-admin setup of that public key and webhook in GitHub; no deployment is triggered until then.
+
+> CI/CD activation (2026-07-26): the read-only deploy key is accepted by GitHub and repository webhook `https://toptrainers.ru/deploy/github` is active for push events with JSON and SSL verification. The receiver HMAC smoke test passes. The first push to `main` after committing the CI/CD files will initialise the managed production checkout (preserving the prior unmanaged directory as a timestamped backup) and deploy that exact branch head.
+
 _Обновлено: 19 июля 2026_
 
 ## Зачем существует продукт

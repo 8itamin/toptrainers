@@ -1,0 +1,19 @@
+[Unit]
+Description=TopTrainers GitHub webhook receiver
+After=network.target
+
+[Service]
+Type=simple
+User=ab
+Group=ab
+EnvironmentFile=/etc/toptrainers/webhook.env
+ExecStart=/usr/local/lib/toptrainers/github-webhook.py
+Restart=always
+RestartSec=3
+PrivateTmp=true
+ProtectHome=true
+ProtectSystem=strict
+ReadWritePaths=/run
+
+[Install]
+WantedBy=multi-user.target

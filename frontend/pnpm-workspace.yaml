@@ -3,6 +3,14 @@ packages:
   - libs/*
   - libs/*/*
 
+allowBuilds:
+  '@parcel/watcher': true
+  esbuild: true
+  less: true
+  lmdb: true
+  msgpackr-extract: true
+  nx: true
+
 onlyBuiltDependencies:
   - '@parcel/watcher'
   - esbuild

@@ -91,6 +91,22 @@ the Compose API continues to use the service names `postgres` and `redis`.
 
 `Tailscale Serve` делает доступным имя самого tailnet-хоста. Для реальных адресов `app.<домен>`, `api.<домен>` и `*.<домен>` потребуются отдельные DNS/TLS и утверждённый публичный ingress. До этого Tailnet разумно использовать для эксплуатации и health-check, а не выдавать его за готовую публичную публикацию.
 
+## CI/CD через GitHub webhook
+
+Проверки CI запускаются GitHub Actions на pull request и push в `main`: frontend проходит install/lint/typecheck/build, backend — ruff/mypy/pytest. Production-деплой отделён от GitHub Actions: GitHub отправляет push-webhook на `https://toptrainers.ru/deploy/github`, а сервер принимает только подписанный HMAC-SHA256 запрос для `refs/heads/main`.
+
+На хосте работают два systemd-сервиса: `toptrainers-webhook` (непривилегированный приёмник на `127.0.0.1:9003`) и `toptrainers-deploy` (один последовательный job). Job получает актуальный `origin/main` через `git fetch`, отключая Git hooks, переключает checkout на точный commit, создаёт миграционный контейнер и проверяет gateway health. Обычный `git pull` на production не используется. При первом webhook текущая неуправляемая директория `/opt/toptrainers` переименовывается в timestamped backup, а вместо неё создаётся Git checkout; поэтому первый push должен содержать все нужные production-изменения.
+
+Для включения контура администратор репозитория добавляет server deploy key как **read-only** key в *Settings → Deploy keys* и создаёт webhook в *Settings → Webhooks*:
+
+- Payload URL: `https://toptrainers.ru/deploy/github`
+- Content type: `application/json`
+- Secret: значение `WEBHOOK_SECRET` из `/etc/toptrainers/webhook.env` на сервере
+- Events: только **Just the push event**
+- Active: включено
+
+Секрет webhook и приватный deploy key живут только на сервере, имеют права `600` и никогда не попадают в Git. После каждого деплоя статус и логи проверяются командами `systemctl status toptrainers-deploy` и `journalctl -u toptrainers-deploy -n 100`; откат приложения выполняется только до commit, совместимого с уже применённой схемой БД.
+
 ## Обновление и откат
 
 - Собирайте и проверяйте релиз до переноса на сервер; используйте тег checkout или закреплённые образы.

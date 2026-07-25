@@ -28,5 +28,6 @@
       "cache": true,
       "inputs": ["default", "^production"]
     }
-  }
+  },
+  "analytics": true
 }
