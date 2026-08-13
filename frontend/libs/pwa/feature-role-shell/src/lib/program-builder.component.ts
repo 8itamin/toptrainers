@@ -45,7 +45,11 @@ const INITIAL_BLOCKS: readonly ExerciseBlock[] = [
         </a>
         <nav class="sidebar-nav" aria-label="Навигация тренера">
           <a class="side-item" routerLink="/trainer"><span class="side-icon"><svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 12l9-9 9 9M5 10v10h14V10" /></svg></span><span>Сегодня</span></a>
+          <a class="side-item" routerLink="/trainer/clients"><span class="side-icon"><svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="9" cy="8" r="4" /><path d="M2 21c0-3.5 3-5 7-5M16 3.5a4 4 0 0 1 0 7.5M15 21c.5-3 3-5 7-5" /></svg></span><span>Клиенты</span></a>
           <a class="side-item is-active" routerLink="/trainer/programs"><span class="side-icon"><svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="4" width="18" height="16" rx="2" /><path d="M3 9h18M8 4v16" /></svg></span><span>Программы</span></a>
+          <a class="side-item" routerLink="/trainer/chats"><span class="side-icon"><svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 11.5a8.4 8.4 0 0 1-9 8 8.4 8.4 0 0 1-4-1L3 20l1.5-4a8.4 8.4 0 0 1 8.5-8 8.4 8.4 0 0 1 9 7.5z" /></svg></span><span>Чаты</span></a>
+          <a class="side-item" routerLink="/trainer/competitions"><span class="side-icon"><svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="8" r="5" /><path d="M8.5 12.5 7 21l5-3 5 3-1.5-8.5" /></svg></span><span>Соревн.</span></a>
+          <a class="side-item" routerLink="/trainer/showcase"><span class="side-icon">▣</span><span>Витрина</span></a>
         </nav>
         <span class="sidebar-avatar" aria-hidden="true"></span>
       </aside>
@@ -179,7 +183,11 @@ const INITIAL_BLOCKS: readonly ExerciseBlock[] = [
 
       <nav class="mobile-nav mobile-only" aria-label="Навигация тренера">
         <a class="mobile-nav__item" routerLink="/trainer"><svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 12l9-9 9 9M5 10v10h14V10" /></svg><span>Сегодня</span></a>
+        <a class="mobile-nav__item" routerLink="/trainer/clients"><svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="9" cy="8" r="4" /><path d="M2 21c0-3.5 3-5 7-5M16 3.5a4 4 0 0 1 0 7.5M15 21c.5-3 3-5 7-5" /></svg><span>Клиенты</span></a>
         <a class="mobile-nav__item is-active" routerLink="/trainer/programs"><svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="4" width="18" height="16" rx="2" /><path d="M3 9h18M8 4v16" /></svg><span>Программы</span></a>
+        <a class="mobile-nav__item" routerLink="/trainer/chats"><svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 11.5a8.4 8.4 0 0 1-9 8.4 8.4 8.4 0 0 1-4-1L3 20l1.5-4a8.4 8.4 0 0 1-1-4 8.4 8.4 0 0 1 8.5-8 8.4 8.4 0 0 1 9 7.5z" /></svg><span>Чаты</span></a>
+        <a class="mobile-nav__item" href="#more"><svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="5" cy="12" r="1.5" /><circle cx="12" cy="12" r="1.5" /><circle cx="19" cy="12" r="1.5" /></svg><span>Ещё</span></a>
+        <a class="mobile-nav__item" routerLink="/trainer/showcase"><svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="4" width="18" height="16" rx="2" /><path d="M3 9h18M8 4v16" /></svg><span>Витрина</span></a>
       </nav>
     </div>
   `,
@@ -187,7 +195,7 @@ const INITIAL_BLOCKS: readonly ExerciseBlock[] = [
     :host { display: block; }
     .workspace { min-height: 100dvh; background: #14181d; }
     .screen { min-width: 0; min-height: 100dvh; background: #14181d; color: #f5f7fa; font-family: 'Golos Text', system-ui, sans-serif; }
-    .sidebar { width: 5.5rem; flex-shrink: 0; background: #0e1116; border-right: 1px solid rgb(245 247 250 / 6%); display: flex; flex-direction: column; align-items: center; padding: 1.25rem 0; box-sizing: border-box; }
+    .sidebar { width: 5.5rem; height: 100dvh; position: sticky; top: 0; flex-shrink: 0; overflow-y: auto; background: #0e1116; border-right: 1px solid rgb(245 247 250 / 6%); display: flex; flex-direction: column; align-items: center; padding: 1.25rem 0; box-sizing: border-box; }
     .sidebar-logo { color: #c9f24b; }
     .sidebar-nav { display: flex; flex-direction: column; align-items: center; gap: 1.375rem; margin-top: 2rem; }
     .side-item { display: flex; flex-direction: column; align-items: center; gap: 0.3125rem; color: #8a94a6; text-decoration: none; font-size: 0.5625rem; }
@@ -323,7 +331,7 @@ const INITIAL_BLOCKS: readonly ExerciseBlock[] = [
     .inspector-empty { color: #8a94a6; font-size: 0.875rem; line-height: 1.5; }
     .form-message { padding: 0 1.75rem 1rem; font-size: 0.8125rem; color: #8a94a6; }
     .mobile-only { display: none; }
-    @media (min-width: 860px) { .workspace { display: flex; } .desktop-only { display: flex; } .screen { flex: 1; } }
+    @media (min-width: 860px) { .workspace { display: flex; align-items: flex-start; } .desktop-only { display: flex; } .screen { flex: 1; } }
     @media (max-width: 859.98px) {
       .desktop-only { display: none; }
       .mobile-only { display: flex; }

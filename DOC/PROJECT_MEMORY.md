@@ -28,7 +28,15 @@
 
 > Trainer registration recovery update (2026-08-13): the specialised «Регистрация тренера» layout also includes the «Я регистрируюсь как» role selector, so a visitor can immediately return to client registration after an accidental trainer selection.
 
-> Trainer Programs navigation update (2026-08-14): the program constructor retains the trainer navigation shell: a persistent sidebar on desktop and fixed bottom navigation on mobile, with «Программы» highlighted as the current section.
+> Trainer Programs navigation update (2026-08-14): the program constructor retains the full trainer navigation shell: a viewport-stable, scrollable sidebar on desktop and fixed five-item bottom navigation on mobile, with «Программы» highlighted as the current section.
+
+> Trainer chats UI update (2026-08-14): `/trainer/chats` implements the D4 trainer chat design with responsive conversation/thread views, search, quick replies and local typed message state. It is intentionally UI-only until the `chat` module and realtime transport are introduced.
+
+> Trainer competitions UI update (2026-08-14): `/trainer/competitions` implements the D5 trainer competition design with its active challenge, leaderboard and rules sidebar. It uses local typed data until a dedicated competitions module is scoped and introduced.
+
+> Trainer showcase example update (2026-08-14): the public SSR showcase renders the V1/V2 example profile for `anton.toptrainers.ru`, selected from the browser hostname, while the root domain keeps the TopTrainers landing. The example uses fixed, safe presentation data only; the trainer PWA now exposes `/trainer/showcase` as a placeholder for the future typed block editor.
+
+> Local-first delivery rule (2026-08-14): implement and verify product changes locally first. Do not commit, push, invoke the production webhook, or alter the server unless the owner explicitly confirms the local result and asks to publish it.
 
 > Deployment permissions follow-up (2026-08-13): because the production deploy process uses `umask 077`, it must normalise read/traverse permissions after every `git checkout`, not only on the initial bootstrap. This is required for migration and runtime containers that execute as unprivileged users; `.git` remains private.
 

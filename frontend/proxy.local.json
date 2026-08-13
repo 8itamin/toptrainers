@@ -1,0 +1,8 @@
+{
+  "/api": {
+    "target": "https://app.toptrainers.ru",
+    "secure": true,
+    "changeOrigin": true,
+    "logLevel": "warn"
+  }
+}

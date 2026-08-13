@@ -33,6 +33,38 @@ export const APP_ROUTES: Routes = [
       import('@toptrainers/pwa/feature-role-shell').then((module) => module.TrainerTodayComponent),
   },
   {
+    path: 'trainer/clients',
+    pathMatch: 'full',
+    title: 'TopTrainers — Клиенты',
+    canActivate: [authenticatedGuard],
+    loadComponent: () =>
+      import('@toptrainers/pwa/feature-role-shell').then((module) => module.TrainerClientsComponent),
+  },
+  {
+    path: 'trainer/chats',
+    pathMatch: 'full',
+    title: 'TopTrainers — Чаты',
+    canActivate: [authenticatedGuard],
+    loadComponent: () =>
+      import('@toptrainers/pwa/feature-role-shell').then((module) => module.TrainerChatsComponent),
+  },
+  {
+    path: 'trainer/competitions',
+    pathMatch: 'full',
+    title: 'TopTrainers — Соревнования',
+    canActivate: [authenticatedGuard],
+    loadComponent: () =>
+      import('@toptrainers/pwa/feature-role-shell').then((module) => module.TrainerCompetitionsComponent),
+  },
+  {
+    path: 'trainer/showcase',
+    pathMatch: 'full',
+    title: 'TopTrainers — Витрина',
+    canActivate: [authenticatedGuard],
+    loadComponent: () =>
+      import('@toptrainers/pwa/feature-role-shell').then((module) => module.TrainerShowcasePlaceholderComponent),
+  },
+  {
     path: 'trainer/programs',
     pathMatch: 'full',
     title: 'TopTrainers — Программы',

@@ -1,9 +1,16 @@
-import { ChangeDetectionStrategy, Component } from '@angular/core';
+import { isPlatformBrowser } from '@angular/common';
+import { ChangeDetectionStrategy, Component, PLATFORM_ID, inject } from '@angular/core';
+
+import { TrainerShowcaseComponent } from './trainer-showcase.component';
 
 @Component({
   selector: 'tt-showcase-home',
   standalone: true,
+  imports: [TrainerShowcaseComponent],
   template: `
+    @if (isTrainerShowcase()) {
+      <tt-trainer-showcase />
+    } @else {
     <main class="landing">
       <header class="topbar shell">
         <a class="brand" href="/" aria-label="TopTrainers — главная">
@@ -104,6 +111,7 @@ import { ChangeDetectionStrategy, Component } from '@angular/core';
         <small>© 2026</small>
       </footer>
     </main>
+    }
   `,
   styles: `
     :host{display:block}
@@ -249,4 +257,9 @@ import { ChangeDetectionStrategy, Component } from '@angular/core';
   `,
   changeDetection: ChangeDetectionStrategy.OnPush,
 })
-export class ShowcaseHomeComponent {}
+export class ShowcaseHomeComponent {
+  private readonly platformId = inject(PLATFORM_ID);
+
+  protected readonly isTrainerShowcase = () =>
+    isPlatformBrowser(this.platformId) && globalThis.location.hostname.toLocaleLowerCase().startsWith('anton.');
+}
