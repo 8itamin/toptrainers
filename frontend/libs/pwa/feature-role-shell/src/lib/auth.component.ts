@@ -61,6 +61,15 @@ const ROLE_HOME: Record<UserRole, string> = {
                 <h3>Регистрация тренера</h3>
                 <span class="step">шаг 1 / 2</span>
               </div>
+              <div class="field-label">Я регистрируюсь как</div>
+              <div class="role-toggle" role="radiogroup" aria-label="Роль">
+                <button type="button" role="radio" [attr.aria-checked]="role() === 'client'" [class.is-active]="role() === 'client'" (click)="role.set('client')">
+                  Клиент
+                </button>
+                <button type="button" role="radio" [attr.aria-checked]="role() === 'trainer'" [class.is-active]="role() === 'trainer'" (click)="role.set('trainer')">
+                  Тренер
+                </button>
+              </div>
             } @else {
               <h1>Создать<br />аккаунт</h1>
               <p class="lede">30 секунд — и вы на дорожке. Настроим детали позже.</p>
@@ -124,7 +133,6 @@ const ROLE_HOME: Record<UserRole, string> = {
             <p class="legal">Регистрируясь, вы принимаете <a href="#">оферту</a> и <a href="#">политику данных</a></p>
             @if (isTrainerRegister()) {
               <p class="switch">Уже с нами? <button type="button" (click)="setMode('login')">Войти в кабинет</button></p>
-              <p class="switch-role">Не тренер? <button type="button" (click)="role.set('client')">Зарегистрироваться как клиент</button></p>
             } @else {
               <p class="switch">Уже есть аккаунт? <button type="button" (click)="setMode('login')">Войти</button></p>
             }

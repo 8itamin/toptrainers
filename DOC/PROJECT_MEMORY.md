@@ -26,6 +26,8 @@
 
 > Showcase sign-up routing update (2026-08-13): the header CTA «Начать бесплатно» opens the neutral account-creation view («30 секунд — и вы на дорожке») without preselecting the trainer-specific registration layout; the visitor chooses their role in the form.
 
+> Trainer registration recovery update (2026-08-13): the specialised «Регистрация тренера» layout also includes the «Я регистрируюсь как» role selector, so a visitor can immediately return to client registration after an accidental trainer selection.
+
 > Deployment permissions follow-up (2026-08-13): because the production deploy process uses `umask 077`, it must normalise read/traverse permissions after every `git checkout`, not only on the initial bootstrap. This is required for migration and runtime containers that execute as unprivileged users; `.git` remains private.
 
 _Обновлено: 19 июля 2026_
