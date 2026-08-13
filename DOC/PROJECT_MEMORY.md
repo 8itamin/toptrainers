@@ -36,6 +36,8 @@
 
 > Trainer showcase example update (2026-08-14): the public SSR showcase renders the V1/V2 example profile for `anton.toptrainers.ru`, selected from the browser hostname, while the root domain keeps the TopTrainers landing. The example uses fixed, safe presentation data only; the trainer PWA now exposes `/trainer/showcase` as a placeholder for the future typed block editor.
 
+> Role route isolation update (2026-08-14): PWA routes now enforce the authenticated session role. A client can access only `/client/*`; attempts to open any `/trainer/*` route redirect to the client home, and trainer-only routes require the trainer role rather than mere authentication.
+
 > Local-first delivery rule (2026-08-14): implement and verify product changes locally first. Do not commit, push, invoke the production webhook, or alter the server unless the owner explicitly confirms the local result and asks to publish it.
 
 > Deployment permissions follow-up (2026-08-13): because the production deploy process uses `umask 077`, it must normalise read/traverse permissions after every `git checkout`, not only on the initial bootstrap. This is required for migration and runtime containers that execute as unprivileged users; `.git` remains private.

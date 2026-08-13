@@ -1,6 +1,6 @@
 import { Routes } from '@angular/router';
 
-import { authenticatedGuard } from './auth.guard';
+import { clientGuard, trainerGuard } from './auth.guard';
 
 export const APP_ROUTES: Routes = [
   {
@@ -28,7 +28,7 @@ export const APP_ROUTES: Routes = [
     path: 'trainer',
     pathMatch: 'full',
     title: 'TopTrainers — Сегодня',
-    canActivate: [authenticatedGuard],
+    canActivate: [trainerGuard],
     loadComponent: () =>
       import('@toptrainers/pwa/feature-role-shell').then((module) => module.TrainerTodayComponent),
   },
@@ -36,7 +36,7 @@ export const APP_ROUTES: Routes = [
     path: 'trainer/clients',
     pathMatch: 'full',
     title: 'TopTrainers — Клиенты',
-    canActivate: [authenticatedGuard],
+    canActivate: [trainerGuard],
     loadComponent: () =>
       import('@toptrainers/pwa/feature-role-shell').then((module) => module.TrainerClientsComponent),
   },
@@ -44,7 +44,7 @@ export const APP_ROUTES: Routes = [
     path: 'trainer/chats',
     pathMatch: 'full',
     title: 'TopTrainers — Чаты',
-    canActivate: [authenticatedGuard],
+    canActivate: [trainerGuard],
     loadComponent: () =>
       import('@toptrainers/pwa/feature-role-shell').then((module) => module.TrainerChatsComponent),
   },
@@ -52,7 +52,7 @@ export const APP_ROUTES: Routes = [
     path: 'trainer/competitions',
     pathMatch: 'full',
     title: 'TopTrainers — Соревнования',
-    canActivate: [authenticatedGuard],
+    canActivate: [trainerGuard],
     loadComponent: () =>
       import('@toptrainers/pwa/feature-role-shell').then((module) => module.TrainerCompetitionsComponent),
   },
@@ -60,7 +60,7 @@ export const APP_ROUTES: Routes = [
     path: 'trainer/showcase',
     pathMatch: 'full',
     title: 'TopTrainers — Витрина',
-    canActivate: [authenticatedGuard],
+    canActivate: [trainerGuard],
     loadComponent: () =>
       import('@toptrainers/pwa/feature-role-shell').then((module) => module.TrainerShowcasePlaceholderComponent),
   },
@@ -68,14 +68,14 @@ export const APP_ROUTES: Routes = [
     path: 'trainer/programs',
     pathMatch: 'full',
     title: 'TopTrainers — Программы',
-    canActivate: [authenticatedGuard],
+    canActivate: [trainerGuard],
     loadComponent: () =>
       import('@toptrainers/pwa/feature-role-shell').then((module) => module.ProgramBuilderComponent),
   },
   {
     path: 'trainer/programs/library',
     title: 'TopTrainers — Упражнения и тренировки',
-    canActivate: [authenticatedGuard],
+    canActivate: [trainerGuard],
     loadComponent: () =>
       import('@toptrainers/pwa/feature-role-shell').then((module) => module.TrainerProgramsComponent),
   },
@@ -84,7 +84,7 @@ export const APP_ROUTES: Routes = [
     path: 'client',
     pathMatch: 'full',
     title: 'TopTrainers — Сегодня',
-    canActivate: [authenticatedGuard],
+    canActivate: [clientGuard],
     loadComponent: () =>
       import('@toptrainers/pwa/feature-role-shell').then((module) => module.ClientTodayComponent),
   },
@@ -92,14 +92,14 @@ export const APP_ROUTES: Routes = [
     path: 'client/workout',
     pathMatch: 'full',
     title: 'TopTrainers — Упражнения на сегодня',
-    canActivate: [authenticatedGuard],
+    canActivate: [clientGuard],
     loadComponent: () =>
       import('@toptrainers/pwa/feature-role-shell').then((module) => module.ClientWorkoutListComponent),
   },
   {
     path: 'client/workout/player',
     title: 'TopTrainers — Тренировка',
-    canActivate: [authenticatedGuard],
+    canActivate: [clientGuard],
     loadComponent: () =>
       import('@toptrainers/pwa/feature-role-shell').then((module) => module.WorkoutPlayerComponent),
   },
