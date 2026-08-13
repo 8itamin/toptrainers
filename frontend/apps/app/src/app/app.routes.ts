@@ -33,10 +33,18 @@ export const APP_ROUTES: Routes = [
   },
   {
     path: 'client',
+    pathMatch: 'full',
     title: 'TopTrainers — Сегодня',
     canActivate: [authenticatedGuard],
     loadComponent: () =>
       import('@toptrainers/pwa/feature-role-shell').then((module) => module.ClientTodayComponent),
+  },
+  {
+    path: 'client/workout',
+    title: 'TopTrainers — Тренировка',
+    canActivate: [authenticatedGuard],
+    loadComponent: () =>
+      import('@toptrainers/pwa/feature-role-shell').then((module) => module.WorkoutPlayerComponent),
   },
   {
     path: '',
