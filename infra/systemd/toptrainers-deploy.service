@@ -7,7 +7,7 @@ Wants=network-online.target
 Type=oneshot
 User=root
 Group=root
-Environment=GIT_SSH_COMMAND=/usr/bin/ssh -i /etc/toptrainers/github-deploy-key -o IdentitiesOnly=yes -o StrictHostKeyChecking=accept-new
+Environment="GIT_SSH_COMMAND=/usr/bin/ssh -i /etc/toptrainers/github-deploy-key -o IdentitiesOnly=yes -o StrictHostKeyChecking=accept-new"
 ExecStart=/usr/local/sbin/toptrainers-deploy
 TimeoutStartSec=30min
 NoNewPrivileges=true

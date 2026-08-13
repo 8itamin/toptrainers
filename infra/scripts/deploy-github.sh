@@ -28,6 +28,10 @@ if [[ ! -d "$REPOSITORY_DIR/.git" ]]; then
     printf 'Bootstrapping the first managed checkout from %s\n' "$REMOTE_URL"
     git -c core.hooksPath=/dev/null clone --branch "$BRANCH" --single-branch "$REMOTE_URL" "$STAGING_DIR"
     [[ -f "$STAGING_DIR/infra/scripts/deploy-tailnet.sh" ]] || fail "Clone does not contain the deployment script."
+    # The deployment process uses a restrictive umask, but runtime images also
+    # run as unprivileged users. Make tracked release files readable/traversable
+    # before handing the checkout to Docker; production secrets live outside it.
+    chmod -R a+rX "$STAGING_DIR"
     mv "$REPOSITORY_DIR" "$LEGACY_DIR"
     mv "$STAGING_DIR" "$REPOSITORY_DIR"
     printf 'Previous unmanaged release preserved at %s\n' "$LEGACY_DIR"

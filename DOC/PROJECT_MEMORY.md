@@ -6,6 +6,10 @@
 
 > CI/CD activation (2026-07-26): the read-only deploy key is accepted by GitHub and repository webhook `https://toptrainers.ru/deploy/github` is active for push events with JSON and SSL verification. The receiver HMAC smoke test passes. The first push to `main` after committing the CI/CD files will initialise the managed production checkout (preserving the prior unmanaged directory as a timestamped backup) and deploy that exact branch head.
 
+> Deployment repair (2026-08-13): production CD was blocked because systemd parsed the unquoted `GIT_SSH_COMMAND` value as several invalid environment assignments, so deploy jobs connected to GitHub without the deploy key and failed before checkout. The unit now quotes the complete assignment; after applying it on the host, the managed checkout must be bootstrapped and deployed from the current `main` revision, with service and health checks verified.
+
+> Deployment repair follow-up (2026-08-13): `deploy-github.sh` retains a restrictive umask, so the bootstrap checkout must explicitly be made readable/traversable before Docker builds images that run as unprivileged users. This normalisation applies only to tracked release files; production env files and deploy keys remain outside the checkout with restricted permissions.
+
 _Обновлено: 19 июля 2026_
 
 ## Зачем существует продукт
