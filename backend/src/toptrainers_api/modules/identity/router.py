@@ -217,6 +217,40 @@ async def session_info(account: dict[str, object] = Depends(current_account)) ->
     return AuthResponse(account_id=str(account["sub"]), role=UserRole(str(account["role"])))
 
 
+@router.post("/become-trainer", response_model=AuthResponse)
+async def become_trainer(
+    response: Response,
+    account: dict[str, object] = Depends(current_account),
+    session: AsyncSession = Depends(get_session),
+) -> AuthResponse:
+    """Let a signed-in client start using the trainer workspace.
+
+    This transition is intentionally limited to the non-privileged client role.
+    It revokes existing sessions and immediately issues a new cookie with the new role.
+    """
+    if account.get("role") not in {"client", "trainer"}:
+        raise HTTPException(status_code=403, detail="Role transition is not available")
+    stored_account = await session.get(Account, str(account["sub"]))
+    if stored_account is None:
+        raise HTTPException(status_code=401, detail="Account not found")
+    if stored_account.role not in {"client", "trainer"}:
+        raise HTTPException(status_code=403, detail="Role transition is not available")
+    if stored_account.role == "trainer":
+        return AuthResponse(account_id=stored_account.id, role=UserRole.TRAINER)
+
+    stored_account.role = UserRole.TRAINER.value
+    await revoke_account_sessions(session, stored_account.id)
+    auth_session = AuthSession(
+        id=str(uuid4()),
+        account_id=stored_account.id,
+        expires_at=utcnow() + timedelta(days=settings.auth_session_days),
+    )
+    session.add(auth_session)
+    await session.commit()
+    _set_session_cookie(response, create_token(stored_account.id, stored_account.role, auth_session.id))
+    return AuthResponse(account_id=stored_account.id, role=UserRole.TRAINER)
+
+
 @router.post("/logout", status_code=status.HTTP_204_NO_CONTENT)
 async def logout(
     response: Response,

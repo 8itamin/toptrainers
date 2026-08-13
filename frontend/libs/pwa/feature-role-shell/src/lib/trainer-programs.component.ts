@@ -40,6 +40,8 @@ interface Workout {
   }>;
 }
 
+interface AuthSessionResponse { role: 'client' | 'trainer' | 'admin'; }
+
 const DIRECTION_LABELS: Record<ExerciseDirection, string> = {
   speed: 'Скорость',
   strength: 'Сила',
@@ -75,7 +77,14 @@ const BLOCK_KINDS: readonly WorkoutBlockKind[] = ['warmup', 'main', 'cooldown'];
 
       @if (message()) { <p class="message" [class.is-error]="isError()">{{ message() }}</p> }
 
-      @if (activeTab() === 'exercises') {
+      @if (needsTrainerRole()) {
+        <section class="panel role-panel">
+          <p class="eyebrow">ДОСТУП К ТРЕНЕРСКОЙ ЗОНЕ</p>
+          <h2>Ваша учётная запись сейчас в режиме клиента</h2>
+          <p>Переключите её в режим тренера, чтобы создавать упражнения и тренировки. Текущие сессии будут безопасно обновлены.</p>
+          <button class="primary" type="button" (click)="becomeTrainer()" [disabled]="becomingTrainer()">{{ becomingTrainer() ? 'Переключаем…' : 'Стать тренером' }}</button>
+        </section>
+      } @else if (activeTab() === 'exercises') {
         <div class="layout">
           <section class="panel form-panel">
             <p class="eyebrow">НОВОЕ УПРАЖНЕНИЕ</p>
@@ -174,7 +183,7 @@ const BLOCK_KINDS: readonly WorkoutBlockKind[] = ['warmup', 'main', 'cooldown'];
     </main>
   `,
   styles: `
-    :host{display:block}.screen{min-height:100dvh;background:#14181d;color:#f5f7fa;font-family:'Golos Text',system-ui,sans-serif;padding:clamp(1rem,3vw,2rem);box-sizing:border-box}.toolbar,.panel-heading,.block-heading{display:flex;align-items:flex-start;justify-content:space-between;gap:1rem}.back{color:#9aa6b8;text-decoration:none;font-size:.9rem}.toolbar h1{margin:.5rem 0 .25rem;font-size:clamp(1.5rem,3vw,2.25rem);font-family:'Unbounded',sans-serif}.toolbar p{margin:0;color:#9aa6b8}.tabs{display:flex;gap:.5rem;flex-wrap:wrap}.tabs button,.block-heading button,.notice button{border:1px solid rgb(245 247 250 / 15%);border-radius:.55rem;background:transparent;color:#f5f7fa;padding:.6rem .9rem;font:inherit;cursor:pointer}.tabs button.is-active,.primary{border-color:#c9f24b;background:#c9f24b;color:#14181d;font-weight:700}.message{margin:1rem 0;padding:.75rem 1rem;border-radius:.6rem;background:rgb(201 242 75 / 12%);color:#d9fb76}.message.is-error{background:rgb(255 115 115 / 12%);color:#ffabab}.layout{display:grid;grid-template-columns:minmax(0,1.1fr) minmax(20rem,.9fr);gap:1rem;margin-top:1.5rem;max-width:80rem}.panel{padding:clamp(1rem,2vw,1.5rem);border:1px solid rgb(245 247 250 / 9%);border-radius:1rem;background:#1c222b}.eyebrow,.tag{margin:0;color:#8e9aae;font-family:'JetBrains Mono',monospace;font-size:.7rem;letter-spacing:.08em}.panel h2{margin:.4rem 0 1.25rem;font-size:1.25rem}.panel-heading span{display:grid;place-items:center;min-width:2rem;height:2rem;border-radius:999px;background:#29313c;color:#c9f24b;font-family:monospace}form{display:grid;gap:.85rem}label{display:grid;gap:.35rem;color:#b9c2d0;font-size:.85rem;font-weight:600}input,textarea,select{width:100%;box-sizing:border-box;border:1px solid rgb(245 247 250 / 13%);border-radius:.55rem;background:#14181d;color:#f5f7fa;padding:.7rem .8rem;font:inherit;font-weight:400}textarea{min-height:5.5rem;resize:vertical}.fields{display:grid;grid-template-columns:1fr 1fr;gap:.75rem}.primary{justify-self:start;border:0;border-radius:.6rem;padding:.75rem 1rem;font:inherit;cursor:pointer}.primary:disabled{opacity:.6;cursor:wait}.empty,.block-empty{color:#9aa6b8;line-height:1.5}.exercise-list,.workout-list{display:grid;gap:.75rem}.exercise-card,.saved-workout{display:grid;grid-template-columns:5rem 1fr;gap:.8rem;padding:.8rem;border:1px solid rgb(245 247 250 / 8%);border-radius:.75rem;background:#171c22}.exercise-card img{width:5rem;height:5rem;object-fit:cover;border-radius:.55rem}.exercise-card h3,.saved-workout h3{margin:.25rem 0 .4rem;font-size:1rem}.instruction,.saved-workout p{margin:.4rem 0;color:#aeb8c6;font-size:.86rem;line-height:1.4}.exercise-card a{color:#c9f24b;font-size:.8rem}.notice{display:grid;gap:.75rem;padding:.9rem;border:1px solid rgb(201 242 75 / 24%);border-radius:.7rem;background:rgb(201 242 75 / 7%);color:#d8e8b1}.notice button{justify-self:start;color:#c9f24b}.workout-block{display:grid;gap:.65rem;padding:.9rem;border:1px solid rgb(245 247 250 / 9%);border-radius:.75rem}.block-heading{align-items:center}.block-heading h3{margin:0;font-size:1rem}.block-heading button{padding:.35rem .55rem;color:#c9f24b;font-size:.8rem}.block-empty{margin:0;font-size:.85rem}.workout-item{display:grid;grid-template-columns:minmax(10rem,1fr) 5.4rem 4.6rem 4.6rem 2rem;gap:.45rem;align-items:end}.workout-item label{font-size:.7rem}.workout-item input,.workout-item select{padding:.55rem}.remove{height:2.3rem;border:0;border-radius:.5rem;background:#323944;color:#f5f7fa;font-size:1.2rem;cursor:pointer}.saved-workout{display:block}.saved-blocks{display:flex;gap:.4rem;flex-wrap:wrap;margin-top:.75rem}.saved-blocks span{padding:.3rem .5rem;border-radius:.4rem;background:#29313c;color:#c9f24b;font:700 .7rem monospace}@media(max-width:52rem){.toolbar,.panel-heading{flex-direction:column}.layout{grid-template-columns:1fr}.fields{grid-template-columns:1fr}.workout-item{grid-template-columns:1fr 1fr 1fr 1fr 2rem}.workout-item select{grid-column:span 4}}@media(max-width:30rem){.workout-item{grid-template-columns:1fr 1fr}.workout-item select{grid-column:span 2}.remove{grid-column:2}.screen{padding:1rem}}
+    :host{display:block}.screen{min-height:100dvh;background:#14181d;color:#f5f7fa;font-family:'Golos Text',system-ui,sans-serif;padding:clamp(1rem,3vw,2rem);box-sizing:border-box}.toolbar,.panel-heading,.block-heading{display:flex;align-items:flex-start;justify-content:space-between;gap:1rem}.back{color:#9aa6b8;text-decoration:none;font-size:.9rem}.toolbar h1{margin:.5rem 0 .25rem;font-size:clamp(1.5rem,3vw,2.25rem);font-family:'Unbounded',sans-serif}.toolbar p{margin:0;color:#9aa6b8}.tabs{display:flex;gap:.5rem;flex-wrap:wrap}.tabs button,.block-heading button,.notice button{border:1px solid rgb(245 247 250 / 15%);border-radius:.55rem;background:transparent;color:#f5f7fa;padding:.6rem .9rem;font:inherit;cursor:pointer}.tabs button.is-active,.primary{border-color:#c9f24b;background:#c9f24b;color:#14181d;font-weight:700}.message{margin:1rem 0;padding:.75rem 1rem;border-radius:.6rem;background:rgb(201 242 75 / 12%);color:#d9fb76}.message.is-error{background:rgb(255 115 115 / 12%);color:#ffabab}.layout{display:grid;grid-template-columns:minmax(0,1.1fr) minmax(20rem,.9fr);gap:1rem;margin-top:1.5rem;max-width:80rem}.panel{padding:clamp(1rem,2vw,1.5rem);border:1px solid rgb(245 247 250 / 9%);border-radius:1rem;background:#1c222b}.role-panel{display:grid;gap:.85rem;max-width:42rem;margin-top:1.5rem}.role-panel h2{margin:0}.role-panel>p:not(.eyebrow){margin:0;color:#aeb8c6;line-height:1.5}.eyebrow,.tag{margin:0;color:#8e9aae;font-family:'JetBrains Mono',monospace;font-size:.7rem;letter-spacing:.08em}.panel h2{margin:.4rem 0 1.25rem;font-size:1.25rem}.panel-heading span{display:grid;place-items:center;min-width:2rem;height:2rem;border-radius:999px;background:#29313c;color:#c9f24b;font-family:monospace}form{display:grid;gap:.85rem}label{display:grid;gap:.35rem;color:#b9c2d0;font-size:.85rem;font-weight:600}input,textarea,select{width:100%;box-sizing:border-box;border:1px solid rgb(245 247 250 / 13%);border-radius:.55rem;background:#14181d;color:#f5f7fa;padding:.7rem .8rem;font:inherit;font-weight:400}textarea{min-height:5.5rem;resize:vertical}.fields{display:grid;grid-template-columns:1fr 1fr;gap:.75rem}.primary{justify-self:start;border:0;border-radius:.6rem;padding:.75rem 1rem;font:inherit;cursor:pointer}.primary:disabled{opacity:.6;cursor:wait}.empty,.block-empty{color:#9aa6b8;line-height:1.5}.exercise-list,.workout-list{display:grid;gap:.75rem}.exercise-card,.saved-workout{display:grid;grid-template-columns:5rem 1fr;gap:.8rem;padding:.8rem;border:1px solid rgb(245 247 250 / 8%);border-radius:.75rem;background:#171c22}.exercise-card img{width:5rem;height:5rem;object-fit:cover;border-radius:.55rem}.exercise-card h3,.saved-workout h3{margin:.25rem 0 .4rem;font-size:1rem}.instruction,.saved-workout p{margin:.4rem 0;color:#aeb8c6;font-size:.86rem;line-height:1.4}.exercise-card a{color:#c9f24b;font-size:.8rem}.notice{display:grid;gap:.75rem;padding:.9rem;border:1px solid rgb(201 242 75 / 24%);border-radius:.7rem;background:rgb(201 242 75 / 7%);color:#d8e8b1}.notice button{justify-self:start;color:#c9f24b}.workout-block{display:grid;gap:.65rem;padding:.9rem;border:1px solid rgb(245 247 250 / 9%);border-radius:.75rem}.block-heading{align-items:center}.block-heading h3{margin:0;font-size:1rem}.block-heading button{padding:.35rem .55rem;color:#c9f24b;font-size:.8rem}.block-empty{margin:0;font-size:.85rem}.workout-item{display:grid;grid-template-columns:minmax(10rem,1fr) 5.4rem 4.6rem 4.6rem 2rem;gap:.45rem;align-items:end}.workout-item label{font-size:.7rem}.workout-item input,.workout-item select{padding:.55rem}.remove{height:2.3rem;border:0;border-radius:.5rem;background:#323944;color:#f5f7fa;font-size:1.2rem;cursor:pointer}.saved-workout{display:block}.saved-blocks{display:flex;gap:.4rem;flex-wrap:wrap;margin-top:.75rem}.saved-blocks span{padding:.3rem .5rem;border-radius:.4rem;background:#29313c;color:#c9f24b;font:700 .7rem monospace}@media(max-width:52rem){.toolbar,.panel-heading{flex-direction:column}.layout{grid-template-columns:1fr}.fields{grid-template-columns:1fr}.workout-item{grid-template-columns:1fr 1fr 1fr 1fr 2rem}.workout-item select{grid-column:span 4}}@media(max-width:30rem){.workout-item{grid-template-columns:1fr 1fr}.workout-item select{grid-column:span 2}.remove{grid-column:2}.screen{padding:1rem}}
   `,
   changeDetection: ChangeDetectionStrategy.OnPush,
 })
@@ -191,8 +200,10 @@ export class TrainerProgramsComponent {
   protected readonly workouts = signal<Workout[]>([]);
   protected readonly loading = signal(true);
   protected readonly busy = signal(false);
+  protected readonly becomingTrainer = signal(false);
   protected readonly message = signal('');
   protected readonly isError = signal(false);
+  protected readonly needsTrainerRole = signal(false);
   protected readonly workoutBlocks = signal<Record<WorkoutBlockKind, WorkoutExerciseDraft[]>>({ warmup: [], main: [], cooldown: [] });
 
   protected exerciseTitle = '';
@@ -241,6 +252,15 @@ export class TrainerProgramsComponent {
     });
   }
 
+  protected becomeTrainer(): void {
+    this.becomingTrainer.set(true); this.clearMessage();
+    this.http.post<AuthSessionResponse>(`${this.config.apiBaseUrl}/auth/become-trainer`, {}).subscribe({
+      next: () => { this.needsTrainerRole.set(false); this.showMessage('Режим тренера включён.'); this.loadData(); },
+      error: (error) => this.showMessage(this.errorMessage(error), true),
+      complete: () => this.becomingTrainer.set(false),
+    });
+  }
+
   protected createWorkout(): void {
     const blocks = BLOCK_KINDS.map((kind) => ({ kind, exercises: this.itemsFor(kind).map((item) => ({ exercise_id: item.exerciseId, weight_kg: item.weightKg, sets: item.sets, reps: item.reps })) })).filter((block) => block.exercises.length);
     if (!blocks.length) { this.showMessage('Добавьте хотя бы одно упражнение в тренировку.', true); return; }
@@ -253,6 +273,17 @@ export class TrainerProgramsComponent {
   }
 
   private loadData(): void {
+    this.loading.set(true);
+    this.http.get<AuthSessionResponse>(`${this.config.apiBaseUrl}/auth/session`).subscribe({
+      next: (account) => {
+        if (account.role !== 'trainer') { this.needsTrainerRole.set(true); this.loading.set(false); return; }
+        this.loadTrainerData();
+      },
+      error: (error) => { this.showMessage(this.errorMessage(error), true); this.loading.set(false); },
+    });
+  }
+
+  private loadTrainerData(): void {
     this.http.get<Exercise[]>(`${this.config.apiBaseUrl}/exercises`).subscribe({
       next: (exercises) => { this.exercises.set(exercises); this.http.get<Workout[]>(`${this.config.apiBaseUrl}/workouts`).subscribe({ next: (workouts) => this.workouts.set(workouts), error: (error) => this.showMessage(this.errorMessage(error), true), complete: () => this.loading.set(false) }); },
       error: (error) => { this.showMessage(this.errorMessage(error), true); this.loading.set(false); },

@@ -20,6 +20,8 @@
 
 > Trainer exercise and workout update (2026-08-13): trainer Programs now provides a persistent personal exercise library and workout-template builder. Exercises are scoped to their owner and store validated `http(s)` instructional/video/thumbnail URLs; workout blocks reference only that trainer’s exercises and retain ordered warm-up/main/cool-down parameters (weight, sets, reps). Migration `20260813_0004` introduces the associated tables. Direct file upload is deferred until the protected S3 media layer is available.
 
+> Trainer-role recovery update (2026-08-13): the trainer workspace now identifies a client session before loading trainer data, explains the mismatch, and offers an explicit client-to-trainer transition. The server revokes all existing sessions and issues a new signed session cookie with the trainer role; public registration now defaults to trainer while retaining the client choice.
+
 > Deployment permissions follow-up (2026-08-13): because the production deploy process uses `umask 077`, it must normalise read/traverse permissions after every `git checkout`, not only on the initial bootstrap. This is required for migration and runtime containers that execute as unprivileged users; `.git` remains private.
 
 _Обновлено: 19 июля 2026_
