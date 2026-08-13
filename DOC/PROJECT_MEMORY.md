@@ -14,6 +14,8 @@
 
 > Identity security update (2026-08-13): public registration is restricted to trainer/client roles. New accounts require email verification before a server-side, revocable session is issued in a Secure, HttpOnly, SameSite cookie; access tokens are no longer stored in browser storage. Verification and password-reset secrets are random, single-use, expiry-bound and stored only as hashes. Login, registration and reset requests are rate-limited in Redis. SMTP configuration is external to Git and required in production.
 
+> Identity schema repair (2026-08-13): password-hash storage was expanded from 128 to 255 characters. The PBKDF2 encoding used by the secure identity flow exceeds the former legacy column limit; the migration preserves all existing data and allows registration to complete.
+
 > Deployment permissions follow-up (2026-08-13): because the production deploy process uses `umask 077`, it must normalise read/traverse permissions after every `git checkout`, not only on the initial bootstrap. This is required for migration and runtime containers that execute as unprivileged users; `.git` remains private.
 
 _Обновлено: 19 июля 2026_
