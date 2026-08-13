@@ -121,7 +121,7 @@ async def send_password_reset_email(recipient: str, token: str) -> None:
 
 
 async def enforce_rate_limit(
-    redis: Redis[str], request: Request, scope: str, subject: str, limit: int, window: int
+    redis: Redis, request: Request, scope: str, subject: str, limit: int, window: int
 ) -> None:
     client_ip = request.client.host if request.client else "unknown"
     subject_hash = hash_secret(subject.lower())[:24]

@@ -88,7 +88,7 @@ async def register(
     payload: RegisterAccountRequest,
     request: Request,
     session: AsyncSession = Depends(get_session),
-    redis: Redis[str] = Depends(get_redis),
+    redis: Redis = Depends(get_redis),
 ) -> MessageResponse:
     email = str(payload.email).lower()
     await enforce_rate_limit(redis, request, "register", email, limit=5, window=3600)
@@ -141,7 +141,7 @@ async def login(
     request: Request,
     response: Response,
     session: AsyncSession = Depends(get_session),
-    redis: Redis[str] = Depends(get_redis),
+    redis: Redis = Depends(get_redis),
 ) -> AuthResponse:
     email = str(payload.email).lower()
     await enforce_rate_limit(redis, request, "login", email, limit=10, window=900)
@@ -170,7 +170,7 @@ async def request_password_reset(
     payload: EmailRequest,
     request: Request,
     session: AsyncSession = Depends(get_session),
-    redis: Redis[str] = Depends(get_redis),
+    redis: Redis = Depends(get_redis),
 ) -> MessageResponse:
     email = str(payload.email).lower()
     await enforce_rate_limit(redis, request, "password-reset", email, limit=5, window=3600)
