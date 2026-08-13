@@ -1,5 +1,5 @@
 import { HttpClient } from '@angular/common/http';
-import { ChangeDetectionStrategy, Component, inject, signal } from '@angular/core';
+import { ChangeDetectionStrategy, Component, computed, inject, signal } from '@angular/core';
 import { FormsModule } from '@angular/forms';
 import { ActivatedRoute, Router } from '@angular/router';
 
@@ -27,76 +27,110 @@ const ROLE_HOME: Record<UserRole, string> = {
   imports: [FormsModule],
   template: `
     <div class="auth-screen">
-      <div class="auth-card">
-        <a class="brand" href="https://toptrainers.ru" aria-label="TopTrainers — главная">
-          <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round"><polyline points="4 12 12 5 20 12" /><polyline points="4 19 12 12 20 19" /></svg>
-          <span>toptrainers</span>
-        </a>
+      <div class="auth-shell" [class.has-rail]="isTrainerRegister()">
+        @if (isTrainerRegister()) {
+          <aside class="brand-rail">
+            <div>
+              <a class="brand" href="https://toptrainers.ru" aria-label="TopTrainers — главная">
+                <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round"><polyline points="4 12 12 5 20 12" /><polyline points="4 19 12 12 20 19" /></svg>
+                <span>toptrainers</span>
+              </a>
+              <p class="rail-kicker">РЕЖИМ СИЛЫ · ДЛЯ ТРЕНЕРА</p>
+              <h3>Ведите зал с одного табло</h3>
+            </div>
+            <ul class="rail-benefits">
+              <li><span class="check"><svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><path d="M20 6 9 17l-5-5" /></svg></span>Конструктор программ</li>
+              <li><span class="check"><svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><path d="M20 6 9 17l-5-5" /></svg></span>Очередь «Обработать»</li>
+              <li><span class="check"><svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><path d="M20 6 9 17l-5-5" /></svg></span>CRM и прогресс клиентов</li>
+            </ul>
+          </aside>
+        }
 
-        @if (mode() === 'register') {
-          <h1>Создать<br />аккаунт</h1>
-          <p class="lede">30 секунд — и вы на дорожке. Настроим детали позже.</p>
+        <div class="auth-card">
+          @if (!isTrainerRegister()) {
+            <a class="brand" href="https://toptrainers.ru" aria-label="TopTrainers — главная">
+              <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round"><polyline points="4 12 12 5 20 12" /><polyline points="4 19 12 12 20 19" /></svg>
+              <span>toptrainers</span>
+            </a>
+          }
 
-          <div class="field-label">Я регистрируюсь как</div>
-          <div class="role-toggle" role="radiogroup" aria-label="Роль">
-            <button type="button" role="radio" [attr.aria-checked]="role() === 'client'" [class.is-active]="role() === 'client'" (click)="role.set('client')">
-              Клиент
+          @if (mode() === 'register') {
+            @if (isTrainerRegister()) {
+              <div class="card-heading">
+                <h3>Регистрация тренера</h3>
+                <span class="step">шаг 1 / 2</span>
+              </div>
+            } @else {
+              <h1>Создать<br />аккаунт</h1>
+              <p class="lede">30 секунд — и вы на дорожке. Настроим детали позже.</p>
+
+              <div class="field-label">Я регистрируюсь как</div>
+              <div class="role-toggle" role="radiogroup" aria-label="Роль">
+                <button type="button" role="radio" [attr.aria-checked]="role() === 'client'" [class.is-active]="role() === 'client'" (click)="role.set('client')">
+                  Клиент
+                </button>
+                <button type="button" role="radio" [attr.aria-checked]="role() === 'trainer'" [class.is-active]="role() === 'trainer'" (click)="role.set('trainer')">
+                  Тренер
+                </button>
+              </div>
+            }
+          } @else {
+            <h1>С<br />возвращением</h1>
+            <p class="lede">Войдите, чтобы продолжить работу с программами и тренировками.</p>
+          }
+
+          <div class="oauth-list">
+            <button type="button" class="oauth oauth--yandex" (click)="oauthClick('Яндекс')">
+              <span class="oauth__chip">Я</span>Продолжить с Яндекс<span class="oauth__arrow">›</span>
             </button>
-            <button type="button" role="radio" [attr.aria-checked]="role() === 'trainer'" [class.is-active]="role() === 'trainer'" (click)="role.set('trainer')">
-              Тренер
+            <button type="button" class="oauth oauth--tbank" (click)="oauthClick('Т-Банк')">
+              <span class="oauth__chip">Т</span>Продолжить с Т-Банк<span class="oauth__arrow">›</span>
+            </button>
+            <button type="button" class="oauth oauth--vk" (click)="oauthClick('VK')">
+              <span class="oauth__chip">VK</span>Продолжить с VK<span class="oauth__arrow">›</span>
             </button>
           </div>
-        } @else {
-          <h1>С<br />возвращением</h1>
-          <p class="lede">Войдите, чтобы продолжить работу с программами и тренировками.</p>
-        }
 
-        <div class="oauth-list">
-          <button type="button" class="oauth oauth--yandex" (click)="oauthClick('Яндекс')">
-            <span class="oauth__chip">Я</span>Продолжить с Яндекс<span class="oauth__arrow">›</span>
-          </button>
-          <button type="button" class="oauth oauth--tbank" (click)="oauthClick('Т-Банк')">
-            <span class="oauth__chip">Т</span>Продолжить с Т-Банк<span class="oauth__arrow">›</span>
-          </button>
-          <button type="button" class="oauth oauth--vk" (click)="oauthClick('VK')">
-            <span class="oauth__chip">VK</span>Продолжить с VK<span class="oauth__arrow">›</span>
-          </button>
+          <div class="divider"><span></span>ИЛИ ПО EMAIL<span></span></div>
+
+          <form (ngSubmit)="submit()">
+            <label class="input">
+              <input name="email" type="email" placeholder="you@email.ru" [(ngModel)]="email" required autocomplete="email" />
+            </label>
+            <label class="input">
+              <input
+                name="password"
+                type="password"
+                [placeholder]="mode() === 'register' ? 'Пароль · от 12 символов' : 'Пароль'"
+                [(ngModel)]="password"
+                required
+                [minlength]="mode() === 'register' ? 12 : 1"
+                [autocomplete]="mode() === 'register' ? 'new-password' : 'current-password'"
+              />
+            </label>
+
+            <button class="cta" type="submit" [disabled]="busy()">
+              {{ busy() ? 'Проверяем…' : ctaLabel() }}
+              <svg width="19" height="19" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round"><path d="M5 12h14M13 6l6 6-6 6" /></svg>
+            </button>
+          </form>
+
+          @if (message()) {
+            <p class="form-message">{{ message() }}</p>
+          }
+
+          @if (mode() === 'register') {
+            <p class="legal">Регистрируясь, вы принимаете <a href="#">оферту</a> и <a href="#">политику данных</a></p>
+            @if (isTrainerRegister()) {
+              <p class="switch">Уже с нами? <button type="button" (click)="setMode('login')">Войти в кабинет</button></p>
+              <p class="switch-role">Не тренер? <button type="button" (click)="role.set('client')">Зарегистрироваться как клиент</button></p>
+            } @else {
+              <p class="switch">Уже есть аккаунт? <button type="button" (click)="setMode('login')">Войти</button></p>
+            }
+          } @else {
+            <p class="switch">Ещё нет аккаунта? <button type="button" (click)="setMode('register')">Зарегистрироваться</button></p>
+          }
         </div>
-
-        <div class="divider"><span></span>ИЛИ ПО EMAIL<span></span></div>
-
-        <form (ngSubmit)="submit()">
-          <label class="input">
-            <input name="email" type="email" placeholder="you@email.ru" [(ngModel)]="email" required autocomplete="email" />
-          </label>
-          <label class="input">
-            <input
-              name="password"
-              type="password"
-              [placeholder]="mode() === 'register' ? 'Пароль · от 12 символов' : 'Пароль'"
-              [(ngModel)]="password"
-              required
-              [minlength]="mode() === 'register' ? 12 : 1"
-              [autocomplete]="mode() === 'register' ? 'new-password' : 'current-password'"
-            />
-          </label>
-
-          <button class="cta" type="submit" [disabled]="busy()">
-            {{ busy() ? 'Проверяем…' : mode() === 'register' ? 'Создать аккаунт' : 'Войти' }}
-            <svg width="19" height="19" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round"><path d="M5 12h14M13 6l6 6-6 6" /></svg>
-          </button>
-        </form>
-
-        @if (message()) {
-          <p class="form-message">{{ message() }}</p>
-        }
-
-        @if (mode() === 'register') {
-          <p class="legal">Регистрируясь, вы принимаете <a href="#">оферту</a> и <a href="#">политику данных</a></p>
-          <p class="switch">Уже есть аккаунт? <button type="button" (click)="setMode('login')">Войти</button></p>
-        } @else {
-          <p class="switch">Ещё нет аккаунта? <button type="button" (click)="setMode('register')">Зарегистрироваться</button></p>
-        }
       </div>
     </div>
   `,
@@ -110,7 +144,39 @@ const ROLE_HOME: Record<UserRole, string> = {
       min-height: 100dvh;
       font-family: 'Golos Text', system-ui, sans-serif;
     }
-    .auth-card { width: 100%; max-width: 26rem; }
+    .auth-shell { width: 100%; max-width: 26rem; }
+    .brand-rail { display: none; }
+    .rail-kicker { font-family: 'JetBrains Mono', monospace; font-size: 0.625rem; letter-spacing: 0.12em; color: #8a94a6; margin: 0.375rem 0 0; }
+    .brand-rail h3 { font-family: 'Unbounded', sans-serif; font-weight: 700; font-size: 1.5rem; line-height: 1.1; letter-spacing: -0.02em; color: #f5f7fa; margin: 1.875rem 0 0; }
+    .rail-benefits { list-style: none; margin: 0; padding: 0; display: flex; flex-direction: column; gap: 0.875rem; }
+    .rail-benefits li { display: flex; align-items: center; gap: 0.6875rem; color: #c7ccd6; font-size: 0.8125rem; }
+    .rail-benefits .check { display: inline-flex; align-items: center; justify-content: center; width: 1.375rem; height: 1.375rem; border-radius: 0.375rem; background: rgb(201 242 75 / 14%); color: #c9f24b; flex-shrink: 0; }
+    .card-heading { display: flex; align-items: center; justify-content: space-between; gap: 1rem; }
+    .card-heading h3 { font-family: 'Unbounded', sans-serif; font-weight: 700; font-size: 1.375rem; letter-spacing: -0.02em; color: #f5f7fa; margin: 0; }
+    .step { font-family: 'JetBrains Mono', monospace; font-size: 0.6875rem; color: #8a94a6; white-space: nowrap; }
+    .switch-role { font-size: 0.8125rem; color: #8a94a6; margin: 0.375rem 0 0; text-align: center; }
+    .switch-role button { border: 0; background: none; color: #8a94a6; text-decoration: underline; font: inherit; cursor: pointer; padding: 0; }
+    @media (min-width: 860px) {
+      .has-rail {
+        max-width: 45rem;
+        display: flex;
+        border-radius: 1.5rem;
+        overflow: hidden;
+        background: #14181d;
+        border: 1px solid rgb(245 247 250 / 6%);
+        box-shadow: 0 30px 80px rgb(20 24 29 / 28%);
+      }
+      .has-rail .brand-rail {
+        display: flex;
+        flex-direction: column;
+        justify-content: space-between;
+        width: 16.875rem;
+        padding: 2.125rem 1.875rem;
+        background: #1c222b;
+        border-right: 1px solid rgb(245 247 250 / 6%);
+      }
+      .has-rail .auth-card { flex: 1; max-width: none; padding: 2.125rem 2.5rem; }
+    }
     .brand { display: inline-flex; align-items: center; gap: 0.5rem; color: #c9f24b; text-decoration: none; }
     .brand span { font-weight: 700; font-size: 1.0625rem; color: #f5f7fa; }
     h1 {
@@ -218,6 +284,12 @@ export class AuthComponent {
   protected readonly message = signal('');
   protected email = '';
   protected password = '';
+
+  protected readonly isTrainerRegister = computed(() => this.mode() === 'register' && this.role() === 'trainer');
+  protected readonly ctaLabel = computed(() => {
+    if (this.mode() !== 'register') return 'Войти';
+    return this.isTrainerRegister() ? 'Продолжить' : 'Создать аккаунт';
+  });
 
   constructor() {
     const params = this.route.snapshot.queryParamMap;
