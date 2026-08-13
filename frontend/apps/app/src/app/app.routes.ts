@@ -57,6 +57,14 @@ export const APP_ROUTES: Routes = [
   },
   {
     path: 'client/workout',
+    pathMatch: 'full',
+    title: 'TopTrainers — Упражнения на сегодня',
+    canActivate: [authenticatedGuard],
+    loadComponent: () =>
+      import('@toptrainers/pwa/feature-role-shell').then((module) => module.ClientWorkoutListComponent),
+  },
+  {
+    path: 'client/workout/player',
     title: 'TopTrainers — Тренировка',
     canActivate: [authenticatedGuard],
     loadComponent: () =>

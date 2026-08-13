@@ -16,6 +16,8 @@
 
 > Identity schema repair (2026-08-13): password-hash storage was expanded from 128 to 255 characters. The PBKDF2 encoding used by the secure identity flow exceeds the former legacy column limit; the migration preserves all existing data and allows registration to complete.
 
+> Client workout flow update (2026-08-13): the M1.5 client exercise-list screen now sits between «Сегодня» and the workout player. It presents typed local workout data, progress and exercise states while the data API is still being introduced; `/client/workout` is the list and `/client/workout/player` is the player.
+
 > Deployment permissions follow-up (2026-08-13): because the production deploy process uses `umask 077`, it must normalise read/traverse permissions after every `git checkout`, not only on the initial bootstrap. This is required for migration and runtime containers that execute as unprivileged users; `.git` remains private.
 
 _Обновлено: 19 июля 2026_
