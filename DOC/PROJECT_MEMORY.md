@@ -18,6 +18,8 @@
 
 > Client workout flow update (2026-08-13): the M1.5 client exercise-list screen now sits between «Сегодня» and the workout player. It presents typed local workout data, progress and exercise states while the data API is still being introduced; `/client/workout` is the list and `/client/workout/player` is the player.
 
+> Trainer exercise and workout update (2026-08-13): trainer Programs now provides a persistent personal exercise library and workout-template builder. Exercises are scoped to their owner and store validated `http(s)` instructional/video/thumbnail URLs; workout blocks reference only that trainer’s exercises and retain ordered warm-up/main/cool-down parameters (weight, sets, reps). Migration `20260813_0004` introduces the associated tables. Direct file upload is deferred until the protected S3 media layer is available.
+
 > Deployment permissions follow-up (2026-08-13): because the production deploy process uses `umask 077`, it must normalise read/traverse permissions after every `git checkout`, not only on the initial bootstrap. This is required for migration and runtime containers that execute as unprivileged users; `.git` remains private.
 
 _Обновлено: 19 июля 2026_

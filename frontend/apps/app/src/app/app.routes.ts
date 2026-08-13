@@ -42,10 +42,10 @@ export const APP_ROUTES: Routes = [
   },
   {
     path: 'trainer/programs/builder',
-    title: 'TopTrainers — Конструктор программы',
+    title: 'TopTrainers — Упражнения и тренировки',
     canActivate: [authenticatedGuard],
     loadComponent: () =>
-      import('@toptrainers/pwa/feature-role-shell').then((module) => module.ProgramBuilderComponent),
+      import('@toptrainers/pwa/feature-role-shell').then((module) => module.TrainerProgramsComponent),
   },
   {
     path: 'client',

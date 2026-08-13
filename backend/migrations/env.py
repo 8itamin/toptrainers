@@ -10,8 +10,10 @@ from sqlalchemy.ext.asyncio import async_engine_from_config
 
 from toptrainers_api.core.config import settings
 from toptrainers_api.core.db import Base
+from toptrainers_api.modules.exercises import models as _exercise_models  # noqa: F401
 from toptrainers_api.modules.identity import models as _identity_models  # noqa: F401
 from toptrainers_api.modules.programs import models as _program_models  # noqa: F401
+from toptrainers_api.modules.workouts import models as _workout_models  # noqa: F401
 
 config = context.config
 

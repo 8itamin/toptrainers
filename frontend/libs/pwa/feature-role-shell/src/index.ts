@@ -4,5 +4,6 @@ export * from './lib/client-today.component';
 export * from './lib/client-workout-list.component';
 export * from './lib/program-builder.component';
 export * from './lib/trainer-home.component';
+export * from './lib/trainer-programs.component';
 export * from './lib/trainer-today.component';
 export * from './lib/workout-player.component';
