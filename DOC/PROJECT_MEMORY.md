@@ -28,6 +28,8 @@
 
 > Trainer registration recovery update (2026-08-13): the specialised «Регистрация тренера» layout also includes the «Я регистрируюсь как» role selector, so a visitor can immediately return to client registration after an accidental trainer selection.
 
+> Trainer Programs navigation update (2026-08-14): the program constructor retains the trainer navigation shell: a persistent sidebar on desktop and fixed bottom navigation on mobile, with «Программы» highlighted as the current section.
+
 > Deployment permissions follow-up (2026-08-13): because the production deploy process uses `umask 077`, it must normalise read/traverse permissions after every `git checkout`, not only on the initial bootstrap. This is required for migration and runtime containers that execute as unprivileged users; `.git` remains private.
 
 _Обновлено: 19 июля 2026_

@@ -38,7 +38,19 @@ const INITIAL_BLOCKS: readonly ExerciseBlock[] = [
   standalone: true,
   imports: [RouterLink],
   template: `
-    <div class="screen">
+    <div class="workspace">
+      <aside class="sidebar desktop-only">
+        <a class="sidebar-logo" routerLink="/trainer" aria-label="TopTrainers: Сегодня">
+          <svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round"><polyline points="4 12 12 5 20 12" /><polyline points="4 19 12 12 20 19" /></svg>
+        </a>
+        <nav class="sidebar-nav" aria-label="Навигация тренера">
+          <a class="side-item" routerLink="/trainer"><span class="side-icon"><svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 12l9-9 9 9M5 10v10h14V10" /></svg></span><span>Сегодня</span></a>
+          <a class="side-item is-active" routerLink="/trainer/programs"><span class="side-icon"><svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="4" width="18" height="16" rx="2" /><path d="M3 9h18M8 4v16" /></svg></span><span>Программы</span></a>
+        </nav>
+        <span class="sidebar-avatar" aria-hidden="true"></span>
+      </aside>
+
+      <div class="screen">
       <header class="toolbar">
         <div class="toolbar-left">
           <a class="back" routerLink="/trainer/programs">
@@ -163,11 +175,26 @@ const INITIAL_BLOCKS: readonly ExerciseBlock[] = [
       @if (message()) {
         <p class="form-message">{{ message() }}</p>
       }
+      </div>
+
+      <nav class="mobile-nav mobile-only" aria-label="Навигация тренера">
+        <a class="mobile-nav__item" routerLink="/trainer"><svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 12l9-9 9 9M5 10v10h14V10" /></svg><span>Сегодня</span></a>
+        <a class="mobile-nav__item is-active" routerLink="/trainer/programs"><svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="4" width="18" height="16" rx="2" /><path d="M3 9h18M8 4v16" /></svg><span>Программы</span></a>
+      </nav>
     </div>
   `,
   styles: `
     :host { display: block; }
-    .screen { min-height: 100dvh; background: #14181d; color: #f5f7fa; font-family: 'Golos Text', system-ui, sans-serif; }
+    .workspace { min-height: 100dvh; background: #14181d; }
+    .screen { min-width: 0; min-height: 100dvh; background: #14181d; color: #f5f7fa; font-family: 'Golos Text', system-ui, sans-serif; }
+    .sidebar { width: 5.5rem; flex-shrink: 0; background: #0e1116; border-right: 1px solid rgb(245 247 250 / 6%); display: flex; flex-direction: column; align-items: center; padding: 1.25rem 0; box-sizing: border-box; }
+    .sidebar-logo { color: #c9f24b; }
+    .sidebar-nav { display: flex; flex-direction: column; align-items: center; gap: 1.375rem; margin-top: 2rem; }
+    .side-item { display: flex; flex-direction: column; align-items: center; gap: 0.3125rem; color: #8a94a6; text-decoration: none; font-size: 0.5625rem; }
+    .side-icon { display: flex; align-items: center; justify-content: center; width: 2.75rem; height: 2.75rem; border-radius: 0.75rem; }
+    .side-item.is-active { color: #c9f24b; font-weight: 600; }
+    .side-item.is-active .side-icon { background: rgb(201 242 75 / 12%); }
+    .sidebar-avatar { margin-top: auto; width: 2.5rem; height: 2.5rem; border-radius: 999px; background: repeating-linear-gradient(135deg, #2a323d, #2a323d 6px, #242b34 6px, #242b34 12px); }
     .toolbar { display: flex; align-items: center; justify-content: space-between; padding: 1.125rem 1.75rem; border-bottom: 1px solid rgb(245 247 250 / 6%); gap: 1rem; flex-wrap: wrap; }
     .toolbar-left { display: flex; align-items: center; gap: 0.875rem; flex-wrap: wrap; }
     .back { display: inline-flex; align-items: center; gap: 0.375rem; color: #8a94a6; text-decoration: none; font-size: 0.875rem; }
@@ -295,6 +322,16 @@ const INITIAL_BLOCKS: readonly ExerciseBlock[] = [
     .media-actions button { flex: 1; padding: 0.625rem; font-size: 0.75rem; }
     .inspector-empty { color: #8a94a6; font-size: 0.875rem; line-height: 1.5; }
     .form-message { padding: 0 1.75rem 1rem; font-size: 0.8125rem; color: #8a94a6; }
+    .mobile-only { display: none; }
+    @media (min-width: 860px) { .workspace { display: flex; } .desktop-only { display: flex; } .screen { flex: 1; } }
+    @media (max-width: 859.98px) {
+      .desktop-only { display: none; }
+      .mobile-only { display: flex; }
+      .screen { padding-bottom: 5.5rem; }
+      .mobile-nav { position: fixed; z-index: 10; inset-inline: 0; bottom: 0; justify-content: space-around; padding: 0.625rem 1rem calc(0.625rem + env(safe-area-inset-bottom)); border-top: 1px solid rgb(245 247 250 / 8%); background: rgb(14 17 22 / 96%); backdrop-filter: blur(12px); }
+      .mobile-nav__item { display: flex; flex-direction: column; align-items: center; gap: 0.2rem; color: #8a94a6; text-decoration: none; font-size: 0.625rem; }
+      .mobile-nav__item.is-active { color: #c9f24b; font-weight: 700; }
+    }
     @media (max-width: 1079.98px) {
       .panels { overflow-x: auto; }
       .panel-weeks, .panel-inspector { min-width: 15rem; }
