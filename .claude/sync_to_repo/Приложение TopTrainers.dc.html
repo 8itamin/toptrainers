@@ -440,24 +440,29 @@
 
             <div style="padding:20px 20px 0;">
               <div style="font-family:'Unbounded',sans-serif; font-weight:600; font-size:22px; color:#F5F7FA; line-height:1.1;">Присед со штангой</div>
-              <!-- mono scoreboard -->
+              <!-- mono scoreboard · диагональные линии на фоне, ± встроены в поля -->
               <div style="display:flex; gap:8px; margin-top:16px;">
-                <div style="flex:1; background:#1C222B; border-radius:12px; padding:14px 10px; text-align:center;"><div style="font-family:'JetBrains Mono',monospace; font-size:10px; color:#8A94A6; letter-spacing:.08em;">ПОДХОД</div><div style="font-family:'Unbounded',sans-serif; font-weight:700; font-size:26px; color:#C9F24B; line-height:1; margin-top:6px;">2<span style="font-size:14px; color:#5b6472;">/4</span></div></div>
-                <div style="flex:1; background:#1C222B; border-radius:12px; padding:14px 10px; text-align:center;"><div style="font-family:'JetBrains Mono',monospace; font-size:10px; color:#8A94A6; letter-spacing:.08em;">ПОВТОРЫ</div><div style="font-family:'Unbounded',sans-serif; font-weight:700; font-size:26px; color:#F5F7FA; line-height:1; margin-top:6px;">8</div></div>
-                <div style="flex:1; background:#1C222B; border-radius:12px; padding:14px 10px; text-align:center;"><div style="font-family:'JetBrains Mono',monospace; font-size:10px; color:#8A94A6; letter-spacing:.08em;">ВЕС, КГ</div><div style="font-family:'Unbounded',sans-serif; font-weight:700; font-size:26px; color:#F5F7FA; line-height:1; margin-top:6px;">80</div></div>
-              </div>
-
-              <!-- steppers -->
-              <div style="display:flex; gap:8px; margin-top:10px;">
-                <div style="flex:1; display:flex; align-items:center; justify-content:space-between; background:#1C222B; border-radius:12px; padding:8px 10px;">
-                  <button style="width:34px; height:34px; border:none; border-radius:9px; background:#2a323d; color:#F5F7FA; font-size:20px; font-weight:600;">−</button>
-                  <span style="font-family:'JetBrains Mono',monospace; font-size:12px; color:#8A94A6;">повт</span>
-                  <button style="width:34px; height:34px; border:none; border-radius:9px; background:#2a323d; color:#F5F7FA; font-size:20px; font-weight:600;">+</button>
+                <div style="flex:1; position:relative; overflow:hidden; background:#1C222B; border-radius:12px; padding:14px 10px; text-align:center;">
+                  <div style="position:relative; font-family:'JetBrains Mono',monospace; font-size:10px; color:#8A94A6; letter-spacing:.08em;">ПОДХОД</div>
+                  <div style="position:relative; font-family:'Unbounded',sans-serif; font-weight:700; font-size:26px; color:#C9F24B; line-height:1; margin-top:6px;">2<span style="font-size:14px; color:#5b6472;">/4</span></div>
                 </div>
-                <div style="flex:1; display:flex; align-items:center; justify-content:space-between; background:#1C222B; border-radius:12px; padding:8px 10px;">
-                  <button style="width:34px; height:34px; border:none; border-radius:9px; background:#2a323d; color:#F5F7FA; font-size:20px; font-weight:600;">−</button>
-                  <span style="font-family:'JetBrains Mono',monospace; font-size:12px; color:#8A94A6;">кг</span>
-                  <button style="width:34px; height:34px; border:none; border-radius:9px; background:#2a323d; color:#F5F7FA; font-size:20px; font-weight:600;">+</button>
+                <div style="flex:1; position:relative; overflow:hidden; background:#1C222B; border-radius:12px; text-align:center;">
+                  <button aria-label="минус повтор" style="position:absolute; left:0; top:0; bottom:0; width:50%; border:none; background:transparent;"><span style="position:absolute; left:12px; top:50%; transform:translateY(-50%); color:rgba(0,0,0,.3); font-size:38px; font-weight:600; line-height:1;">−</span></button>
+                  <button aria-label="плюс повтор" style="position:absolute; right:0; top:0; bottom:0; width:50%; border:none; background:transparent;"><span style="position:absolute; right:12px; top:50%; transform:translateY(-50%); color:rgba(0,0,0,.3); font-size:38px; font-weight:600; line-height:1;">+</span></button>
+                  <span style="position:absolute; inset:0; pointer-events:none; background:linear-gradient(to top right, transparent calc(50% - .6px), rgba(0,0,0,.32) calc(50% - .6px), rgba(0,0,0,.32) calc(50% + .6px), transparent calc(50% + .6px));"></span>
+                  <div style="position:relative; pointer-events:none; padding:14px 10px;">
+                    <div style="font-family:'JetBrains Mono',monospace; font-size:10px; color:#8A94A6; letter-spacing:.08em;">ПОВТОРЫ</div>
+                    <div style="font-family:'Unbounded',sans-serif; font-weight:700; font-size:26px; color:#F5F7FA; line-height:1; margin-top:6px;">8</div>
+                  </div>
+                </div>
+                <div style="flex:1; position:relative; overflow:hidden; background:#1C222B; border-radius:12px; text-align:center;">
+                  <button aria-label="минус вес" style="position:absolute; left:0; top:0; bottom:0; width:50%; border:none; background:transparent;"><span style="position:absolute; left:12px; top:50%; transform:translateY(-50%); color:rgba(0,0,0,.3); font-size:38px; font-weight:600; line-height:1;">−</span></button>
+                  <button aria-label="плюс вес" style="position:absolute; right:0; top:0; bottom:0; width:50%; border:none; background:transparent;"><span style="position:absolute; right:12px; top:50%; transform:translateY(-50%); color:rgba(0,0,0,.3); font-size:38px; font-weight:600; line-height:1;">+</span></button>
+                  <span style="position:absolute; inset:0; pointer-events:none; background:linear-gradient(to top right, transparent calc(50% - .6px), rgba(0,0,0,.32) calc(50% - .6px), rgba(0,0,0,.32) calc(50% + .6px), transparent calc(50% + .6px));"></span>
+                  <div style="position:relative; pointer-events:none; padding:14px 10px;">
+                    <div style="font-family:'JetBrains Mono',monospace; font-size:10px; color:#8A94A6; letter-spacing:.08em;">ВЕС, КГ</div>
+                    <div style="font-family:'Unbounded',sans-serif; font-weight:700; font-size:26px; color:#F5F7FA; line-height:1; margin-top:6px;">80</div>
+                  </div>
                 </div>
               </div>
 
