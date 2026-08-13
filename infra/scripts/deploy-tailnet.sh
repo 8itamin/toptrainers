@@ -68,8 +68,13 @@ done
 printf '%s\n' 'Applying Alembic migrations as a one-off container...'
 dc --profile migrate run --rm --build migrate
 
-printf '%s\n' 'Building and starting gateway, PWA, showcase and API...'
-dc up -d --build gateway pwa showcase api
+printf '%s\n' 'Building application images sequentially to keep the production host responsive...'
+dc build api
+dc build pwa
+dc build showcase
+
+printf '%s\n' 'Starting gateway, PWA, showcase and API...'
+dc up -d --no-build gateway pwa showcase api
 
 gateway_address="$(dc port gateway 8080)"
 [[ -n "$gateway_address" ]] || fail "Could not resolve the gateway port."

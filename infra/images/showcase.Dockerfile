@@ -4,6 +4,10 @@ FROM node:22-alpine AS build
 
 ARG ALLOW_UNLOCKED_INSTALL=false
 
+ENV CI=true \
+    NX_DAEMON=false \
+    NX_ADD_PLUGINS=false
+
 WORKDIR /workspace
 
 RUN corepack enable

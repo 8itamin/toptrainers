@@ -10,6 +10,8 @@
 
 > Deployment repair follow-up (2026-08-13): `deploy-github.sh` retains a restrictive umask, so the bootstrap checkout must explicitly be made readable/traversable before Docker builds images that run as unprivileged users. This normalisation applies only to tracked release files; production env files and deploy keys remain outside the checkout with restricted permissions.
 
+> Deployment reliability update (2026-08-13): the first managed release exhausted the original 30-minute systemd timeout while Docker built the two Angular apps in parallel, making the host temporarily unresponsive. Production Docker builds now disable the Nx daemon/plugin auto-discovery, build application images sequentially, and have a 90-minute bounded deployment timeout. Existing services remain running until replacement images are ready.
+
 _Обновлено: 19 июля 2026_
 
 ## Зачем существует продукт
