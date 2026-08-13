@@ -44,6 +44,11 @@ cd "$REPOSITORY_DIR"
 git -c core.hooksPath=/dev/null fetch --prune origin "refs/heads/$BRANCH:refs/remotes/origin/$BRANCH"
 readonly REVISION="$(git rev-parse --verify "refs/remotes/origin/$BRANCH^{commit}")"
 git -c core.hooksPath=/dev/null checkout --detach --force "$REVISION"
+# `umask 077` protects deployment state, but Git applies it to files written by
+# every checkout. Runtime images need the application source to be readable by
+# their unprivileged users; leave the Git metadata private.
+find "$REPOSITORY_DIR" -path "$REPOSITORY_DIR/.git" -prune -o -type d -exec chmod a+rx {} +
+find "$REPOSITORY_DIR" -path "$REPOSITORY_DIR/.git" -prune -o -type f -exec chmod a+r {} +
 
 printf 'Deploying revision %s\n' "$REVISION"
 bash "$REPOSITORY_DIR/infra/scripts/deploy-tailnet.sh"
