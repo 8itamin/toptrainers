@@ -18,7 +18,7 @@ import { ChangeDetectionStrategy, Component } from '@angular/core';
         </nav>
         <div class="nav-actions">
           <a class="outline-button" href="https://app.toptrainers.ru/auth?mode=login">Войти</a>
-          <a class="nav-cta" href="https://app.toptrainers.ru/auth?mode=register&role=trainer">Начать бесплатно</a>
+          <a class="nav-cta" href="https://app.toptrainers.ru/auth?mode=login">Войти</a>
         </div>
       </header>
 
