@@ -27,6 +27,15 @@ class Settings(BaseSettings):
         validation_alias="TT_ALLOWED_HOSTS",
     )
     cors_origins_csv: str = Field(default="", validation_alias="TT_CORS_ORIGINS")
+    public_app_url: str = "http://app.toptrainers.localhost:8080"
+    auth_cookie_name: str = "tt_session"
+    auth_session_days: int = Field(default=7, ge=1, le=30)
+    smtp_host: str | None = Field(default=None, validation_alias="SMTP_SERVER")
+    smtp_port: int = Field(default=465, ge=1, le=65535)
+    smtp_username: str | None = Field(default=None, validation_alias="ADMIN_MAIL")
+    smtp_password: str | None = Field(default=None, validation_alias="ADMIN_MAIL_PASSWORD")
+    smtp_from_email: str | None = Field(default=None, validation_alias="ADMIN_MAIL")
+    smtp_use_starttls: bool = False
     s3_endpoint_url: str | None = None
     s3_bucket: str | None = None
     s3_region: str | None = None
@@ -53,7 +62,13 @@ class Settings(BaseSettings):
             missing.append("TT_CORS_ORIGINS")
         if len(self.jwt_signing_key) < 48:
             missing.append("TT_JWT_SIGNING_KEY (at least 48 characters)")
-        if "change-me" in self.database_url or self.database_url.endswith("@localhost:5432/toptrainers"):
+        if not self.public_app_url.startswith("https://"):
+            missing.append("TT_PUBLIC_APP_URL (HTTPS URL)")
+        if not all([self.smtp_host, self.smtp_username, self.smtp_password, self.smtp_from_email]):
+            missing.append("SMTP_SERVER, ADMIN_MAIL, ADMIN_MAIL_PASSWORD")
+        if "change-me" in self.database_url or self.database_url.endswith(
+            "@localhost:5432/toptrainers"
+        ):
             missing.append("TT_DATABASE_URL")
         if missing:
             joined = ", ".join(missing)

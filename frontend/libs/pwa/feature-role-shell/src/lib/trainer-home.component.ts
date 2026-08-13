@@ -43,17 +43,22 @@ export class TrainerHomeComponent {
   protected readonly busy = signal(false);
   protected readonly message = signal('');
   protected readonly programs = signal<Program[]>([]);
-  protected readonly hasToken = signal(!!localStorage.getItem('tt_access_token'));
+  protected readonly hasToken = signal(false);
   protected title = '';
   protected description = '';
   protected weeks = 4;
 
+  constructor() {
+    this.http.get(`${this.config.apiBaseUrl}/auth/session`).subscribe({
+      next: () => this.hasToken.set(true),
+      error: () => this.hasToken.set(false),
+    });
+  }
+
   protected createProgram(): void {
     this.busy.set(true);
     this.message.set('');
-    const token = localStorage.getItem('tt_access_token');
-    const headers = token ? { Authorization: `Bearer ${token}` } : undefined;
-    this.http.post<Program>(`${this.config.apiBaseUrl}/programs`, { title: this.title, description: this.description, weeks: this.weeks }, { headers }).subscribe({
+    this.http.post<Program>(`${this.config.apiBaseUrl}/programs`, { title: this.title, description: this.description, weeks: this.weeks }).subscribe({
       next: (program) => { this.programs.update((items) => [...items, program]); this.message.set('Программа создана'); this.title = ''; this.description = ''; },
       error: () => { this.message.set('Нужна авторизация тренера — войдите или зарегистрируйтесь на /auth.'); this.busy.set(false); },
       complete: () => this.busy.set(false),

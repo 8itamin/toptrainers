@@ -10,10 +10,11 @@ type AuthMode = 'register' | 'login';
 type AuthRole = Extract<UserRole, 'client' | 'trainer'>;
 
 interface AuthResponse {
-  access_token: string;
   account_id: string;
   role: UserRole;
 }
+
+interface MessageResponse { message: string; }
 
 const ROLE_HOME: Record<UserRole, string> = {
   client: '/client',
@@ -129,6 +130,7 @@ const ROLE_HOME: Record<UserRole, string> = {
             }
           } @else {
             <p class="switch">Ещё нет аккаунта? <button type="button" (click)="setMode('register')">Зарегистрироваться</button></p>
+            <p class="switch"><button type="button" (click)="requestPasswordReset()">Не помню пароль</button></p>
           }
         </div>
       </div>
@@ -322,10 +324,13 @@ export class AuthComponent {
         ? { email: this.email, password: this.password, role: this.role() }
         : { email: this.email, password: this.password };
 
-    this.http.post<AuthResponse>(`${this.config.apiBaseUrl}/auth/${path}`, body).subscribe({
-      next: ({ access_token, role }) => {
-        localStorage.setItem('tt_access_token', access_token);
-        localStorage.setItem('tt_role', role);
+    this.http.post<AuthResponse | MessageResponse>(`${this.config.apiBaseUrl}/auth/${path}`, body).subscribe({
+      next: (result) => {
+        if (this.mode() === 'register') {
+          this.message.set('Проверьте почту и подтвердите email — после этого можно войти.');
+          return;
+        }
+        const { role } = result as AuthResponse;
         const destination = isUserRole(role) ? ROLE_HOME[role] : '/trainer';
         this.router.navigateByUrl(destination);
       },
@@ -337,6 +342,19 @@ export class AuthComponent {
         );
         this.busy.set(false);
       },
+      complete: () => this.busy.set(false),
+    });
+  }
+
+  protected requestPasswordReset(): void {
+    if (!this.email) {
+      this.message.set('Введите email, чтобы получить ссылку для сброса пароля.');
+      return;
+    }
+    this.busy.set(true);
+    this.http.post<MessageResponse>(`${this.config.apiBaseUrl}/auth/password-reset/request`, { email: this.email }).subscribe({
+      next: () => this.message.set('Если аккаунт существует, ссылка для сброса отправлена на почту.'),
+      error: () => this.message.set('Не удалось отправить письмо. Попробуйте позже.'),
       complete: () => this.busy.set(false),
     });
   }

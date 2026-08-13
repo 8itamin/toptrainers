@@ -8,6 +8,12 @@ x-api-environment: &api-environment
   TT_DATABASE_URL: ${TT_DATABASE_URL:?Set TT_DATABASE_URL in the environment file}
   TT_REDIS_URL: ${TT_REDIS_URL:?Set TT_REDIS_URL in the environment file}
   TT_JWT_SIGNING_KEY: ${TT_JWT_SIGNING_KEY:?Set TT_JWT_SIGNING_KEY in the environment file}
+  TT_PUBLIC_APP_URL: ${TT_PUBLIC_APP_URL:?Set TT_PUBLIC_APP_URL in the environment file}
+  SMTP_SERVER: ${SMTP_SERVER:?Set SMTP_SERVER in the environment file}
+  TT_SMTP_PORT: ${TT_SMTP_PORT:-465}
+  ADMIN_MAIL: ${ADMIN_MAIL:?Set ADMIN_MAIL in the environment file}
+  ADMIN_MAIL_PASSWORD: ${ADMIN_MAIL_PASSWORD:?Set ADMIN_MAIL_PASSWORD in the environment file}
+  TT_SMTP_USE_STARTTLS: ${TT_SMTP_USE_STARTTLS:-false}
   TT_OPENAPI_ENABLED: ${TT_OPENAPI_ENABLED:-false}
   TT_S3_ENDPOINT_URL: ${TT_S3_ENDPOINT_URL:-}
   TT_S3_BUCKET: ${TT_S3_BUCKET:-}
