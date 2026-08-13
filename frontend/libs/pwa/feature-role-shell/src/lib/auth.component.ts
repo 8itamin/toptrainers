@@ -281,7 +281,7 @@ export class AuthComponent {
   private readonly config = inject<RuntimeConfig>(RUNTIME_CONFIG);
 
   protected readonly mode = signal<AuthMode>('register');
-  protected readonly role = signal<AuthRole>('trainer');
+  protected readonly role = signal<AuthRole>('client');
   protected readonly busy = signal(false);
   protected readonly message = signal('');
   protected email = '';

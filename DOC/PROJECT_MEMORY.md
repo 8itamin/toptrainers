@@ -24,6 +24,8 @@
 
 > Trainer Programs routing update (2026-08-13): `/trainer/programs` is the existing trainer program-constructor design; its toolbar links to `/trainer/programs/library` for the persistent exercise library and workout templates. The former `/trainer/programs/builder` URL redirects to the constructor for compatibility.
 
+> Showcase sign-up routing update (2026-08-13): the header CTA «Начать бесплатно» opens the neutral account-creation view («30 секунд — и вы на дорожке») without preselecting the trainer-specific registration layout; the visitor chooses their role in the form.
+
 > Deployment permissions follow-up (2026-08-13): because the production deploy process uses `umask 077`, it must normalise read/traverse permissions after every `git checkout`, not only on the initial bootstrap. This is required for migration and runtime containers that execute as unprivileged users; `.git` remains private.
 
 _Обновлено: 19 июля 2026_
