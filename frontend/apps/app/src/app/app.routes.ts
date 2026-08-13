@@ -26,10 +26,26 @@ export const APP_ROUTES: Routes = [
   },
   {
     path: 'trainer',
-    title: 'TopTrainers — Кабинет тренера',
+    pathMatch: 'full',
+    title: 'TopTrainers — Сегодня',
+    canActivate: [authenticatedGuard],
+    loadComponent: () =>
+      import('@toptrainers/pwa/feature-role-shell').then((module) => module.TrainerTodayComponent),
+  },
+  {
+    path: 'trainer/programs',
+    pathMatch: 'full',
+    title: 'TopTrainers — Программы',
     canActivate: [authenticatedGuard],
     loadComponent: () =>
       import('@toptrainers/pwa/feature-role-shell').then((module) => module.TrainerHomeComponent),
+  },
+  {
+    path: 'trainer/programs/builder',
+    title: 'TopTrainers — Конструктор программы',
+    canActivate: [authenticatedGuard],
+    loadComponent: () =>
+      import('@toptrainers/pwa/feature-role-shell').then((module) => module.ProgramBuilderComponent),
   },
   {
     path: 'client',

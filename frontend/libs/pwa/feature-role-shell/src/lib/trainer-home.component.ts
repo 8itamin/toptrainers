@@ -28,7 +28,7 @@ interface Program { id: string; title: string; weeks: number; }
     @if (!hasToken()) {
       <section class="card"><h2>Доступ тренера</h2><p>Войдите или создайте аккаунт тренера, чтобы сохранять программы.</p><a class="button button--primary" routerLink="/auth">Войти или зарегистрироваться</a></section>
     }
-    <section id="programs" class="card"><h2>Программы</h2><p>Первый рабочий срез сохраняет программу в PostgreSQL.</p>
+    <section id="programs" class="card"><div class="card__header"><h2>Программы</h2><a routerLink="/trainer/programs/builder">Открыть конструктор</a></div><p>Первый рабочий срез сохраняет программу в PostgreSQL.</p>
       <form class="program-form" (ngSubmit)="createProgram()"><label>Название<input name="title" [(ngModel)]="title" required maxlength="160" /></label><label>Описание<textarea name="description" [(ngModel)]="description" maxlength="2000"></textarea></label><label>Недель<input name="weeks" type="number" min="1" max="52" [(ngModel)]="weeks" /></label><button class="button button--primary" type="submit" [disabled]="busy()">{{ busy() ? 'Сохраняем…' : 'Сохранить программу' }}</button></form>
       @if (message()) { <p class="form-message">{{ message() }}</p> } @if (programs().length) { <ul class="program-list">@for (program of programs(); track program.id) { <li><strong>{{ program.title }}</strong><span>{{ program.weeks }} нед.</span></li>}</ul> }
     </section>
