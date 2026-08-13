@@ -103,11 +103,19 @@ const WORKOUT_BLOCKS: readonly WorkoutBlock[] = [
           Продолжить · присед
         </a>
       </footer>
+
+      <nav class="tabbar" aria-label="Навигация клиента">
+        <a class="tab" routerLink="/client"><svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M3 12l9-9 9 9M5 10v10h14V10" /></svg><span>Сегодня</span></a>
+        <a class="tab" href="#calendar"><svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="4" width="18" height="18" rx="2" /><path d="M3 10h18M8 2v4M16 2v4" /></svg><span>Календарь</span></a>
+        <a class="tab is-active" routerLink="/client/workout"><svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="4" width="18" height="16" rx="2" /><path d="M3 9h18M8 4v16" /></svg><span>Тренировка</span></a>
+        <a class="tab" href="#competitions"><svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="8" r="5" /><path d="M8.5 12.5 7 21l5-3 5 3-1.5-8.5" /></svg><span>Соревн.</span></a>
+        <a class="tab" href="#profile"><svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="8" r="4" /><path d="M4 21c0-4 4-6 8-6s8 2 8 6" /></svg><span>Профиль</span></a>
+      </nav>
     </main>
   `,
   styles: `
     :host { display: block; }
-    .screen { min-height: 100dvh; background: #14181d; color: #f5f7fa; font-family: 'Golos Text', system-ui, sans-serif; }
+    .screen { min-height: 100dvh; padding-bottom: calc(10.5rem + env(safe-area-inset-bottom)); background: #14181d; color: #f5f7fa; font-family: 'Golos Text', system-ui, sans-serif; }
     .app-header { display: flex; align-items: center; justify-content: space-between; padding: 1rem 1.25rem 0.75rem; }
     .back { display: inline-flex; align-items: center; gap: .375rem; color: #8a94a6; font-size: .875rem; text-decoration: none; }
     .streak { display: inline-flex; align-items: center; gap: .3125rem; border-radius: 999px; padding: .3125rem .625rem; background: rgb(232 131 58 / 12%); color: #e8833a; font-family: 'JetBrains Mono', monospace; font-size: .8125rem; font-weight: 700; }
@@ -120,7 +128,7 @@ const WORKOUT_BLOCKS: readonly WorkoutBlock[] = [
     .progress span { height: .5rem; flex: 1; overflow: hidden; border-radius: 999px; background: rgb(245 247 250 / 9%); }
     .progress i { display: block; width: 33.333%; height: 100%; border-radius: inherit; background: #c9f24b; }
     .progress b { color: #8a94a6; font-family: 'JetBrains Mono', monospace; font-size: .6875rem; font-weight: 500; }
-    .exercise-list { display: flex; flex-direction: column; gap: .625rem; padding: .125rem 1.25rem 5.75rem; }
+    .exercise-list { display: flex; flex-direction: column; gap: .625rem; padding: .125rem 1.25rem 1rem; }
     .exercise-list h2 { margin: .375rem 0 .0625rem; color: #8a94a6; }
     .exercise { display: flex; align-items: center; gap: .8125rem; min-height: 4.25rem; padding: .75rem .875rem; border: 1px solid transparent; border-radius: .875rem; background: #1c222b; color: inherit; text-decoration: none; }
     .exercise--current { border-color: #c9f24b; }
@@ -139,9 +147,11 @@ const WORKOUT_BLOCKS: readonly WorkoutBlock[] = [
     .chips .chip--lime { color: #c9f24b; }
     .play { display: grid; width: 2.375rem; height: 2.375rem; flex: 0 0 auto; place-items: center; border-radius: .625rem; background: #c9f24b; color: #14181d; }
     .chevron { color: #5b6472; font-size: 1.5rem; line-height: 1; }
-    .action-bar { position: fixed; right: 0; bottom: 0; left: 0; z-index: 1; padding: .875rem 1.25rem calc(.875rem + env(safe-area-inset-bottom)); border-top: 1px solid rgb(245 247 250 / 6%); background: #14181d; }
+    .action-bar { position: fixed; right: 0; bottom: calc(4.875rem + env(safe-area-inset-bottom)); left: 0; z-index: 1; padding: .875rem 1.25rem; border-top: 1px solid rgb(245 247 250 / 6%); background: #14181d; }
     .cta { display: flex; height: 3.5rem; align-items: center; justify-content: center; gap: .5rem; border-radius: .8125rem; background: #c9f24b; color: #14181d; font-size: 1rem; font-weight: 700; text-decoration: none; }
-    @media (min-width: 720px) { .screen { max-width: 30rem; margin: 0 auto; } .action-bar { width: 30rem; right: auto; left: 50%; transform: translateX(-50%); } }
+    .tabbar { position: fixed; z-index: 2; inset-inline: 0; bottom: 0; display: flex; justify-content: space-between; padding: .75rem 1.25rem calc(.75rem + env(safe-area-inset-bottom)); background: #14181d; border-top: 1px solid rgb(245 247 250 / 6%); }
+    .tab { display: flex; flex-direction: column; align-items: center; gap: .25rem; color: #5b6472; text-decoration: none; font-size: .625rem; }.tab.is-active { color: #c9f24b; font-weight: 600; }
+    @media (min-width: 720px) { .screen { max-width: 30rem; margin: 0 auto; } .action-bar,.tabbar { width: 30rem; right: auto; left: 50%; transform: translateX(-50%); } }
   `,
   changeDetection: ChangeDetectionStrategy.OnPush,
 })

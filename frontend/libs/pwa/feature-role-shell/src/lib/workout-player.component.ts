@@ -77,11 +77,18 @@ const REST_SECONDS = 90;
           <p class="form-message">{{ message() }}</p>
         }
       </div>
+      <nav class="tabbar" aria-label="Навигация клиента">
+        <a class="tab" routerLink="/client"><svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M3 12l9-9 9 9M5 10v10h14V10" /></svg><span>Сегодня</span></a>
+        <a class="tab" href="#calendar"><svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="4" width="18" height="18" rx="2" /><path d="M3 10h18M8 2v4M16 2v4" /></svg><span>Календарь</span></a>
+        <a class="tab is-active" routerLink="/client/workout"><svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="4" width="18" height="16" rx="2" /><path d="M3 9h18M8 4v16" /></svg><span>Тренировка</span></a>
+        <a class="tab" href="#competitions"><svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="8" r="5" /><path d="M8.5 12.5 7 21l5-3 5 3-1.5-8.5" /></svg><span>Соревн.</span></a>
+        <a class="tab" href="#profile"><svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="8" r="4" /><path d="M4 21c0-4 4-6 8-6s8 2 8 6" /></svg><span>Профиль</span></a>
+      </nav>
     </div>
   `,
   styles: `
     :host { display: block; }
-    .screen { min-height: 100dvh; padding-bottom: 2rem; background: #14181d; color: #f5f7fa; font-family: 'Golos Text', system-ui, sans-serif; }
+    .screen { min-height: 100dvh; padding-bottom: 6rem; background: #14181d; color: #f5f7fa; font-family: 'Golos Text', system-ui, sans-serif; }
     .app-header { display: flex; align-items: center; justify-content: space-between; padding: 1rem 1.25rem 0.5rem; }
     .back { display: inline-flex; align-items: center; gap: 0.375rem; color: #8a94a6; text-decoration: none; font-size: 0.875rem; }
     .counter { font-family: 'JetBrains Mono', monospace; font-size: 0.75rem; color: #8a94a6; }
@@ -211,8 +218,11 @@ const REST_SECONDS = 90;
       cursor: pointer;
     }
     .form-message { font-size: 0.8125rem; color: #8a94a6; margin: 0.75rem 0 0; text-align: center; }
+    .tabbar { position: fixed; z-index: 2; inset-inline: 0; bottom: 0; display: flex; justify-content: space-between; padding: .75rem 1.25rem calc(.75rem + env(safe-area-inset-bottom)); background: #14181d; border-top: 1px solid rgb(245 247 250 / 6%); }
+    .tab { display: flex; flex-direction: column; align-items: center; gap: .25rem; color: #5b6472; text-decoration: none; font-size: .625rem; }.tab.is-active { color: #c9f24b; font-weight: 600; }
     @media (min-width: 720px) {
       .screen { max-width: 30rem; margin: 0 auto; }
+      .tabbar { width: 30rem; right: auto; left: 50%; transform: translateX(-50%); }
     }
   `,
   changeDetection: ChangeDetectionStrategy.OnPush,
