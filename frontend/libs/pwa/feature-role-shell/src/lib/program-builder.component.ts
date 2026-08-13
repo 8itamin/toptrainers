@@ -50,6 +50,7 @@ const INITIAL_BLOCKS: readonly ExerciseBlock[] = [
         </div>
         <div class="toolbar-right">
           <span class="hotkeys">N упр · D дубль · / поиск</span>
+          <a class="outline library-link" routerLink="/trainer/programs/library">Упражнения и тренировки</a>
           <button type="button" class="outline" (click)="preview()">Предпросмотр</button>
           <button type="button" class="fill" (click)="publish()">Опубликовать</button>
         </div>
@@ -183,6 +184,7 @@ const INITIAL_BLOCKS: readonly ExerciseBlock[] = [
       cursor: pointer;
     }
     .outline { border: 1px solid rgb(245 247 250 / 16%); background: transparent; color: #f5f7fa; }
+    .library-link { text-decoration: none; display: inline-flex; align-items: center; }
     .fill { border: 0; font-weight: 700; color: #14181d; background: #c9f24b; }
     .panels { display: flex; min-height: calc(100dvh - 4.5rem); }
     .panel { padding: 1.25rem 1rem; }

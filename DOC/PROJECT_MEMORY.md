@@ -22,6 +22,8 @@
 
 > Trainer-role recovery update (2026-08-13): the trainer workspace now identifies a client session before loading trainer data, explains the mismatch, and offers an explicit client-to-trainer transition. The server revokes all existing sessions and issues a new signed session cookie with the trainer role; public registration now defaults to trainer while retaining the client choice.
 
+> Trainer Programs routing update (2026-08-13): `/trainer/programs` is the existing trainer program-constructor design; its toolbar links to `/trainer/programs/library` for the persistent exercise library and workout templates. The former `/trainer/programs/builder` URL redirects to the constructor for compatibility.
+
 > Deployment permissions follow-up (2026-08-13): because the production deploy process uses `umask 077`, it must normalise read/traverse permissions after every `git checkout`, not only on the initial bootstrap. This is required for migration and runtime containers that execute as unprivileged users; `.git` remains private.
 
 _Обновлено: 19 июля 2026_

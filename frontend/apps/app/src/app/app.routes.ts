@@ -38,15 +38,16 @@ export const APP_ROUTES: Routes = [
     title: 'TopTrainers — Программы',
     canActivate: [authenticatedGuard],
     loadComponent: () =>
-      import('@toptrainers/pwa/feature-role-shell').then((module) => module.TrainerHomeComponent),
+      import('@toptrainers/pwa/feature-role-shell').then((module) => module.ProgramBuilderComponent),
   },
   {
-    path: 'trainer/programs/builder',
+    path: 'trainer/programs/library',
     title: 'TopTrainers — Упражнения и тренировки',
     canActivate: [authenticatedGuard],
     loadComponent: () =>
       import('@toptrainers/pwa/feature-role-shell').then((module) => module.TrainerProgramsComponent),
   },
+  { path: 'trainer/programs/builder', pathMatch: 'full', redirectTo: 'trainer/programs' },
   {
     path: 'client',
     pathMatch: 'full',
