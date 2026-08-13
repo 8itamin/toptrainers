@@ -1,4 +1,1 @@
-<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 192 192" role="img" aria-label="TopTrainers">
-  <rect width="192" height="192" rx="40" fill="#0d2235"/>
-  <path d="M38 67h116v23H38zm25 36h66v23H63z" fill="#1eb980"/>
-</svg>
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 192 192" role="img" aria-label="TopTrainers"><rect width="192" height="192" rx="48" fill="#14181D"/><path d="M36 93 96 39l60 54M36 150l60-54 60 54" fill="none" stroke="#C9F24B" stroke-width="18" stroke-linecap="round" stroke-linejoin="round"/></svg>
