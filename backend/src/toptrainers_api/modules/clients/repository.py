@@ -1,6 +1,8 @@
 from __future__ import annotations
 
-from sqlalchemy import exists, or_, select
+from datetime import datetime
+
+from sqlalchemy import exists, select, update
 from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy.sql import Select
 
@@ -34,13 +36,12 @@ def relationship_for_update_query(relationship_id: str) -> Select[tuple[TrainerC
 
 
 def client_footprint_query(client_id: str) -> Select[tuple[bool]]:
-    invitation_exists = exists(
-        select(TrainerClientInvitation.id).where(TrainerClientInvitation.client_id == client_id)
-    )
     relationship_exists = exists(
-        select(TrainerClientRelationship.id).where(TrainerClientRelationship.client_id == client_id)
+        select(TrainerClientRelationship.id).where(
+            TrainerClientRelationship.client_id == client_id
+        )
     )
-    return select(or_(invitation_exists, relationship_exists))
+    return select(relationship_exists)
 
 
 async def lock_account(session: AsyncSession, account_id: str) -> Account | None:
@@ -68,6 +69,30 @@ async def lock_relationship(
 
 async def has_client_footprint(session: AsyncSession, client_id: str) -> bool:
     return bool(await session.scalar(client_footprint_query(client_id)))
+
+
+async def cancel_pending_inbound_invitations(
+    session: AsyncSession,
+    client_id: str,
+    *,
+    resolved_at: datetime,
+    resolution_reason: str,
+) -> int:
+    result = await session.execute(
+        update(TrainerClientInvitation)
+        .where(
+            TrainerClientInvitation.client_id == client_id,
+            TrainerClientInvitation.status == InvitationStatus.PENDING.value,
+        )
+        .values(
+            status=InvitationStatus.CANCELLED.value,
+            updated_at=resolved_at,
+            resolved_at=resolved_at,
+            resolved_by_account_id=None,
+            resolution_reason=resolution_reason,
+        )
+    )
+    return result.rowcount or 0
 
 
 async def find_pending_invitation(
