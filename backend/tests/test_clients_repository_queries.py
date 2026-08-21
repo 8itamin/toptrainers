@@ -36,8 +36,7 @@ def test_relationship_lock_query_uses_for_update() -> None:
     assert sql.endswith("FOR UPDATE")
 
 
-def test_client_footprint_query_checks_both_p0_tables() -> None:
+def test_client_footprint_query_checks_relationship_only() -> None:
     sql = _sql(client_footprint_query("client-1"))
-    assert "trainer_client_invitations.client_id = 'client-1'" in sql
     assert "trainer_client_relationships.client_id = 'client-1'" in sql
-    assert " OR " in sql
+    assert "trainer_client_invitations" not in sql
