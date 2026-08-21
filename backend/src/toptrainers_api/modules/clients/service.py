@@ -15,6 +15,9 @@ from toptrainers_api.modules.clients.models import (
     TrainerClientRelationship,
 )
 
+_PENDING_INVITATION_CONSTRAINT = "uq_trainer_client_invitations_pending_pair"
+_ACTIVE_RELATIONSHIP_CONSTRAINT = "uq_trainer_client_relationships_active_pair"
+
 
 def _conflict(code: str, message: str) -> BusinessRuleError:
     return BusinessRuleError(status_code=409, code=code, message=message)
@@ -26,6 +29,24 @@ def _not_found(code: str, message: str) -> BusinessRuleError:
 
 def _forbidden(code: str, message: str) -> BusinessRuleError:
     return BusinessRuleError(status_code=403, code=code, message=message)
+
+
+def _integrity_constraint_name(error: IntegrityError) -> str | None:
+    current: object | None = error.orig
+    visited: set[int] = set()
+    while current is not None and id(current) not in visited:
+        visited.add(id(current))
+        constraint_name = getattr(current, "constraint_name", None)
+        if isinstance(constraint_name, str):
+            return constraint_name
+
+        cause = getattr(current, "__cause__", None)
+        if isinstance(cause, BaseException):
+            current = cause
+            continue
+        context = getattr(current, "__context__", None)
+        current = context if isinstance(context, BaseException) else None
+    return None
 
 
 async def has_client_p0_footprint(session: AsyncSession, client_id: str) -> bool:
@@ -63,6 +84,8 @@ async def create_invitation(
         await session.commit()
     except IntegrityError as error:
         await session.rollback()
+        if _integrity_constraint_name(error) != _PENDING_INVITATION_CONSTRAINT:
+            raise
         raise _conflict(
             "INVITATION_ALREADY_PENDING",
             "A pending invitation already exists for this trainer and client",
@@ -130,6 +153,8 @@ async def accept_invitation(
         await session.commit()
     except IntegrityError as error:
         await session.rollback()
+        if _integrity_constraint_name(error) != _ACTIVE_RELATIONSHIP_CONSTRAINT:
+            raise
         raise _conflict(
             "ACTIVE_RELATIONSHIP_EXISTS",
             "Trainer and client already have an active relationship",
