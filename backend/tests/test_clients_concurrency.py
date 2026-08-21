@@ -3,7 +3,6 @@ from __future__ import annotations
 import asyncio
 
 import pytest
-from fastapi import HTTPException, Response
 from sqlalchemy import func, select
 from sqlalchemy.ext.asyncio import AsyncSession, async_sessionmaker
 
@@ -17,6 +16,7 @@ from toptrainers_api.modules.clients.models import (
 )
 from toptrainers_api.modules.identity.models import Account
 from toptrainers_api.modules.identity.router import become_trainer
+from fastapi import Response
 
 pytestmark = pytest.mark.asyncio
 
@@ -161,7 +161,7 @@ async def test_concurrent_termination_is_idempotent(
     assert results[1].status == RelationshipStatus.TERMINATED.value
 
 
-async def test_create_invitation_vs_become_trainer_never_creates_trainer_footprint(
+async def test_create_invitation_vs_become_trainer_never_leaves_pending_for_trainer(
     p0_session_factory: async_sessionmaker[AsyncSession],
 ) -> None:
     await _account(p0_session_factory, "trainer-1", "trainer")
@@ -177,7 +177,7 @@ async def test_create_invitation_vs_become_trainer_never_creates_trainer_footpri
             session,
         )
 
-    results = await asyncio.gather(
+    await asyncio.gather(
         _run_in_session(p0_session_factory, create),
         _run_in_session(p0_session_factory, transition),
         return_exceptions=True,
@@ -185,24 +185,17 @@ async def test_create_invitation_vs_become_trainer_never_creates_trainer_footpri
 
     async with p0_session_factory() as session:
         account = await session.get(Account, "client-1")
-        invitation_count = await session.scalar(
-            select(func.count()).select_from(TrainerClientInvitation)
+        pending_count = await session.scalar(
+            select(func.count())
+            .select_from(TrainerClientInvitation)
+            .where(
+                TrainerClientInvitation.client_id == "client-1",
+                TrainerClientInvitation.status == InvitationStatus.PENDING.value,
+            )
         )
-        assert account is not None
-        if account.role == "trainer":
-            assert invitation_count == 0
-            assert any(
-                isinstance(result, BusinessRuleError)
-                and result.code == "TARGET_NOT_CLIENT"
-                for result in results
-            )
-        else:
-            assert account.role == "client"
-            assert invitation_count == 1
-            assert any(
-                isinstance(result, HTTPException)
-                and result.status_code == 409
-                and isinstance(result.detail, dict)
-                and result.detail.get("code") == "BECOME_TRAINER_P0_FOOTPRINT_EXISTS"
-                for result in results
-            )
+        relationship_count = await session.scalar(
+            select(func.count()).select_from(TrainerClientRelationship)
+        )
+        assert account is not None and account.role == "trainer"
+        assert pending_count == 0
+        assert relationship_count == 0
