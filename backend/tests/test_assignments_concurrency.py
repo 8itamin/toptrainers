@@ -115,6 +115,10 @@ def payload(request_id: str = "race-request") -> CreateWorkoutAssignmentRequest:
     )
 
 
+async def _release_gate(session: AsyncSession) -> None:
+    await session.rollback()
+
+
 async def test_concurrent_same_request_id_creates_one_assignment(
     p0_session_factory: async_sessionmaker[AsyncSession],
 ) -> None:
@@ -134,8 +138,21 @@ async def test_create_wins_then_termination_cancels_new_planned_assignment(
     p0_session_factory: async_sessionmaker[AsyncSession],
 ) -> None:
     await seed_sources(p0_session_factory)
-    async with p0_session_factory() as create_session, p0_session_factory() as terminate_session:
-        assert await clients_repository.lock_account(create_session, CLIENT_ID) is not None
+    async with (
+        p0_session_factory() as gate_session,
+        p0_session_factory() as create_session,
+        p0_session_factory() as terminate_session,
+    ):
+        assert await clients_repository.lock_account(gate_session, CLIENT_ID) is not None
+        create_task = asyncio.create_task(
+            assignment_service.create_assignment(
+                create_session,
+                TRAINER_ID,
+                payload("create-wins"),
+            )
+        )
+        await asyncio.sleep(0.05)
+        assert not create_task.done()
         terminate_task = asyncio.create_task(
             clients_service.terminate_relationship(
                 terminate_session,
@@ -144,11 +161,9 @@ async def test_create_wins_then_termination_cancels_new_planned_assignment(
             )
         )
         await asyncio.sleep(0.05)
-        created = await assignment_service.create_assignment(
-            create_session,
-            TRAINER_ID,
-            payload("create-wins"),
-        )
+        assert not terminate_task.done()
+        await _release_gate(gate_session)
+        created = await asyncio.wait_for(create_task, timeout=3)
         await asyncio.wait_for(terminate_task, timeout=3)
 
     async with p0_session_factory() as session:
@@ -161,8 +176,21 @@ async def test_termination_wins_then_create_gets_active_relationship_409(
     p0_session_factory: async_sessionmaker[AsyncSession],
 ) -> None:
     await seed_sources(p0_session_factory)
-    async with p0_session_factory() as terminate_session, p0_session_factory() as create_session:
-        assert await clients_repository.lock_account(terminate_session, CLIENT_ID) is not None
+    async with (
+        p0_session_factory() as gate_session,
+        p0_session_factory() as terminate_session,
+        p0_session_factory() as create_session,
+    ):
+        assert await clients_repository.lock_account(gate_session, CLIENT_ID) is not None
+        terminate_task = asyncio.create_task(
+            clients_service.terminate_relationship(
+                terminate_session,
+                TRAINER_ID,
+                RELATIONSHIP_ID,
+            )
+        )
+        await asyncio.sleep(0.05)
+        assert not terminate_task.done()
         create_task = asyncio.create_task(
             assignment_service.create_assignment(
                 create_session,
@@ -171,11 +199,9 @@ async def test_termination_wins_then_create_gets_active_relationship_409(
             )
         )
         await asyncio.sleep(0.05)
-        await clients_service.terminate_relationship(
-            terminate_session,
-            TRAINER_ID,
-            RELATIONSHIP_ID,
-        )
+        assert not create_task.done()
+        await _release_gate(gate_session)
+        await asyncio.wait_for(terminate_task, timeout=3)
         with pytest.raises(BusinessRuleError) as caught:
             await asyncio.wait_for(create_task, timeout=3)
         assert caught.value.code == "ACTIVE_RELATIONSHIP_REQUIRED"
@@ -197,8 +223,21 @@ async def test_termination_wins_reschedule_returns_not_planned(
         )
         assignment_id = created.assignment.id
 
-    async with p0_session_factory() as terminate_session, p0_session_factory() as mutate_session:
-        assert await clients_repository.lock_account(terminate_session, CLIENT_ID) is not None
+    async with (
+        p0_session_factory() as gate_session,
+        p0_session_factory() as terminate_session,
+        p0_session_factory() as mutate_session,
+    ):
+        assert await clients_repository.lock_account(gate_session, CLIENT_ID) is not None
+        terminate_task = asyncio.create_task(
+            clients_service.terminate_relationship(
+                terminate_session,
+                TRAINER_ID,
+                RELATIONSHIP_ID,
+            )
+        )
+        await asyncio.sleep(0.05)
+        assert not terminate_task.done()
         mutate_task = asyncio.create_task(
             assignment_service.reschedule_assignment(
                 mutate_session,
@@ -208,11 +247,9 @@ async def test_termination_wins_reschedule_returns_not_planned(
             )
         )
         await asyncio.sleep(0.05)
-        await clients_service.terminate_relationship(
-            terminate_session,
-            TRAINER_ID,
-            RELATIONSHIP_ID,
-        )
+        assert not mutate_task.done()
+        await _release_gate(gate_session)
+        await asyncio.wait_for(terminate_task, timeout=3)
         with pytest.raises(BusinessRuleError) as caught:
             await asyncio.wait_for(mutate_task, timeout=3)
         assert caught.value.code == "ASSIGNMENT_NOT_PLANNED"
