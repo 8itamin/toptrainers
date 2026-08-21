@@ -20,6 +20,9 @@ class InvitationResponse(BaseModel):
     status: InvitationStatus
     created_at: datetime
     updated_at: datetime
+    resolved_at: datetime | None
+    resolved_by_account_id: str | None
+    resolution_reason: str | None
 
 
 class RelationshipResponse(BaseModel):
