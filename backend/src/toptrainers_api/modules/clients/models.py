@@ -57,6 +57,11 @@ class TrainerClientInvitation(Base):
     updated_at: Mapped[datetime] = mapped_column(
         DateTime(timezone=True), server_default=func.now(), onupdate=func.now(), nullable=False
     )
+    resolved_at: Mapped[datetime | None] = mapped_column(DateTime(timezone=True), nullable=True)
+    resolved_by_account_id: Mapped[str | None] = mapped_column(
+        ForeignKey("accounts.id"), nullable=True
+    )
+    resolution_reason: Mapped[str | None] = mapped_column(String(64), nullable=True)
 
 
 class TrainerClientRelationship(Base):
