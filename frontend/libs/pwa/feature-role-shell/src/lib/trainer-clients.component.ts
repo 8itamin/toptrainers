@@ -33,8 +33,6 @@ interface Client {
 const RIBBON_FULL: readonly RibbonState[] = ['done', 'done', 'idle', 'done', 'done', 'done', 'future'];
 const RIBBON_LOW: readonly RibbonState[] = ['done', 'idle', 'idle', 'future', 'future', 'future', 'future'];
 
-const DEFAULT_CLIENT_ID = 'ivan';
-
 const CLIENTS: readonly Client[] = [
   {
     id: 'ivan', name: 'Иван П.', meta: 'стрик 30 дней', metaTone: 'muted',
