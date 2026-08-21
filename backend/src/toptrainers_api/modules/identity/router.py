@@ -247,7 +247,10 @@ async def become_trainer(
     )
     session.add(auth_session)
     await session.commit()
-    _set_session_cookie(response, create_token(stored_account.id, stored_account.role, auth_session.id))
+    _set_session_cookie(
+        response,
+        create_token(stored_account.id, stored_account.role, auth_session.id),
+    )
     return AuthResponse(account_id=stored_account.id, role=UserRole.TRAINER)
 
 

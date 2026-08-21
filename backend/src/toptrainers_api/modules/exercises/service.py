@@ -18,14 +18,26 @@ async def list_exercises(session: AsyncSession, account: dict[str, object]) -> l
     return list(await repository.list_for_trainer(session, require_trainer(account)))
 
 
-async def create_exercise(session: AsyncSession, account: dict[str, object], payload: ExerciseCreate) -> Exercise:
-    exercise = Exercise(id=str(uuid4()), trainer_id=require_trainer(account), **payload.model_dump())
+async def create_exercise(
+    session: AsyncSession,
+    account: dict[str, object],
+    payload: ExerciseCreate,
+) -> Exercise:
+    exercise = Exercise(
+        id=str(uuid4()),
+        trainer_id=require_trainer(account),
+        **payload.model_dump(),
+    )
     session.add(exercise)
     await session.commit()
     await session.refresh(exercise)
     return exercise
 
 
-async def get_owned_exercise_ids(session: AsyncSession, trainer_id: str, exercise_ids: set[str]) -> set[str]:
+async def get_owned_exercise_ids(
+    session: AsyncSession,
+    trainer_id: str,
+    exercise_ids: set[str],
+) -> set[str]:
     """Public cross-module contract: return only exercises owned by this trainer."""
     return await repository.owned_ids(session, trainer_id, exercise_ids)

@@ -71,30 +71,27 @@ def _build_link(path: str, token: str) -> str:
 
 
 def _send_smtp(recipient: str, subject: str, html: str) -> None:
-    if not all(
-        [
-            settings.smtp_host,
-            settings.smtp_username,
-            settings.smtp_password,
-            settings.smtp_from_email,
-        ]
-    ):
+    smtp_host = settings.smtp_host
+    smtp_username = settings.smtp_username
+    smtp_password = settings.smtp_password
+    smtp_from_email = settings.smtp_from_email
+    if not smtp_host or not smtp_username or not smtp_password or not smtp_from_email:
         raise RuntimeError("SMTP is not configured")
 
     message = EmailMessage()
-    message["From"] = settings.smtp_from_email
+    message["From"] = smtp_from_email
     message["To"] = recipient
     message["Subject"] = subject
     message.set_content("Откройте письмо в почтовом клиенте с поддержкой HTML.")
     message.add_alternative(html, subtype="html")
     if settings.smtp_use_starttls:
-        with smtplib.SMTP(settings.smtp_host, settings.smtp_port, timeout=15) as client:
+        with smtplib.SMTP(smtp_host, settings.smtp_port, timeout=15) as client:
             client.starttls(context=ssl.create_default_context())
-            client.login(settings.smtp_username, settings.smtp_password)
+            client.login(smtp_username, smtp_password)
             client.send_message(message)
     else:
-        with smtplib.SMTP_SSL(settings.smtp_host, settings.smtp_port, timeout=15) as client:
-            client.login(settings.smtp_username, settings.smtp_password)
+        with smtplib.SMTP_SSL(smtp_host, settings.smtp_port, timeout=15) as client:
+            client.login(smtp_username, smtp_password)
             client.send_message(message)
 
 

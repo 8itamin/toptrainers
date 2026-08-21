@@ -1,10 +1,14 @@
+from typing import cast
+
 from fastapi import APIRouter, Depends
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from toptrainers_api.core.auth import current_account
 from toptrainers_api.core.db import get_session
 from toptrainers_api.modules.workouts import service
+from toptrainers_api.modules.workouts.models import Workout
 from toptrainers_api.modules.workouts.schemas import (
+    WorkoutBlockKind,
     WorkoutBlockResponse,
     WorkoutCreate,
     WorkoutExerciseResponse,
@@ -14,7 +18,7 @@ from toptrainers_api.modules.workouts.schemas import (
 router = APIRouter(prefix="/workouts", tags=["workouts"])
 
 
-def to_response(workout: object) -> WorkoutResponse:
+def to_response(workout: Workout) -> WorkoutResponse:
     return WorkoutResponse(
         id=workout.id,
         trainer_id=workout.trainer_id,
@@ -23,7 +27,7 @@ def to_response(workout: object) -> WorkoutResponse:
         blocks=[
             WorkoutBlockResponse(
                 id=block.id,
-                kind=block.kind,
+                kind=cast(WorkoutBlockKind, block.kind),
                 exercises=[
                     WorkoutExerciseResponse(
                         id=item.id,
@@ -42,9 +46,13 @@ def to_response(workout: object) -> WorkoutResponse:
 
 @router.get("", response_model=list[WorkoutResponse])
 async def list_workouts(
-    account: dict[str, object] = Depends(current_account), session: AsyncSession = Depends(get_session)
+    account: dict[str, object] = Depends(current_account),
+    session: AsyncSession = Depends(get_session),
 ) -> list[WorkoutResponse]:
-    return [to_response(workout) for workout in await service.list_workouts(session, account)]
+    return [
+        to_response(workout)
+        for workout in await service.list_workouts(session, account)
+    ]
 
 
 @router.post("", response_model=WorkoutResponse, status_code=201)

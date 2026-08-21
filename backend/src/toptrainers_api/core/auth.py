@@ -4,11 +4,10 @@ import base64
 import hashlib
 import hmac
 import json
-import os
 import secrets
 import time
 from datetime import UTC, datetime
-from typing import Annotated
+from typing import Annotated, cast
 
 from fastapi import Depends, HTTPException, Request, status
 from fastapi.security import HTTPAuthorizationCredentials, HTTPBearer
@@ -59,8 +58,12 @@ def decode_token(token: str) -> dict[str, object]:
         actual = base64.urlsafe_b64decode(encoded_signature + "=")
         if not hmac.compare_digest(expected, actual):
             raise ValueError
-        payload = json.loads(base64.urlsafe_b64decode(body + "=="))
-        if int(payload["exp"]) < int(time.time()):
+        payload = cast(
+            dict[str, object],
+            json.loads(base64.urlsafe_b64decode(body + "==")),
+        )
+        expiration = cast(int | str | bytes | bytearray, payload["exp"])
+        if int(expiration) < int(time.time()):
             raise ValueError
         return payload
     except (ValueError, KeyError, TypeError, json.JSONDecodeError):

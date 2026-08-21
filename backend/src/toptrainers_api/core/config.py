@@ -51,7 +51,7 @@ class Settings(BaseSettings):
         return [origin.strip() for origin in self.cors_origins_csv.split(",") if origin.strip()]
 
     @model_validator(mode="after")
-    def validate_production_requirements(self) -> "Settings":
+    def validate_production_requirements(self) -> Settings:
         if self.environment != "production":
             return self
 
