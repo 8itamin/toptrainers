@@ -22,8 +22,9 @@ async def get_for_trainer(
     trainer_id: str,
     workout_id: str,
 ) -> Workout | None:
-    return await session.scalar(
+    workout: Workout | None = await session.scalar(
         select(Workout)
         .where(Workout.trainer_id == trainer_id, Workout.id == workout_id)
         .options(selectinload(Workout.blocks).selectinload(WorkoutBlock.items))
     )
+    return workout

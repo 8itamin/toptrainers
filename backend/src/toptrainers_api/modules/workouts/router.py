@@ -4,6 +4,7 @@ from sqlalchemy.ext.asyncio import AsyncSession
 from toptrainers_api.core.auth import current_account
 from toptrainers_api.core.db import get_session
 from toptrainers_api.modules.workouts import service
+from toptrainers_api.modules.workouts.models import Workout
 from toptrainers_api.modules.workouts.schemas import (
     WorkoutBlockResponse,
     WorkoutCreate,
@@ -14,7 +15,7 @@ from toptrainers_api.modules.workouts.schemas import (
 router = APIRouter(prefix="/workouts", tags=["workouts"])
 
 
-def to_response(workout: object) -> WorkoutResponse:
+def to_response(workout: Workout) -> WorkoutResponse:
     return WorkoutResponse(
         id=workout.id,
         trainer_id=workout.trainer_id,
