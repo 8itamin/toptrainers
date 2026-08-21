@@ -1,6 +1,6 @@
 from __future__ import annotations
 
-from typing import Annotated
+from typing import Annotated, Any
 
 from fastapi import APIRouter, Depends, HTTPException, status
 from sqlalchemy.ext.asyncio import AsyncSession
@@ -24,7 +24,7 @@ router = APIRouter(prefix="/clients", tags=["clients"])
 CurrentAccountDep = Annotated[dict[str, object], Depends(current_account)]
 SessionDep = Annotated[AsyncSession, Depends(get_session)]
 
-_BUSINESS_RESPONSES = {
+_BUSINESS_RESPONSES: dict[int | str, dict[str, Any]] = {
     403: {"model": BusinessErrorResponse},
     404: {"model": BusinessErrorResponse},
     409: {"model": BusinessErrorResponse},
