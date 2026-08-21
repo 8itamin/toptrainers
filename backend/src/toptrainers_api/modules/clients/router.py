@@ -1,5 +1,7 @@
 from __future__ import annotations
 
+from typing import Annotated
+
 from fastapi import APIRouter, Depends, HTTPException, status
 from sqlalchemy.ext.asyncio import AsyncSession
 
@@ -18,6 +20,9 @@ from toptrainers_api.modules.clients.schemas import (
 )
 
 router = APIRouter(prefix="/clients", tags=["clients"])
+
+CurrentAccountDep = Annotated[dict[str, object], Depends(current_account)]
+SessionDep = Annotated[AsyncSession, Depends(get_session)]
 
 _BUSINESS_RESPONSES = {
     403: {"model": BusinessErrorResponse},
@@ -45,8 +50,8 @@ def _require_role(account: dict[str, object], *roles: str) -> None:
 )
 async def create_invitation(
     payload: CreateInvitationRequest,
-    account: dict[str, object] = Depends(current_account),
-    session: AsyncSession = Depends(get_session),
+    account: CurrentAccountDep,
+    session: SessionDep,
 ) -> InvitationResponse:
     _require_role(account, "trainer")
     try:
@@ -65,8 +70,8 @@ async def create_invitation(
 )
 async def accept_invitation(
     invitation_id: str,
-    account: dict[str, object] = Depends(current_account),
-    session: AsyncSession = Depends(get_session),
+    account: CurrentAccountDep,
+    session: SessionDep,
 ) -> RelationshipResponse:
     _require_role(account, "client")
     try:
@@ -85,8 +90,8 @@ async def accept_invitation(
 )
 async def reject_invitation(
     invitation_id: str,
-    account: dict[str, object] = Depends(current_account),
-    session: AsyncSession = Depends(get_session),
+    account: CurrentAccountDep,
+    session: SessionDep,
 ) -> InvitationResponse:
     _require_role(account, "client")
     try:
@@ -103,8 +108,8 @@ async def reject_invitation(
 )
 async def cancel_invitation(
     invitation_id: str,
-    account: dict[str, object] = Depends(current_account),
-    session: AsyncSession = Depends(get_session),
+    account: CurrentAccountDep,
+    session: SessionDep,
 ) -> InvitationResponse:
     _require_role(account, "trainer")
     try:
@@ -121,8 +126,8 @@ async def cancel_invitation(
 )
 async def terminate_relationship(
     relationship_id: str,
-    account: dict[str, object] = Depends(current_account),
-    session: AsyncSession = Depends(get_session),
+    account: CurrentAccountDep,
+    session: SessionDep,
 ) -> RelationshipResponse:
     _require_role(account, "trainer", "client")
     try:
