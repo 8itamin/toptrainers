@@ -17,6 +17,11 @@ P0_TABLES = {
     "trainer_client_invitations",
     "trainer_client_relationships",
 }
+V2_INVITATION_COLUMNS = {
+    "resolved_at",
+    "resolved_by_account_id",
+    "resolution_reason",
+}
 
 
 def _test_database_url() -> str:
@@ -45,18 +50,28 @@ async def _reset_public_schema(database_url: str) -> None:
         await engine.dispose()
 
 
-async def _database_state(database_url: str) -> tuple[set[str], str]:
+async def _database_state(database_url: str) -> tuple[set[str], str, set[str]]:
     engine = create_async_engine(database_url)
     try:
         async with engine.connect() as connection:
             tables = await connection.run_sync(
                 lambda sync_connection: set(inspect(sync_connection).get_table_names())
             )
+            invitation_columns: set[str] = set()
+            if "trainer_client_invitations" in tables:
+                invitation_columns = await connection.run_sync(
+                    lambda sync_connection: {
+                        column["name"]
+                        for column in inspect(sync_connection).get_columns(
+                            "trainer_client_invitations"
+                        )
+                    }
+                )
             revision = await connection.scalar(text("SELECT version_num FROM alembic_version"))
     finally:
         await engine.dispose()
     assert isinstance(revision, str)
-    return tables, revision
+    return tables, revision, invitation_columns
 
 
 def test_p0_alembic_upgrade_downgrade_upgrade_roundtrip(monkeypatch: pytest.MonkeyPatch) -> None:
@@ -67,19 +82,22 @@ def test_p0_alembic_upgrade_downgrade_upgrade_roundtrip(monkeypatch: pytest.Monk
     asyncio.run(_reset_public_schema(database_url))
     try:
         command.upgrade(config, "head")
-        tables, revision = asyncio.run(_database_state(database_url))
+        tables, revision, invitation_columns = asyncio.run(_database_state(database_url))
         assert tables >= P0_TABLES
+        assert invitation_columns >= V2_INVITATION_COLUMNS
         assert revision == "20260822_0005"
 
         command.downgrade(config, "20260813_0004")
-        tables, revision = asyncio.run(_database_state(database_url))
+        tables, revision, invitation_columns = asyncio.run(_database_state(database_url))
         assert P0_TABLES.isdisjoint(tables)
+        assert invitation_columns == set()
         assert "accounts" in tables
         assert revision == "20260813_0004"
 
         command.upgrade(config, "head")
-        tables, revision = asyncio.run(_database_state(database_url))
+        tables, revision, invitation_columns = asyncio.run(_database_state(database_url))
         assert tables >= P0_TABLES
+        assert invitation_columns >= V2_INVITATION_COLUMNS
         assert revision == "20260822_0005"
     finally:
         asyncio.run(_reset_public_schema(database_url))
