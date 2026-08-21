@@ -254,6 +254,9 @@ async def become_trainer(
             },
         )
 
+    await clients_service.cancel_pending_inbound_invitations_for_role_change(
+        session, stored_account.id
+    )
     stored_account.role = UserRole.TRAINER.value
     await revoke_account_sessions(session, stored_account.id)
     auth_session = AuthSession(
