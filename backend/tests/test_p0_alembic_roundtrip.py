@@ -68,7 +68,7 @@ def test_p0_alembic_upgrade_downgrade_upgrade_roundtrip(monkeypatch: pytest.Monk
     try:
         command.upgrade(config, "head")
         tables, revision = asyncio.run(_database_state(database_url))
-        assert P0_TABLES <= tables
+        assert tables >= P0_TABLES
         assert revision == "20260822_0005"
 
         command.downgrade(config, "20260813_0004")
@@ -79,7 +79,7 @@ def test_p0_alembic_upgrade_downgrade_upgrade_roundtrip(monkeypatch: pytest.Monk
 
         command.upgrade(config, "head")
         tables, revision = asyncio.run(_database_state(database_url))
-        assert P0_TABLES <= tables
+        assert tables >= P0_TABLES
         assert revision == "20260822_0005"
     finally:
         asyncio.run(_reset_public_schema(database_url))
