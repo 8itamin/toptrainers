@@ -62,7 +62,8 @@ def decode_token(token: str) -> dict[str, object]:
             dict[str, object],
             json.loads(base64.urlsafe_b64decode(body + "==")),
         )
-        if int(payload["exp"]) < int(time.time()):
+        expiration = cast(int | str | bytes | bytearray, payload["exp"])
+        if int(expiration) < int(time.time()):
             raise ValueError
         return payload
     except (ValueError, KeyError, TypeError, json.JSONDecodeError):

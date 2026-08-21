@@ -1,3 +1,5 @@
+from typing import cast
+
 from fastapi import APIRouter, Depends
 from sqlalchemy.ext.asyncio import AsyncSession
 
@@ -6,6 +8,7 @@ from toptrainers_api.core.db import get_session
 from toptrainers_api.modules.workouts import service
 from toptrainers_api.modules.workouts.models import Workout
 from toptrainers_api.modules.workouts.schemas import (
+    WorkoutBlockKind,
     WorkoutBlockResponse,
     WorkoutCreate,
     WorkoutExerciseResponse,
@@ -24,7 +27,7 @@ def to_response(workout: Workout) -> WorkoutResponse:
         blocks=[
             WorkoutBlockResponse(
                 id=block.id,
-                kind=block.kind,
+                kind=cast(WorkoutBlockKind, block.kind),
                 exercises=[
                     WorkoutExerciseResponse(
                         id=item.id,
