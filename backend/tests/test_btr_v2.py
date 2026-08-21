@@ -19,7 +19,6 @@ from toptrainers_api.modules.identity.models import Account
 from toptrainers_api.modules.identity.router import become_trainer
 
 pytestmark = pytest.mark.asyncio
-
 ROLE_CHANGE_REASON = "CLIENT_ROLE_CHANGED_TO_TRAINER"
 
 
@@ -132,7 +131,7 @@ async def test_btr_v2_05_transition_cancels_all_inbound_pending_invitations(
                 TrainerClientInvitation.status == InvitationStatus.PENDING.value,
             )
         )
-        cancelled = (
+        invitations = (
             await session.scalars(
                 select(TrainerClientInvitation).where(
                     TrainerClientInvitation.client_id == "client-1"
@@ -140,8 +139,8 @@ async def test_btr_v2_05_transition_cancels_all_inbound_pending_invitations(
             )
         ).all()
         assert pending == 0
-        assert len(cancelled) == 2
-        assert all(row.resolution_reason == ROLE_CHANGE_REASON for row in cancelled)
+        assert len(invitations) == 2
+        assert all(row.resolution_reason == ROLE_CHANGE_REASON for row in invitations)
 
 
 async def test_btr_v2_06_rejected_invitation_does_not_block_transition(
@@ -216,11 +215,25 @@ async def test_btr_v2_10_become_trainer_wins_deterministic_race(
         )
         await asyncio.sleep(0.05)
         assert not accept_task.done()
-        result = await _transition(btr_session)
-        assert result.role.value == "trainer"
-        with pytest.raises(BusinessRuleError) as error:
+
+        result = None
+        transition_error = None
+        try:
+            result = await _transition(btr_session)
+        except HTTPException as error:
+            transition_error = error
+            await btr_session.rollback()
+
+        accept_error = None
+        try:
             await accept_task
-        assert error.value.code == "INVITATION_CANCELLED_BY_ROLE_CHANGE"
+        except BusinessRuleError as error:
+            accept_error = error
+
+        assert transition_error is None
+        assert result is not None and result.role.value == "trainer"
+        assert accept_error is not None
+        assert accept_error.code == "INVITATION_CANCELLED_BY_ROLE_CHANGE"
     async with p0_session_factory() as session:
         relationship_count = await session.scalar(
             select(func.count()).select_from(TrainerClientRelationship)
