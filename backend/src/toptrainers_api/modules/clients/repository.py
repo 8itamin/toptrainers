@@ -77,8 +77,8 @@ async def cancel_pending_inbound_invitations(
     *,
     resolved_at: datetime,
     resolution_reason: str,
-) -> int:
-    result = await session.execute(
+) -> None:
+    await session.execute(
         update(TrainerClientInvitation)
         .where(
             TrainerClientInvitation.client_id == client_id,
@@ -92,7 +92,6 @@ async def cancel_pending_inbound_invitations(
             resolution_reason=resolution_reason,
         )
     )
-    return result.rowcount or 0
 
 
 async def find_pending_invitation(
