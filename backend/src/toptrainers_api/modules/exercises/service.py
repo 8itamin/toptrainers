@@ -41,3 +41,12 @@ async def get_owned_exercise_ids(
 ) -> set[str]:
     """Public cross-module contract: return only exercises owned by this trainer."""
     return await repository.owned_ids(session, trainer_id, exercise_ids)
+
+
+async def get_owned_exercises(
+    session: AsyncSession,
+    trainer_id: str,
+    exercise_ids: set[str],
+) -> list[Exercise]:
+    """Public cross-module contract returning trainer-owned Exercise rows."""
+    return list(await repository.owned_by_ids(session, trainer_id, exercise_ids))
