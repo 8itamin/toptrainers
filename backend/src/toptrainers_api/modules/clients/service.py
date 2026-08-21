@@ -62,8 +62,8 @@ async def has_client_p0_footprint(session: AsyncSession, client_id: str) -> bool
 
 async def cancel_pending_inbound_invitations_for_role_change(
     session: AsyncSession, client_id: str
-) -> int:
-    return await repository.cancel_pending_inbound_invitations(
+) -> None:
+    await repository.cancel_pending_inbound_invitations(
         session,
         client_id,
         resolved_at=datetime.now(UTC),
