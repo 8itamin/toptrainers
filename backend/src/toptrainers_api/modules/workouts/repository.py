@@ -17,7 +17,11 @@ async def list_for_trainer(session: AsyncSession, trainer_id: str) -> Sequence[W
     return rows.unique().all()
 
 
-async def get_for_trainer(session: AsyncSession, trainer_id: str, workout_id: str) -> Workout | None:
+async def get_for_trainer(
+    session: AsyncSession,
+    trainer_id: str,
+    workout_id: str,
+) -> Workout | None:
     return await session.scalar(
         select(Workout)
         .where(Workout.trainer_id == trainer_id, Workout.id == workout_id)

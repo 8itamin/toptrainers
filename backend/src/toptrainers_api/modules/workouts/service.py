@@ -13,16 +13,36 @@ async def list_workouts(session: AsyncSession, account: dict[str, object]) -> li
     return list(await repository.list_for_trainer(session, require_trainer(account)))
 
 
-async def create_workout(session: AsyncSession, account: dict[str, object], payload: WorkoutCreate) -> Workout:
+async def create_workout(
+    session: AsyncSession,
+    account: dict[str, object],
+    payload: WorkoutCreate,
+) -> Workout:
     trainer_id = require_trainer(account)
-    exercise_ids = {exercise.exercise_id for block in payload.blocks for exercise in block.exercises}
+    exercise_ids = {
+        exercise.exercise_id
+        for block in payload.blocks
+        for exercise in block.exercises
+    }
     owned_ids = await get_owned_exercise_ids(session, trainer_id, exercise_ids)
     if owned_ids != exercise_ids:
-        raise HTTPException(status_code=422, detail="Every workout exercise must belong to the trainer")
+        raise HTTPException(
+            status_code=422,
+            detail="Every workout exercise must belong to the trainer",
+        )
 
-    workout = Workout(id=str(uuid4()), trainer_id=trainer_id, title=payload.title, description=payload.description)
+    workout = Workout(
+        id=str(uuid4()),
+        trainer_id=trainer_id,
+        title=payload.title,
+        description=payload.description,
+    )
     for block_position, block_payload in enumerate(payload.blocks):
-        block = WorkoutBlock(id=str(uuid4()), kind=block_payload.kind, position=block_position)
+        block = WorkoutBlock(
+            id=str(uuid4()),
+            kind=block_payload.kind,
+            position=block_position,
+        )
         for exercise_position, exercise_payload in enumerate(block_payload.exercises):
             block.items.append(
                 WorkoutExercise(

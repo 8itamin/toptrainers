@@ -22,7 +22,10 @@ class WorkoutBlock(Base):
     __tablename__ = "workout_blocks"
 
     id: Mapped[str] = mapped_column(String(36), primary_key=True)
-    workout_id: Mapped[str] = mapped_column(ForeignKey("workouts.id", ondelete="CASCADE"), index=True)
+    workout_id: Mapped[str] = mapped_column(
+        ForeignKey("workouts.id", ondelete="CASCADE"),
+        index=True,
+    )
     kind: Mapped[str] = mapped_column(String(32))
     position: Mapped[int] = mapped_column(Integer)
     workout: Mapped[Workout] = relationship(back_populates="blocks")
@@ -35,8 +38,14 @@ class WorkoutExercise(Base):
     __tablename__ = "workout_exercises"
 
     id: Mapped[str] = mapped_column(String(36), primary_key=True)
-    workout_block_id: Mapped[str] = mapped_column(ForeignKey("workout_blocks.id", ondelete="CASCADE"), index=True)
-    exercise_id: Mapped[str] = mapped_column(ForeignKey("exercises.id", ondelete="RESTRICT"), index=True)
+    workout_block_id: Mapped[str] = mapped_column(
+        ForeignKey("workout_blocks.id", ondelete="CASCADE"),
+        index=True,
+    )
+    exercise_id: Mapped[str] = mapped_column(
+        ForeignKey("exercises.id", ondelete="RESTRICT"),
+        index=True,
+    )
     position: Mapped[int] = mapped_column(Integer)
     weight_kg: Mapped[Decimal | None] = mapped_column(Numeric(6, 2), nullable=True)
     sets: Mapped[int] = mapped_column(Integer)

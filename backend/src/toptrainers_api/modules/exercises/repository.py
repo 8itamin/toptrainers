@@ -8,7 +8,9 @@ from toptrainers_api.modules.exercises.models import Exercise
 
 async def list_for_trainer(session: AsyncSession, trainer_id: str) -> Sequence[Exercise]:
     rows = await session.scalars(
-        select(Exercise).where(Exercise.trainer_id == trainer_id).order_by(Exercise.title, Exercise.id)
+        select(Exercise)
+        .where(Exercise.trainer_id == trainer_id)
+        .order_by(Exercise.title, Exercise.id)
     )
     return rows.all()
 

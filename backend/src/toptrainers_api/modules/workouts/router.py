@@ -42,9 +42,13 @@ def to_response(workout: object) -> WorkoutResponse:
 
 @router.get("", response_model=list[WorkoutResponse])
 async def list_workouts(
-    account: dict[str, object] = Depends(current_account), session: AsyncSession = Depends(get_session)
+    account: dict[str, object] = Depends(current_account),
+    session: AsyncSession = Depends(get_session),
 ) -> list[WorkoutResponse]:
-    return [to_response(workout) for workout in await service.list_workouts(session, account)]
+    return [
+        to_response(workout)
+        for workout in await service.list_workouts(session, account)
+    ]
 
 
 @router.post("", response_model=WorkoutResponse, status_code=201)
