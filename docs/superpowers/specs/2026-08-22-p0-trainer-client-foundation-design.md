@@ -69,3 +69,8 @@ Accept and BecomeTrainer both acquire the same Client Account row first, so only
 - BecomeTrainer wins: it cancels pending inbound Invitations, changes role and commits; waiting Accept then locks the Invitation, sees system cancellation reason, and returns `409 INVITATION_CANCELLED_BY_ROLE_CHANGE`; no Relationship is created.
 
 CreateInvitation also locks the target Client Account. If CreateInvitation wins first, BecomeTrainer subsequently cancels the new pending Invitation. If BecomeTrainer wins first, CreateInvitation observes TRAINER role and fails; no pending invitation remains for a trainer account.
+
+## Verification evidence
+- Tests-only RED against v1 semantics: CI run #46 = 8 failed / 57 passed; failures were the expected v2 behavior differences.
+- GREEN on v2: CI run #60 = 65 passed / 1 third-party warning; `ruff check .`, `mypy src` and frontend checks all passed.
+- Final documentation-only head verification: CI run #61 = 65 passed / 1 third-party warning; backend quality and frontend checks all passed.
