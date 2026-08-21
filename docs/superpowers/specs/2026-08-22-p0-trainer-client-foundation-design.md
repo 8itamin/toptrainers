@@ -72,5 +72,5 @@ CreateInvitation also locks the target Client Account. If CreateInvitation wins 
 
 ## Verification evidence
 - Tests-only RED against v1 semantics: CI run #46 = 8 failed / 57 passed; failures were the expected v2 behavior differences.
-- GREEN on v2: CI run #60 = 65 passed / 1 third-party warning; `ruff check .`, `mypy src` and frontend checks all passed.
-- Final documentation-only head verification: CI run #61 = 65 passed / 1 third-party warning; backend quality and frontend checks all passed.
+- GREEN after v2 implementation: 65 backend tests passed, including BTR-V2-01…11, deterministic Accept-vs-BecomeTrainer races and the Alembic roundtrip.
+- Repository-wide backend quality (`ruff check .`, `mypy src`) and frontend lint/typecheck/build passed on the final implementation.
