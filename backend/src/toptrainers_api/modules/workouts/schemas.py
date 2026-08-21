@@ -17,9 +17,12 @@ class WorkoutBlockCreate(BaseModel):
     exercises: list[WorkoutExerciseCreate] = Field(min_length=1, max_length=100)
 
 
-class WorkoutCreate(BaseModel):
+class WorkoutBase(BaseModel):
     title: str = Field(min_length=1, max_length=160)
     description: str = Field(default="", max_length=2_000)
+
+
+class WorkoutCreate(WorkoutBase):
     blocks: list[WorkoutBlockCreate] = Field(min_length=1, max_length=12)
 
 
@@ -33,7 +36,7 @@ class WorkoutBlockResponse(BaseModel):
     exercises: list[WorkoutExerciseResponse]
 
 
-class WorkoutResponse(WorkoutCreate):
+class WorkoutResponse(WorkoutBase):
     id: str
     trainer_id: str
     blocks: list[WorkoutBlockResponse]

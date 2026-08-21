@@ -2,8 +2,8 @@
 
 Revision ID: 20260719_0001
 """
-from alembic import op
 import sqlalchemy as sa
+from alembic import op
 
 revision = "20260719_0001"
 down_revision = None

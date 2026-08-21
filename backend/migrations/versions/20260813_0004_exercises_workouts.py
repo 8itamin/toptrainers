@@ -4,9 +4,8 @@ Revision ID: 20260813_0004
 Revises: 20260813_0003
 """
 
-from alembic import op
 import sqlalchemy as sa
-
+from alembic import op
 
 revision = "20260813_0004"
 down_revision = "20260813_0003"
@@ -61,12 +60,24 @@ def upgrade() -> None:
         sa.Column("weight_kg", sa.Numeric(precision=6, scale=2), nullable=True),
         sa.Column("sets", sa.Integer(), nullable=False),
         sa.Column("reps", sa.Integer(), nullable=False),
-        sa.ForeignKeyConstraint(["workout_block_id"], ["workout_blocks.id"], ondelete="CASCADE"),
+        sa.ForeignKeyConstraint(
+            ["workout_block_id"],
+            ["workout_blocks.id"],
+            ondelete="CASCADE",
+        ),
         sa.ForeignKeyConstraint(["exercise_id"], ["exercises.id"], ondelete="RESTRICT"),
         sa.PrimaryKeyConstraint("id"),
     )
-    op.create_index("ix_workout_exercises_workout_block_id", "workout_exercises", ["workout_block_id"])
-    op.create_index("ix_workout_exercises_exercise_id", "workout_exercises", ["exercise_id"])
+    op.create_index(
+        "ix_workout_exercises_workout_block_id",
+        "workout_exercises",
+        ["workout_block_id"],
+    )
+    op.create_index(
+        "ix_workout_exercises_exercise_id",
+        "workout_exercises",
+        ["exercise_id"],
+    )
 
 
 def downgrade() -> None:
