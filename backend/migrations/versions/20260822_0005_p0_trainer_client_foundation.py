@@ -32,6 +32,9 @@ def upgrade() -> None:
             server_default=sa.func.now(),
             nullable=False,
         ),
+        sa.Column("resolved_at", sa.DateTime(timezone=True), nullable=True),
+        sa.Column("resolved_by_account_id", sa.String(length=36), nullable=True),
+        sa.Column("resolution_reason", sa.String(length=64), nullable=True),
         sa.CheckConstraint(
             "trainer_id <> client_id",
             name="ck_trainer_client_invitations_distinct_accounts",
@@ -42,6 +45,7 @@ def upgrade() -> None:
         ),
         sa.ForeignKeyConstraint(["trainer_id"], ["accounts.id"]),
         sa.ForeignKeyConstraint(["client_id"], ["accounts.id"]),
+        sa.ForeignKeyConstraint(["resolved_by_account_id"], ["accounts.id"]),
         sa.PrimaryKeyConstraint("id"),
     )
     op.create_index(
