@@ -3,6 +3,7 @@ from __future__ import annotations
 import asyncio
 
 import pytest
+from fastapi import Response
 from sqlalchemy import func, select
 from sqlalchemy.ext.asyncio import AsyncSession, async_sessionmaker
 
@@ -16,7 +17,6 @@ from toptrainers_api.modules.clients.models import (
 )
 from toptrainers_api.modules.identity.models import Account
 from toptrainers_api.modules.identity.router import become_trainer
-from fastapi import Response
 
 pytestmark = pytest.mark.asyncio
 
