@@ -18,7 +18,9 @@ from toptrainers_api.core.auth import (
 )
 from toptrainers_api.core.config import settings
 from toptrainers_api.core.db import get_session
+from toptrainers_api.core.errors import BusinessErrorResponse
 from toptrainers_api.core.redis import get_redis
+from toptrainers_api.modules.clients import service as clients_service
 from toptrainers_api.modules.identity.models import Account, AuthSession, AuthToken
 from toptrainers_api.modules.identity.schemas import RegisterAccountRequest, UserRole
 from toptrainers_api.modules.identity.service import (
@@ -217,7 +219,11 @@ async def session_info(account: dict[str, object] = Depends(current_account)) ->
     return AuthResponse(account_id=str(account["sub"]), role=UserRole(str(account["role"])))
 
 
-@router.post("/become-trainer", response_model=AuthResponse)
+@router.post(
+    "/become-trainer",
+    response_model=AuthResponse,
+    responses={409: {"model": BusinessErrorResponse}},
+)
 async def become_trainer(
     response: Response,
     account: dict[str, object] = Depends(current_account),
@@ -230,13 +236,23 @@ async def become_trainer(
     """
     if account.get("role") not in {"client", "trainer"}:
         raise HTTPException(status_code=403, detail="Role transition is not available")
-    stored_account = await session.get(Account, str(account["sub"]))
+    stored_account = await session.scalar(
+        select(Account).where(Account.id == str(account["sub"])).with_for_update()
+    )
     if stored_account is None:
         raise HTTPException(status_code=401, detail="Account not found")
     if stored_account.role not in {"client", "trainer"}:
         raise HTTPException(status_code=403, detail="Role transition is not available")
     if stored_account.role == "trainer":
         return AuthResponse(account_id=stored_account.id, role=UserRole.TRAINER)
+    if await clients_service.has_client_p0_footprint(session, stored_account.id):
+        raise HTTPException(
+            status_code=409,
+            detail={
+                "code": "BECOME_TRAINER_P0_FOOTPRINT_EXISTS",
+                "message": "Client account has trainer-client P0 history",
+            },
+        )
 
     stored_account.role = UserRole.TRAINER.value
     await revoke_account_sessions(session, stored_account.id)
@@ -247,7 +263,10 @@ async def become_trainer(
     )
     session.add(auth_session)
     await session.commit()
-    _set_session_cookie(response, create_token(stored_account.id, stored_account.role, auth_session.id))
+    _set_session_cookie(
+        response,
+        create_token(stored_account.id, stored_account.role, auth_session.id),
+    )
     return AuthResponse(account_id=stored_account.id, role=UserRole.TRAINER)
 
 
