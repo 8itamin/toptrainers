@@ -17,6 +17,7 @@ from toptrainers_api.modules.clients.models import (
 
 _PENDING_INVITATION_CONSTRAINT = "uq_trainer_client_invitations_pending_pair"
 _ACTIVE_RELATIONSHIP_CONSTRAINT = "uq_trainer_client_relationships_active_pair"
+ROLE_CHANGE_RESOLUTION_REASON = "CLIENT_ROLE_CHANGED_TO_TRAINER"
 
 
 def _conflict(code: str, message: str) -> BusinessRuleError:
@@ -49,8 +50,25 @@ def _integrity_constraint_name(error: IntegrityError) -> str | None:
     return None
 
 
+def _resolve_invitation(invitation: TrainerClientInvitation, actor_id: str) -> None:
+    invitation.resolved_at = datetime.now(UTC)
+    invitation.resolved_by_account_id = actor_id
+    invitation.resolution_reason = None
+
+
 async def has_client_p0_footprint(session: AsyncSession, client_id: str) -> bool:
     return await repository.has_client_footprint(session, client_id)
+
+
+async def cancel_pending_inbound_invitations_for_role_change(
+    session: AsyncSession, client_id: str
+) -> int:
+    return await repository.cancel_pending_inbound_invitations(
+        session,
+        client_id,
+        resolved_at=datetime.now(UTC),
+        resolution_reason=ROLE_CHANGE_RESOLUTION_REASON,
+    )
 
 
 async def create_invitation(
@@ -126,6 +144,14 @@ async def accept_invitation(
                 "Accepted invitation has no relationship",
             )
         return relationship
+    if (
+        invitation.status == InvitationStatus.CANCELLED.value
+        and invitation.resolution_reason == ROLE_CHANGE_RESOLUTION_REASON
+    ):
+        raise _conflict(
+            "INVITATION_CANCELLED_BY_ROLE_CHANGE",
+            "Invitation was cancelled because the client became a trainer",
+        )
     if invitation.status != InvitationStatus.PENDING.value:
         raise _conflict("INVITATION_STATE_CONFLICT", "Invitation is no longer pending")
 
@@ -148,6 +174,7 @@ async def accept_invitation(
         status=RelationshipStatus.ACTIVE.value,
     )
     invitation.status = InvitationStatus.ACCEPTED.value
+    _resolve_invitation(invitation, actor_id)
     session.add(relationship)
     try:
         await session.commit()
@@ -175,6 +202,7 @@ async def reject_invitation(
         raise _conflict("INVITATION_STATE_CONFLICT", "Invitation is no longer pending")
 
     invitation.status = InvitationStatus.REJECTED.value
+    _resolve_invitation(invitation, actor_id)
     await session.commit()
     await session.refresh(invitation)
     return invitation
@@ -192,6 +220,7 @@ async def cancel_invitation(
         raise _conflict("INVITATION_STATE_CONFLICT", "Invitation is no longer pending")
 
     invitation.status = InvitationStatus.CANCELLED.value
+    _resolve_invitation(invitation, actor_id)
     await session.commit()
     await session.refresh(invitation)
     return invitation
