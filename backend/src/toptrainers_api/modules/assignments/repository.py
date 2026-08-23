@@ -7,11 +7,23 @@ from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy.sql import Select
 from sqlalchemy.sql.dml import Update
 
-from toptrainers_api.modules.assignments.models import WorkoutAssignment, WorkoutAssignmentStatus
+from toptrainers_api.modules.assignments.models import (
+    WorkoutAssignment,
+    WorkoutAssignmentStatus,
+    WorkoutExecution,
+)
 
 
 def assignment_for_update_query(assignment_id: str) -> Select[tuple[WorkoutAssignment]]:
     return select(WorkoutAssignment).where(WorkoutAssignment.id == assignment_id).with_for_update()
+
+
+def execution_for_update_query(assignment_id: str) -> Select[tuple[WorkoutExecution]]:
+    return (
+        select(WorkoutExecution)
+        .where(WorkoutExecution.assignment_id == assignment_id)
+        .with_for_update()
+    )
 
 
 async def get_assignment(
@@ -69,6 +81,26 @@ async def lock_assignment(
         assignment_for_update_query(assignment_id)
     )
     return assignment
+
+
+async def get_execution_by_assignment(
+    session: AsyncSession,
+    assignment_id: str,
+) -> WorkoutExecution | None:
+    execution: WorkoutExecution | None = await session.scalar(
+        select(WorkoutExecution).where(WorkoutExecution.assignment_id == assignment_id)
+    )
+    return execution
+
+
+async def lock_execution_by_assignment(
+    session: AsyncSession,
+    assignment_id: str,
+) -> WorkoutExecution | None:
+    execution: WorkoutExecution | None = await session.scalar(
+        execution_for_update_query(assignment_id)
+    )
+    return execution
 
 
 def cancel_planned_for_relationship_query(relationship_id: str) -> Update:

@@ -1,7 +1,8 @@
 from __future__ import annotations
 
 from dataclasses import dataclass
-from datetime import date
+from datetime import UTC, date, datetime
+from typing import Literal
 from uuid import uuid4
 
 from sqlalchemy.exc import IntegrityError
@@ -9,17 +10,25 @@ from sqlalchemy.ext.asyncio import AsyncSession
 
 from toptrainers_api.core.errors import BusinessRuleError
 from toptrainers_api.modules.assignments import repository
-from toptrainers_api.modules.assignments.models import WorkoutAssignment, WorkoutAssignmentStatus
+from toptrainers_api.modules.assignments.models import (
+    WorkoutAssignment,
+    WorkoutAssignmentStatus,
+    WorkoutExecution,
+)
 from toptrainers_api.modules.assignments.schemas import (
     CreateWorkoutAssignmentRequest,
     RescheduleWorkoutAssignmentRequest,
     WorkoutAssignmentResponse,
+    WorkoutExecutionResponse,
     WorkoutSnapshotBlockV1,
     WorkoutSnapshotExerciseV1,
     WorkoutSnapshotV1,
 )
 from toptrainers_api.modules.clients import service as clients_service
-from toptrainers_api.modules.clients.models import TrainerClientRelationship
+from toptrainers_api.modules.clients.models import (
+    RelationshipStatus,
+    TrainerClientRelationship,
+)
 from toptrainers_api.modules.exercises import service as exercises_service
 from toptrainers_api.modules.exercises.models import Exercise
 from toptrainers_api.modules.workouts import service as workouts_service
@@ -122,6 +131,19 @@ def to_response(result: AssignmentResult) -> WorkoutAssignmentResponse:
         workout_snapshot=WorkoutSnapshotV1.model_validate(assignment.workout_snapshot),
         created_at=assignment.created_at,
         updated_at=assignment.updated_at,
+    )
+
+
+def execution_to_response(execution: WorkoutExecution) -> WorkoutExecutionResponse:
+    status: Literal["IN_PROGRESS", "COMPLETED"] = (
+        "COMPLETED" if execution.completed_at is not None else "IN_PROGRESS"
+    )
+    return WorkoutExecutionResponse(
+        id=execution.id,
+        assignment_id=execution.assignment_id,
+        status=status,
+        started_at=execution.started_at,
+        completed_at=execution.completed_at,
     )
 
 
@@ -327,3 +349,114 @@ async def cancel_planned_for_relationship(
 ) -> None:
     """Cancel PLANNED rows inside a caller-owned Relationship transaction; no commit."""
     await repository.cancel_planned_for_relationship(session, relationship_id)
+
+
+async def start_execution(
+    session: AsyncSession,
+    client_id: str,
+    assignment_id: str,
+) -> WorkoutExecution:
+    relationship_id = await repository.get_relationship_id(session, assignment_id)
+    if relationship_id is None:
+        raise _not_found("ASSIGNMENT_NOT_FOUND", "Workout assignment was not found")
+
+    relationship = await clients_service.lock_relationship_with_client(session, relationship_id)
+    if relationship is None or relationship.client_id != client_id:
+        raise _not_found("ASSIGNMENT_NOT_FOUND", "Workout assignment was not found")
+    if relationship.status != RelationshipStatus.ACTIVE.value:
+        raise _conflict(
+            "ACTIVE_RELATIONSHIP_REQUIRED",
+            "An active trainer-client relationship is required to start this workout",
+        )
+
+    assignment = await repository.lock_assignment(session, assignment_id)
+    if assignment is None or assignment.relationship_id != relationship.id:
+        raise _not_found("ASSIGNMENT_NOT_FOUND", "Workout assignment was not found")
+    if assignment.status not in {
+        WorkoutAssignmentStatus.PLANNED.value,
+        WorkoutAssignmentStatus.IN_PROGRESS.value,
+    }:
+        raise _conflict(
+            "ASSIGNMENT_NOT_STARTABLE",
+            "Only a planned workout assignment can be started",
+        )
+
+    execution = await repository.lock_execution_by_assignment(session, assignment.id)
+    if assignment.status == WorkoutAssignmentStatus.IN_PROGRESS.value:
+        if execution is None:
+            raise RuntimeError("IN_PROGRESS assignment has no WorkoutExecution")
+        return execution
+    if execution is not None:
+        raise RuntimeError("PLANNED assignment already has WorkoutExecution")
+
+    execution = WorkoutExecution(
+        id=str(uuid4()),
+        assignment_id=assignment.id,
+        started_at=datetime.now(UTC),
+        completed_at=None,
+    )
+    assignment.status = WorkoutAssignmentStatus.IN_PROGRESS.value
+    session.add(execution)
+    await session.commit()
+    await session.refresh(execution)
+    return execution
+
+
+async def get_execution(
+    session: AsyncSession,
+    actor_id: str,
+    assignment_id: str,
+) -> WorkoutExecution:
+    assignment = await repository.get_assignment(session, assignment_id)
+    if assignment is None:
+        raise _not_found("ASSIGNMENT_NOT_FOUND", "Workout assignment was not found")
+
+    relationship = await clients_service.get_relationship(session, assignment.relationship_id)
+    if relationship is None:
+        raise RuntimeError("Assignment relationship was not found")
+    if actor_id not in {relationship.trainer_id, relationship.client_id}:
+        raise _not_found("ASSIGNMENT_NOT_FOUND", "Workout assignment was not found")
+
+    execution = await repository.get_execution_by_assignment(session, assignment.id)
+    if execution is None:
+        raise _not_found("EXECUTION_NOT_FOUND", "Workout execution was not found")
+    return execution
+
+
+async def complete_execution(
+    session: AsyncSession,
+    client_id: str,
+    assignment_id: str,
+) -> WorkoutExecution:
+    relationship_id = await repository.get_relationship_id(session, assignment_id)
+    if relationship_id is None:
+        raise _not_found("ASSIGNMENT_NOT_FOUND", "Workout assignment was not found")
+
+    relationship = await clients_service.lock_relationship_with_client(session, relationship_id)
+    if relationship is None or relationship.client_id != client_id:
+        raise _not_found("ASSIGNMENT_NOT_FOUND", "Workout assignment was not found")
+
+    assignment = await repository.lock_assignment(session, assignment_id)
+    if assignment is None or assignment.relationship_id != relationship.id:
+        raise _not_found("ASSIGNMENT_NOT_FOUND", "Workout assignment was not found")
+
+    execution = await repository.lock_execution_by_assignment(session, assignment.id)
+    if execution is None:
+        raise _conflict("EXECUTION_NOT_STARTED", "Workout execution has not been started")
+
+    if execution.completed_at is not None:
+        if assignment.status != WorkoutAssignmentStatus.COMPLETED.value:
+            raise RuntimeError("Completed WorkoutExecution has non-COMPLETED assignment")
+        return execution
+
+    if assignment.status != WorkoutAssignmentStatus.IN_PROGRESS.value:
+        raise _conflict(
+            "ASSIGNMENT_NOT_COMPLETABLE",
+            "Only an in-progress workout assignment can be completed",
+        )
+
+    execution.completed_at = datetime.now(UTC)
+    assignment.status = WorkoutAssignmentStatus.COMPLETED.value
+    await session.commit()
+    await session.refresh(execution)
+    return execution

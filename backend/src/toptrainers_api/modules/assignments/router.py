@@ -14,6 +14,7 @@ from toptrainers_api.modules.assignments.schemas import (
     CreateWorkoutAssignmentRequest,
     RescheduleWorkoutAssignmentRequest,
     WorkoutAssignmentResponse,
+    WorkoutExecutionResponse,
 )
 
 router = APIRouter(prefix="/assignments", tags=["assignments"])
@@ -66,6 +67,18 @@ def _require_assignment_reader(account: dict[str, object]) -> str:
             detail={
                 "code": "ROLE_NOT_ALLOWED",
                 "message": "Trainer or client role is required for workout assignment reads",
+            },
+        )
+    return str(account["sub"])
+
+
+def _require_execution_client(account: dict[str, object]) -> str:
+    if account.get("role") != "client":
+        raise HTTPException(
+            status_code=status.HTTP_403_FORBIDDEN,
+            detail={
+                "code": "ROLE_NOT_ALLOWED",
+                "message": "Client role is required for workout execution mutations",
             },
         )
     return str(account["sub"])
@@ -172,3 +185,60 @@ async def cancel_workout_assignment(
     except BusinessRuleError as error:
         raise as_http_exception(error) from error
     return service.to_response(result)
+
+
+@router.post(
+    "/{assignment_id}/execution/start",
+    operation_id="startWorkoutExecution",
+    response_model=WorkoutExecutionResponse,
+    responses=_BUSINESS_RESPONSES,
+)
+async def start_workout_execution(
+    assignment_id: str,
+    account: CurrentAccountDep,
+    session: SessionDep,
+) -> WorkoutExecutionResponse:
+    client_id = _require_execution_client(account)
+    try:
+        execution = await service.start_execution(session, client_id, assignment_id)
+    except BusinessRuleError as error:
+        raise as_http_exception(error) from error
+    return service.execution_to_response(execution)
+
+
+@router.get(
+    "/{assignment_id}/execution",
+    operation_id="getWorkoutExecution",
+    response_model=WorkoutExecutionResponse,
+    responses=_READ_RESPONSES,
+)
+async def get_workout_execution(
+    assignment_id: str,
+    account: CurrentAccountDep,
+    session: SessionDep,
+) -> WorkoutExecutionResponse:
+    actor_id = _require_assignment_reader(account)
+    try:
+        execution = await service.get_execution(session, actor_id, assignment_id)
+    except BusinessRuleError as error:
+        raise as_http_exception(error) from error
+    return service.execution_to_response(execution)
+
+
+@router.post(
+    "/{assignment_id}/execution/complete",
+    operation_id="completeWorkoutExecution",
+    response_model=WorkoutExecutionResponse,
+    responses=_BUSINESS_RESPONSES,
+)
+async def complete_workout_execution(
+    assignment_id: str,
+    account: CurrentAccountDep,
+    session: SessionDep,
+) -> WorkoutExecutionResponse:
+    client_id = _require_execution_client(account)
+    try:
+        execution = await service.complete_execution(session, client_id, assignment_id)
+    except BusinessRuleError as error:
+        raise as_http_exception(error) from error
+    return service.execution_to_response(execution)
