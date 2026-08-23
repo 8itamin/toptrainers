@@ -121,10 +121,33 @@ function assertResponseRef(operation, statusCode, schemaName) {
   }
 }
 
+function assertArrayResponseRef(operation, statusCode, schemaName) {
+  const response = operation.responses?.[statusCode];
+  const schema = response?.content?.['application/json']?.schema;
+  if (!isRecord(schema) || schema.type !== 'array' || refName(schema.items?.$ref) !== schemaName) {
+    throw new Error(`Unexpected array response schema for ${operation.operationId} ${statusCode}`);
+  }
+}
+
 function assertRequestRef(operation, schemaName) {
   const ref = operation.requestBody?.content?.['application/json']?.schema?.$ref;
   if (refName(ref) !== schemaName) {
     throw new Error(`Unexpected request schema for ${operation.operationId}`);
+  }
+}
+
+function assertRequiredQueryParameter(operation, parameterName, format) {
+  const parameter = operation.parameters?.find(
+    (item) => item?.name === parameterName && item?.in === 'query',
+  );
+  if (
+    !parameter ||
+    parameter.required !== true ||
+    !isRecord(parameter.schema) ||
+    parameter.schema.type !== 'string' ||
+    parameter.schema.format !== format
+  ) {
+    throw new Error(`Unexpected query parameter ${parameterName} for ${operation.operationId}`);
   }
 }
 
@@ -156,10 +179,15 @@ try {
 
 assertOpenApiDocument(document);
 
+const listOperation = findOperation(document, 'listClientWorkoutAssignmentsByDate');
+const getOperation = findOperation(document, 'getWorkoutAssignment');
 const createOperation = findOperation(document, 'createWorkoutAssignment');
 const rescheduleOperation = findOperation(document, 'rescheduleWorkoutAssignment');
 const cancelOperation = findOperation(document, 'cancelWorkoutAssignment');
 
+assertRequiredQueryParameter(listOperation.operation, 'scheduled_date', 'date');
+assertArrayResponseRef(listOperation.operation, '200', 'WorkoutAssignmentResponse');
+assertResponseRef(getOperation.operation, '200', 'WorkoutAssignmentResponse');
 assertRequestRef(createOperation.operation, 'CreateWorkoutAssignmentRequest');
 assertResponseRef(createOperation.operation, '201', 'WorkoutAssignmentResponse');
 assertRequestRef(rescheduleOperation.operation, 'RescheduleWorkoutAssignmentRequest');
@@ -178,6 +206,20 @@ const generatedSnapshot = [
 ].join('\n');
 
 const assignmentOperations = {
+  list: {
+    method: listOperation.method,
+    path: listOperation.path,
+    relativePath: relativeAssignmentPath(listOperation.path),
+    operationId: 'listClientWorkoutAssignmentsByDate',
+    successStatus: 200,
+  },
+  get: {
+    method: getOperation.method,
+    path: getOperation.path,
+    relativePath: relativeAssignmentPath(getOperation.path),
+    operationId: 'getWorkoutAssignment',
+    successStatus: 200,
+  },
   create: {
     method: createOperation.method,
     path: createOperation.path,
