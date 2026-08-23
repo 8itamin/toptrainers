@@ -1,3 +1,5 @@
+import '@angular/compiler';
+
 import { HttpErrorResponse } from '@angular/common/http';
 import { firstValueFrom, of, throwError } from 'rxjs';
 import { describe, expect, it } from 'vitest';
