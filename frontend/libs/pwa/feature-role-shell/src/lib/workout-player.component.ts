@@ -60,6 +60,9 @@ import {
           @if (execution(); as current) {
             <strong>{{ current.status === 'COMPLETED' ? 'Тренировка завершена' : 'Тренировка выполняется' }}</strong>
             <small>Статус и время выполнения подтверждены сервером.</small>
+          } @else if (item.assignmentStatus === 'CANCELLED') {
+            <strong>Тренировка отменена</strong>
+            <small>Назначение доступно только для просмотра.</small>
           } @else {
             <strong>Тренировка ещё не начата</strong>
             <small>Старт создаст или вернёт существующее выполнение.</small>
@@ -103,7 +106,7 @@ import {
               {{ mutating() ? 'Завершаем…' : 'Завершить тренировку' }}
             </button>
           } @else {
-            <button type="button" class="cta" disabled>Тренировка завершена</button>
+            <button type="button" class="cta" disabled>{{ terminalActionLabel() }}</button>
           }
         </footer>
       }
@@ -164,12 +167,21 @@ export class WorkoutPlayerComponent {
   protected readonly loading = signal(true);
   protected readonly mutating = signal(false);
   protected readonly errorMessage = signal('');
-  protected readonly lifecycleAction = computed(() => executionActionForResponse(this.execution()));
+  protected readonly lifecycleAction = computed(() => {
+    const item = this.plan();
+    if (!item) return 'none';
+    return executionActionForResponse(item.assignmentStatus, this.execution());
+  });
   protected readonly executionStatusLabel = computed(() => {
     const current = this.execution();
-    if (!current) return 'НЕ НАЧАТА';
-    return current.status === 'COMPLETED' ? 'ЗАВЕРШЕНА' : 'В ПРОЦЕССЕ';
+    if (current) return current.status === 'COMPLETED' ? 'ЗАВЕРШЕНА' : 'В ПРОЦЕССЕ';
+    return this.plan()?.assignmentStatus === 'CANCELLED' ? 'ОТМЕНЕНА' : 'НЕ НАЧАТА';
   });
+  protected readonly terminalActionLabel = computed(() =>
+    this.plan()?.assignmentStatus === 'CANCELLED' && !this.execution()
+      ? 'Тренировка отменена'
+      : 'Тренировка завершена',
+  );
 
   constructor() {
     const assignmentId = assignmentIdFromQueryParam(
@@ -203,13 +215,13 @@ export class WorkoutPlayerComponent {
 
   protected startExecution(): void {
     const assignmentId = this.plan()?.assignmentId;
-    if (!assignmentId || this.mutating()) return;
+    if (!assignmentId || this.mutating() || this.lifecycleAction() !== 'start') return;
     this.runMutation(this.executionsApi.start(assignmentId));
   }
 
   protected completeExecution(): void {
     const assignmentId = this.plan()?.assignmentId;
-    if (!assignmentId || this.mutating()) return;
+    if (!assignmentId || this.mutating() || this.lifecycleAction() !== 'complete') return;
     this.runMutation(this.executionsApi.complete(assignmentId));
   }
 
