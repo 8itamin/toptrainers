@@ -107,11 +107,11 @@ jobs:
       - run: python scripts/export_openapi.py
       - name: Commit generated OpenAPI to PR branch
         run: |
-          if [ -z "$(git status --porcelain -- openapi/openapi.json)" ]; then
+          git add -f openapi/openapi.json
+          if git diff --cached --quiet -- openapi/openapi.json; then
             exit 0
           fi
           git config user.name "github-actions[bot]"
           git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
-          git add openapi/openapi.json
           git commit -m "chore: export authoritative OpenAPI"
           git push origin HEAD:${{ github.head_ref }}
