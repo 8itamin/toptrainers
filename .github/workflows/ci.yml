@@ -48,6 +48,14 @@ jobs:
       - run: python -m pip install '.[dev]'
       - run: ruff check .
       - run: mypy src
+      - name: Export OpenAPI for contract artifact
+        run: python scripts/export_openapi.py
+      - name: Upload OpenAPI contract artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: backend-openapi
+          path: backend/openapi/openapi.json
+          if-no-files-found: error
 
   backend-tests:
     name: Backend tests (PostgreSQL)
