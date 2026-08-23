@@ -14,7 +14,7 @@
     "build": "pnpm api:generate && nx run-many -t build",
     "test": "pnpm api:generate && vitest run",
     "lint": "eslint . --max-warnings=0",
-    "typecheck": "pnpm test && tsc --noEmit -p tsconfig.json",
+    "typecheck": "pnpm api:generate && tsc --noEmit -p tsconfig.json",
     "api:generate": "node tools/openapi/generate.mjs"
   },
   "dependencies": {
