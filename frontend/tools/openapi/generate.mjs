@@ -74,7 +74,7 @@ function renderSchemaType(schema) {
     case 'null':
       return 'null';
     case 'array':
-      return `Array<${renderSchemaType(schema.items)}> ` .trim();
+      return `Array<${renderSchemaType(schema.items)}>`;
     case 'object':
       return 'Record<string, unknown>';
     default:
