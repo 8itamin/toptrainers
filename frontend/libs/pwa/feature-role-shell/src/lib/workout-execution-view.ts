@@ -5,6 +5,7 @@ import type {
 
 export interface WorkoutExecutionPlan {
   assignmentId: string;
+  assignmentStatus: string;
   title: string;
   description: string;
   scheduledDate: string;
@@ -20,6 +21,7 @@ export function playerQueryParams(assignmentId: string): { assignment_id: string
 export function toWorkoutExecutionPlan(assignment: WorkoutAssignmentResponse): WorkoutExecutionPlan {
   return {
     assignmentId: assignment.id,
+    assignmentStatus: assignment.status,
     title: assignment.workout_snapshot.title,
     description: assignment.workout_snapshot.description,
     scheduledDate: assignment.scheduled_date,
@@ -28,9 +30,10 @@ export function toWorkoutExecutionPlan(assignment: WorkoutAssignmentResponse): W
 }
 
 export function executionActionForResponse(
+  assignmentStatus: string,
   execution: WorkoutExecutionResponse | null,
 ): WorkoutExecutionAction {
-  if (!execution) return 'start';
-  if (execution.status === 'IN_PROGRESS') return 'complete';
-  return 'none';
+  if (execution?.status === 'IN_PROGRESS') return 'complete';
+  if (execution?.status === 'COMPLETED') return 'none';
+  return assignmentStatus === 'PLANNED' ? 'start' : 'none';
 }
