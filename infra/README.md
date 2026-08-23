@@ -114,12 +114,79 @@ the Compose API continues to use the service names `postgres` and `redis`.
 - Откат приложения допустим только до версии, совместимой с уже применённой схемой БД. Автоматического downgrade здесь намеренно нет.
 - После обновления проверьте `http://127.0.0.1:8080/__gateway_health` на самом хосте и `docker compose ... ps`/`logs` через тот же env-файл.
 
-Пример резервной копии запускают из защищённого каталога на хосте (путь должен быть вне Git):
+### Production migration gate
+
+Push/merge в `main` запускает production webhook deploy автоматически. Поэтому релиз, который добавляет или меняет Alembic migration, **нельзя merge'ить в `main` до создания и проверки pre-migration backup**.
+
+Перед merge такого релиза оператор обязан:
+
+1. Зафиксировать текущий production commit и текущую Alembic revision.
+2. Создать свежий PostgreSQL backup в защищённом каталоге вне Git.
+3. Проверить, что backup не пустой, читается штатными PostgreSQL tools и имеет сохранённую checksum.
+4. Убедиться, что для этого типа backup существует проверенная процедура восстановления в отдельном контуре.
+5. Только после этого разрешить merge/push migration release в `main`.
+
+Если backup не подтверждён, migration release не выпускается. Сам факт успешного CI не заменяет production backup gate.
+
+Пример backup перед migration release:
 
 ```bash
+sudo install -d -m 700 /srv/toptrainers-backups
+backup="/srv/toptrainers-backups/toptrainers-pre-migration-$(date -u +%Y%m%dT%H%M%SZ).dump"
+
 docker compose --env-file /etc/toptrainers/prod.env -f /opt/toptrainers/infra/compose/compose.yaml \
-  exec -T postgres sh -ec 'pg_dump -U "$POSTGRES_USER" -d "$POSTGRES_DB"' \
-  > /srv/toptrainers-backups/toptrainers-$(date +%F).sql
+  exec -T postgres sh -ec 'pg_dump -Fc -U "$POSTGRES_USER" -d "$POSTGRES_DB"' \
+  > "$backup"
+
+test -s "$backup"
+sha256sum "$backup" > "$backup.sha256"
+sha256sum -c "$backup.sha256"
 ```
 
-Резервные копии содержат персональные данные и должны шифроваться, иметь ограниченные права доступа и проверяться восстановлением в отдельном контуре.
+Backup содержит персональные данные. Каталог и файлы должны быть недоступны непривилегированным пользователям; перенос backup за пределы хоста должен использовать шифрование.
+
+### Rollback policy для `20260824_0007`
+
+Migration `20260824_0007` создаёт singleton-таблицу `workout_executions`. Её downgrade удаляет таблицу целиком. После первого production `Start` или `Complete` это становится destructive rollback: теряются `started_at`/`completed_at`, а Assignment history перестаёт иметь соответствующий Execution record.
+
+Поэтому production policy следующая:
+
+| Ситуация | Разрешённый механизм |
+| --- | --- |
+| Ошибка приложения после применения `0007`, данные БД корректны | **App-only rollback** на заранее проверенный commit, совместимый с уже применённой schema `0007` и текущими данными. Schema остаётся на `0007`. |
+| После `0007` уже появился хотя бы один Execution write | `alembic downgrade 20260822_0006` **запрещён**. `workout_executions` не удаляется. |
+| Требуется откатить саму БД/schema | Только **full database restore/PITR** к согласованной точке до migration/write, с остановкой новых writes. Это disaster recovery, а не обычный deploy rollback. |
+| Старый app commit несовместим с schema/data после `0007` | Такой commit не используется для app-only rollback; выбирается совместимый release либо выполняется DR restore. |
+
+`Assignment` остаётся lifecycle authority, а `Execution` — singleton history record. Rollback procedure не должна создавать состояние `IN_PROGRESS`/`COMPLETED` без сохранённого Execution из-за удаления таблицы.
+
+### App-only rollback
+
+Обычный production rollback после появления Execution writes выполняется без Alembic downgrade:
+
+1. Остановить автоматическое продвижение новых release до выяснения причины.
+2. Выбрать предыдущий commit, который проверен на совместимость с текущей schema `0007` и текущими Assignment status/data.
+3. Переключить production checkout на этот exact commit штатным deploy-механизмом.
+4. **Не запускать `alembic downgrade`.** Повторный `alembic upgrade head` допустим только если выбранный commit знает текущую schema; downgrade не является частью rollback.
+5. Проверить gateway/API health, логи и критические Trainer/Client flows.
+
+Extra table в PostgreSQL сама по себе не является причиной удалять данные. Если старый app commit не совместим с текущим содержимым БД, app-only rollback блокируется и применяется DR procedure.
+
+### Full database restore / disaster recovery
+
+DB rollback после destructive migration/write означает потерю всех изменений после выбранной recovery point. Перед restore оператор должен явно принять соответствующий RPO.
+
+Минимальная процедура:
+
+1. Остановить приложение или иным способом прекратить production writes.
+2. Отключить/приостановить автоматический webhook deploy на время восстановления.
+3. Сохранить текущую повреждённую/нежелательную БД отдельным forensic backup, если это технически возможно.
+4. Выбрать проверенный pre-migration backup или PITR point и проверить его checksum/идентификатор.
+5. Восстановить **всю PostgreSQL database**, а не отдельную таблицу `workout_executions`.
+6. Развернуть exact app commit, соответствующий восстановленной schema/data.
+7. Проверить Alembic revision, integrity критических таблиц, health endpoints и доменные smoke tests.
+8. Только после верификации вернуть пользовательский трафик и автоматический deploy.
+
+При restore из pre-migration backup RPO равен времени выбранного backup: все production writes после этой точки будут потеряны. RTO зависит от размера БД, скорости restore и обязательной post-restore verification. Поэтому database restore применяется только когда app-only rollback недостаточен.
+
+Резервные копии содержат персональные данные и должны шифроваться, иметь ограниченные права доступа и регулярно проверяться полным восстановлением в отдельном контуре.
