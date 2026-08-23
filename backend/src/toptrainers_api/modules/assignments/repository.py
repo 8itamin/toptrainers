@@ -14,6 +14,32 @@ def assignment_for_update_query(assignment_id: str) -> Select[tuple[WorkoutAssig
     return select(WorkoutAssignment).where(WorkoutAssignment.id == assignment_id).with_for_update()
 
 
+async def get_assignment(
+    session: AsyncSession,
+    assignment_id: str,
+) -> WorkoutAssignment | None:
+    assignment: WorkoutAssignment | None = await session.get(WorkoutAssignment, assignment_id)
+    return assignment
+
+
+async def list_for_relationships_and_date(
+    session: AsyncSession,
+    relationship_ids: list[str],
+    scheduled_date: date,
+) -> list[WorkoutAssignment]:
+    if not relationship_ids:
+        return []
+    assignments = await session.scalars(
+        select(WorkoutAssignment)
+        .where(
+            WorkoutAssignment.relationship_id.in_(relationship_ids),
+            WorkoutAssignment.scheduled_date == scheduled_date,
+        )
+        .order_by(WorkoutAssignment.created_at, WorkoutAssignment.id)
+    )
+    return list(assignments)
+
+
 async def get_by_request_id(
     session: AsyncSession,
     relationship_id: str,
