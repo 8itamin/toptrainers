@@ -11,7 +11,7 @@ import {
   toWorkoutExecutionPlan,
 } from './workout-execution-view';
 
-function assignmentFixture(): WorkoutAssignmentResponse {
+function assignmentFixture(status = 'PLANNED'): WorkoutAssignmentResponse {
   return {
     id: 'assignment-1',
     relationship_id: 'relationship-1',
@@ -20,7 +20,7 @@ function assignmentFixture(): WorkoutAssignmentResponse {
     source_workout_id: 'live-template-id-that-must-not-render',
     request_id: 'request-1',
     scheduled_date: '2026-08-24',
-    status: 'PLANNED',
+    status,
     snapshot_schema_version: 1,
     workout_snapshot: {
       title: 'Frozen strength day',
@@ -70,6 +70,7 @@ describe('workout execution player presentation', () => {
 
     expect(plan).toEqual({
       assignmentId: 'assignment-1',
+      assignmentStatus: 'PLANNED',
       title: 'Frozen strength day',
       description: 'Frozen description',
       scheduledDate: '2026-08-24',
@@ -78,9 +79,18 @@ describe('workout execution player presentation', () => {
     expect(JSON.stringify(plan)).not.toContain('live-template-id-that-must-not-render');
   });
 
-  it('derives available lifecycle action only from authoritative Execution response', () => {
-    expect(executionActionForResponse(null)).toBe('start');
-    expect(executionActionForResponse(executionFixture('IN_PROGRESS'))).toBe('complete');
-    expect(executionActionForResponse(executionFixture('COMPLETED'))).toBe('none');
+  it('derives available lifecycle action from authoritative Assignment and Execution responses', () => {
+    expect(executionActionForResponse('PLANNED', null)).toBe('start');
+    expect(executionActionForResponse('IN_PROGRESS', executionFixture('IN_PROGRESS'))).toBe(
+      'complete',
+    );
+    expect(executionActionForResponse('COMPLETED', executionFixture('COMPLETED'))).toBe('none');
+  });
+
+  it('does not offer Start for CANCELLED Assignment without an Execution', () => {
+    const cancelledPlan = toWorkoutExecutionPlan(assignmentFixture('CANCELLED'));
+
+    expect(cancelledPlan.assignmentStatus).toBe('CANCELLED');
+    expect(executionActionForResponse(cancelledPlan.assignmentStatus, null)).toBe('none');
   });
 });
