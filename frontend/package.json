@@ -12,9 +12,9 @@
     "serve:app": "nx serve app",
     "serve:showcase": "nx serve showcase",
     "build": "pnpm api:generate && nx run-many -t build",
-    "test": "pnpm api:generate && nx run-many -t test",
+    "test": "pnpm api:generate && vitest run",
     "lint": "eslint . --max-warnings=0",
-    "typecheck": "pnpm api:generate && tsc --noEmit -p tsconfig.json",
+    "typecheck": "pnpm test && tsc --noEmit -p tsconfig.json",
     "api:generate": "node tools/openapi/generate.mjs"
   },
   "dependencies": {
