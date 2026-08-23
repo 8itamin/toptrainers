@@ -50,6 +50,23 @@ export function isWorkoutAssignmentConflict(error: unknown): error is HttpErrorR
   return error instanceof HttpErrorResponse && error.status === 409;
 }
 
+export function refreshWorkoutAssignmentAfterConflict(
+  assignmentId: string,
+  mutation: Observable<WorkoutAssignmentMutationOutcome>,
+  getAssignment: (assignmentId: string) => Observable<WorkoutAssignmentResponse>,
+): Observable<WorkoutAssignmentMutationOutcome> {
+  return mutation.pipe(
+    catchError((error: unknown) => {
+      if (!isWorkoutAssignmentConflict(error)) {
+        return throwError(() => error);
+      }
+      return getAssignment(assignmentId).pipe(
+        map((assignment) => ({ kind: 'conflict-refreshed', assignment }) as const),
+      );
+    }),
+  );
+}
+
 @Injectable({ providedIn: 'root' })
 export class WorkoutAssignmentsApi {
   private readonly http = inject(HttpClient);
@@ -86,7 +103,11 @@ export class WorkoutAssignmentsApi {
       )
       .pipe(map((assignment) => ({ kind: 'updated', assignment }) as const));
 
-    return this.refreshAfterConflict(assignmentId, mutation);
+    return refreshWorkoutAssignmentAfterConflict(
+      assignmentId,
+      mutation,
+      (id) => this.get(id),
+    );
   }
 
   cancel(assignmentId: string): Observable<WorkoutAssignmentMutationOutcome> {
@@ -97,22 +118,10 @@ export class WorkoutAssignmentsApi {
       )
       .pipe(map((assignment) => ({ kind: 'updated', assignment }) as const));
 
-    return this.refreshAfterConflict(assignmentId, mutation);
-  }
-
-  private refreshAfterConflict(
-    assignmentId: string,
-    mutation: Observable<WorkoutAssignmentMutationOutcome>,
-  ): Observable<WorkoutAssignmentMutationOutcome> {
-    return mutation.pipe(
-      catchError((error: unknown) => {
-        if (!isWorkoutAssignmentConflict(error)) {
-          return throwError(() => error);
-        }
-        return this.get(assignmentId).pipe(
-          map((assignment) => ({ kind: 'conflict-refreshed', assignment }) as const),
-        );
-      }),
+    return refreshWorkoutAssignmentAfterConflict(
+      assignmentId,
+      mutation,
+      (id) => this.get(id),
     );
   }
 }
