@@ -61,7 +61,8 @@ async def has_client_p0_footprint(session: AsyncSession, client_id: str) -> bool
 
 
 async def cancel_pending_inbound_invitations_for_role_change(
-    session: AsyncSession, client_id: str
+    session: AsyncSession,
+    client_id: str,
 ) -> None:
     await repository.cancel_pending_inbound_invitations(
         session,
@@ -71,8 +72,52 @@ async def cancel_pending_inbound_invitations_for_role_change(
     )
 
 
+async def lock_active_relationship_for_trainer_client(
+    session: AsyncSession,
+    trainer_id: str,
+    client_id: str,
+) -> TrainerClientRelationship | None:
+    """Public transactional contract: Account lock, then ACTIVE Relationship lock."""
+    client = await repository.lock_account(session, client_id)
+    if client is None:
+        raise _not_found("CLIENT_NOT_FOUND", "Client account was not found")
+    return await repository.lock_active_relationship_for_pair(session, trainer_id, client_id)
+
+
+async def lock_relationship_with_client(
+    session: AsyncSession,
+    relationship_id: str,
+) -> TrainerClientRelationship | None:
+    """Public transactional contract: Account lock, then Relationship lock."""
+    client_id = await repository.get_relationship_client_id(session, relationship_id)
+    if client_id is None:
+        return None
+    client = await repository.lock_account(session, client_id)
+    if client is None:
+        return None
+    return await repository.lock_relationship(session, relationship_id)
+
+
+async def get_relationship(
+    session: AsyncSession,
+    relationship_id: str,
+) -> TrainerClientRelationship | None:
+    """Public read contract for historical relationship context; no lock."""
+    return await repository.get_relationship(session, relationship_id)
+
+
+async def list_relationships_for_client(
+    session: AsyncSession,
+    client_id: str,
+) -> list[TrainerClientRelationship]:
+    """Return all client relationships, including terminated history; no lock."""
+    return await repository.list_relationships_for_client(session, client_id)
+
+
 async def create_invitation(
-    session: AsyncSession, trainer_id: str, client_id: str
+    session: AsyncSession,
+    trainer_id: str,
+    client_id: str,
 ) -> TrainerClientInvitation:
     client = await repository.lock_account(session, client_id)
     if client is None:
@@ -113,7 +158,8 @@ async def create_invitation(
 
 
 async def _lock_invitation_with_client(
-    session: AsyncSession, invitation_id: str
+    session: AsyncSession,
+    invitation_id: str,
 ) -> TrainerClientInvitation:
     client_id = await repository.get_invitation_client_id(session, invitation_id)
     if client_id is None:
@@ -130,7 +176,9 @@ async def _lock_invitation_with_client(
 
 
 async def accept_invitation(
-    session: AsyncSession, actor_id: str, invitation_id: str
+    session: AsyncSession,
+    actor_id: str,
+    invitation_id: str,
 ) -> TrainerClientRelationship:
     invitation = await _lock_invitation_with_client(session, invitation_id)
     if invitation.client_id != actor_id:
@@ -157,7 +205,9 @@ async def accept_invitation(
 
     if (
         await repository.find_active_relationship(
-            session, invitation.trainer_id, invitation.client_id
+            session,
+            invitation.trainer_id,
+            invitation.client_id,
         )
         is not None
     ):
@@ -191,7 +241,9 @@ async def accept_invitation(
 
 
 async def reject_invitation(
-    session: AsyncSession, actor_id: str, invitation_id: str
+    session: AsyncSession,
+    actor_id: str,
+    invitation_id: str,
 ) -> TrainerClientInvitation:
     invitation = await _lock_invitation_with_client(session, invitation_id)
     if invitation.client_id != actor_id:
@@ -209,7 +261,9 @@ async def reject_invitation(
 
 
 async def cancel_invitation(
-    session: AsyncSession, actor_id: str, invitation_id: str
+    session: AsyncSession,
+    actor_id: str,
+    invitation_id: str,
 ) -> TrainerClientInvitation:
     invitation = await _lock_invitation_with_client(session, invitation_id)
     if invitation.trainer_id != actor_id:
@@ -227,17 +281,11 @@ async def cancel_invitation(
 
 
 async def terminate_relationship(
-    session: AsyncSession, actor_id: str, relationship_id: str
+    session: AsyncSession,
+    actor_id: str,
+    relationship_id: str,
 ) -> TrainerClientRelationship:
-    client_id = await repository.get_relationship_client_id(session, relationship_id)
-    if client_id is None:
-        raise _not_found("RELATIONSHIP_NOT_FOUND", "Relationship was not found")
-
-    client = await repository.lock_account(session, client_id)
-    if client is None:
-        raise _not_found("CLIENT_NOT_FOUND", "Client account was not found")
-
-    relationship = await repository.lock_relationship(session, relationship_id)
+    relationship = await lock_relationship_with_client(session, relationship_id)
     if relationship is None:
         raise _not_found("RELATIONSHIP_NOT_FOUND", "Relationship was not found")
     if actor_id not in {relationship.trainer_id, relationship.client_id}:
@@ -250,6 +298,9 @@ async def terminate_relationship(
 
     relationship.status = RelationshipStatus.TERMINATED.value
     relationship.terminated_at = datetime.now(UTC)
+    from toptrainers_api.modules.assignments.service import cancel_planned_for_relationship
+
+    await cancel_planned_for_relationship(session, relationship.id)
     await session.commit()
     await session.refresh(relationship)
     return relationship

@@ -61,3 +61,12 @@ async def create_workout(
     if saved_workout is None:
         raise RuntimeError("Created workout was not found")
     return saved_workout
+
+
+async def get_owned_workout(
+    session: AsyncSession,
+    trainer_id: str,
+    workout_id: str,
+) -> Workout | None:
+    """Public cross-module contract for a trainer-owned workout template."""
+    return await repository.get_for_trainer(session, trainer_id, workout_id)

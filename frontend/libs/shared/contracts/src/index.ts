@@ -3,3 +3,4 @@
  * Do not hand-author duplicate request/response DTOs here.
  */
 export * from './generated/openapi-schema';
+export * from './generated/workout-assignments';
