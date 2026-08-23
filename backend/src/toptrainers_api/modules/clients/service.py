@@ -98,6 +98,22 @@ async def lock_relationship_with_client(
     return await repository.lock_relationship(session, relationship_id)
 
 
+async def get_relationship(
+    session: AsyncSession,
+    relationship_id: str,
+) -> TrainerClientRelationship | None:
+    """Public read contract for historical relationship context; no lock."""
+    return await repository.get_relationship(session, relationship_id)
+
+
+async def list_relationships_for_client(
+    session: AsyncSession,
+    client_id: str,
+) -> list[TrainerClientRelationship]:
+    """Return all client relationships, including terminated history; no lock."""
+    return await repository.list_relationships_for_client(session, client_id)
+
+
 async def create_invitation(
     session: AsyncSession,
     trainer_id: str,
