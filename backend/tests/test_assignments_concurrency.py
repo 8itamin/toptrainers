@@ -54,12 +54,17 @@ async def seed_sources(factory: async_sessionmaker[AsyncSession]) -> None:
                 ),
             ]
         )
+        await session.flush()
+
         invitation = TrainerClientInvitation(
             id="77777777-7777-7777-7777-777777777777",
             trainer_id=TRAINER_ID,
             client_id=CLIENT_ID,
             status=InvitationStatus.ACCEPTED.value,
         )
+        session.add(invitation)
+        await session.flush()
+
         relationship = TrainerClientRelationship(
             id=RELATIONSHIP_ID,
             trainer_id=TRAINER_ID,
@@ -102,7 +107,7 @@ async def seed_sources(factory: async_sessionmaker[AsyncSession]) -> None:
             )
         )
         workout.blocks.append(block)
-        session.add_all([invitation, relationship, exercise, workout])
+        session.add_all([relationship, exercise, workout])
         await session.commit()
 
 
