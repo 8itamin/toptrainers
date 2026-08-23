@@ -200,6 +200,18 @@ async def get_relationship(
     return relationship
 
 
+async def list_relationships_for_client(
+    session: AsyncSession,
+    client_id: str,
+) -> list[TrainerClientRelationship]:
+    relationships = await session.scalars(
+        select(TrainerClientRelationship)
+        .where(TrainerClientRelationship.client_id == client_id)
+        .order_by(TrainerClientRelationship.created_at, TrainerClientRelationship.id)
+    )
+    return list(relationships)
+
+
 async def lock_relationship_by_invitation(
     session: AsyncSession,
     invitation_id: str,
