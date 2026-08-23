@@ -107,7 +107,7 @@ jobs:
       - run: python scripts/export_openapi.py
       - name: Commit generated OpenAPI to PR branch
         run: |
-          if git diff --quiet -- openapi/openapi.json; then
+          if [ -z "$(git status --porcelain -- openapi/openapi.json)" ]; then
             exit 0
           fi
           git config user.name "github-actions[bot]"
