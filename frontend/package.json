@@ -15,7 +15,7 @@
     "test": "pnpm api:generate && vitest run",
     "lint": "eslint . --max-warnings=0",
     "typecheck": "pnpm api:generate && tsc --noEmit -p tsconfig.json",
-    "api:generate": "node tools/openapi/generate.mjs"
+    "api:generate": "node tools/openapi/generate-all.mjs"
   },
   "dependencies": {
     "@angular/common": "21.2.13",

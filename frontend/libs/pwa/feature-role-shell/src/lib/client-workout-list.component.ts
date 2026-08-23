@@ -10,6 +10,7 @@ import {
   type ClientWorkoutAssignmentDetails,
   toClientAssignmentDetails,
 } from './client-workout-assignment-view';
+import { playerQueryParams } from './workout-execution-view';
 
 @Component({
   selector: 'tt-client-workout-list',
@@ -70,6 +71,12 @@ import {
             }
           }
         </section>
+
+        <footer class="action-bar">
+          <a class="cta" routerLink="/client/workout/player" [queryParams]="playerParams(item.id)">
+            Перейти к тренировке
+          </a>
+        </footer>
       }
 
       <nav class="tabbar" aria-label="Навигация клиента">
@@ -87,7 +94,7 @@ import {
   `,
   styles: `
     :host { display: block; }
-    .screen { min-height: 100dvh; padding-bottom: calc(5.5rem + env(safe-area-inset-bottom)); background: #14181d; color: #f5f7fa; font-family: 'Golos Text', system-ui, sans-serif; }
+    .screen { min-height: 100dvh; padding-bottom: calc(10.5rem + env(safe-area-inset-bottom)); background: #14181d; color: #f5f7fa; font-family: 'Golos Text', system-ui, sans-serif; }
     .app-header { display: flex; align-items: center; padding: 1rem 1.25rem .75rem; }
     .back { display: inline-flex; align-items: center; gap: .375rem; color: #8a94a6; font-size: .875rem; text-decoration: none; }
     .state { margin: .5rem 1.25rem; padding: 1rem; border-radius: .875rem; background: #1c222b; color: #8a94a6; line-height: 1.5; }
@@ -109,9 +116,11 @@ import {
     .chips i { border-radius: .375rem; padding: .1875rem .5rem; background: #14181d; color: #f5f7fa; font-style: normal; }
     .chips .chip--lime { color: #c9f24b; }
     .instruction { display: block; margin-top: .5rem; color: #8a94a6; font-size: .75rem; line-height: 1.45; }
+    .action-bar { position: fixed; right: 0; bottom: calc(4.875rem + env(safe-area-inset-bottom)); left: 0; z-index: 1; padding: .875rem 1.25rem; border-top: 1px solid rgb(245 247 250 / 6%); background: #14181d; }
+    .cta { display: flex; height: 3.5rem; align-items: center; justify-content: center; border-radius: .8125rem; background: #c9f24b; color: #14181d; font-size: 1rem; font-weight: 700; text-decoration: none; }
     .tabbar { position: fixed; z-index: 2; inset-inline: 0; bottom: 0; display: flex; justify-content: space-between; padding: .75rem 1.25rem calc(.75rem + env(safe-area-inset-bottom)); background: #14181d; border-top: 1px solid rgb(245 247 250 / 6%); }
     .tab { display: flex; flex-direction: column; align-items: center; gap: .25rem; color: #5b6472; text-decoration: none; font-size: .625rem; }.tab.is-active { color: #c9f24b; font-weight: 600; }
-    @media (min-width: 720px) { .screen { max-width: 30rem; margin: 0 auto; } .tabbar { width: 30rem; right: auto; left: 50%; transform: translateX(-50%); } }
+    @media (min-width: 720px) { .screen { max-width: 30rem; margin: 0 auto; } .action-bar,.tabbar { width: 30rem; right: auto; left: 50%; transform: translateX(-50%); } }
   `,
   changeDetection: ChangeDetectionStrategy.OnPush,
 })
@@ -145,5 +154,9 @@ export class ClientWorkoutListComponent {
 
   protected detailsQueryParams(assignmentId: string): { assignment_id: string } {
     return clientAssignmentDetailsQueryParams(assignmentId);
+  }
+
+  protected playerParams(assignmentId: string): { assignment_id: string } {
+    return playerQueryParams(assignmentId);
   }
 }

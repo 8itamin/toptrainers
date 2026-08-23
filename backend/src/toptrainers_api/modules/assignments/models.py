@@ -66,3 +66,20 @@ class WorkoutAssignment(Base):
     updated_at: Mapped[datetime] = mapped_column(
         DateTime(timezone=True), server_default=func.now(), onupdate=func.now(), nullable=False
     )
+
+
+class WorkoutExecution(Base):
+    __tablename__ = "workout_executions"
+    __table_args__ = (
+        UniqueConstraint(
+            "assignment_id",
+            name="uq_workout_executions_assignment_id",
+        ),
+    )
+
+    id: Mapped[str] = mapped_column(String(36), primary_key=True)
+    assignment_id: Mapped[str] = mapped_column(
+        ForeignKey("workout_assignments.id"), nullable=False
+    )
+    started_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), nullable=False)
+    completed_at: Mapped[datetime | None] = mapped_column(DateTime(timezone=True), nullable=True)

@@ -4,3 +4,4 @@
  */
 export * from './generated/openapi-schema';
 export * from './generated/workout-assignments';
+export * from './generated/workout-executions';

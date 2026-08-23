@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 from datetime import date, datetime
+from typing import Literal
 
 from pydantic import BaseModel, ConfigDict, Field
 
@@ -60,3 +61,11 @@ class WorkoutAssignmentResponse(BaseModel):
     workout_snapshot: WorkoutSnapshotV1
     created_at: datetime
     updated_at: datetime
+
+
+class WorkoutExecutionResponse(BaseModel):
+    id: str
+    assignment_id: str
+    status: Literal["IN_PROGRESS", "COMPLETED"]
+    started_at: datetime
+    completed_at: datetime | None
