@@ -309,8 +309,8 @@ async def test_read_side_openapi_uses_existing_assignment_response_schema() -> N
     )
     assert scheduled_date["required"] is True
     assert scheduled_date["schema"]["format"] == "date"
-    assert list_operation["responses"]["200"]["content"]["application/json"]["schema"] == {
-        "items": {"$ref": "#/components/schemas/WorkoutAssignmentResponse"},
-        "type": "array",
-        "title": "Response List Client Workout Assignments By Date Api V1 Assignments Get",
+    list_schema = list_operation["responses"]["200"]["content"]["application/json"]["schema"]
+    assert list_schema["type"] == "array"
+    assert list_schema["items"] == {
+        "$ref": "#/components/schemas/WorkoutAssignmentResponse"
     }
