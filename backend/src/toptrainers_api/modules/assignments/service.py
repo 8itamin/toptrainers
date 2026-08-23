@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 from dataclasses import dataclass
+from datetime import date
 from uuid import uuid4
 
 from sqlalchemy.exc import IntegrityError
@@ -133,6 +134,48 @@ def _result(
         trainer_id=relationship.trainer_id,
         client_id=relationship.client_id,
     )
+
+
+async def get_assignment(
+    session: AsyncSession,
+    actor_id: str,
+    assignment_id: str,
+) -> AssignmentResult:
+    assignment = await repository.get_assignment(session, assignment_id)
+    if assignment is None:
+        raise _not_found("ASSIGNMENT_NOT_FOUND", "Workout assignment was not found")
+
+    relationship = await clients_service.get_relationship(session, assignment.relationship_id)
+    if relationship is None:
+        raise RuntimeError("Assignment relationship was not found")
+    if actor_id not in {relationship.trainer_id, relationship.client_id}:
+        raise _forbidden(
+            "ASSIGNMENT_PARTY_REQUIRED",
+            "Only the assignment trainer or client can read this assignment",
+        )
+    return _result(assignment, relationship)
+
+
+async def list_client_assignments_by_date(
+    session: AsyncSession,
+    client_id: str,
+    scheduled_date: date,
+) -> list[AssignmentResult]:
+    relationships = await clients_service.list_relationships_for_client(session, client_id)
+    relationships_by_id = {relationship.id: relationship for relationship in relationships}
+    assignments = await repository.list_for_relationships_and_date(
+        session,
+        list(relationships_by_id),
+        scheduled_date,
+    )
+
+    results: list[AssignmentResult] = []
+    for assignment in assignments:
+        relationship = relationships_by_id.get(assignment.relationship_id)
+        if relationship is None:
+            raise RuntimeError("Assignment relationship was not found in client read scope")
+        results.append(_result(assignment, relationship))
+    return results
 
 
 async def create_assignment(
