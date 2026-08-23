@@ -66,7 +66,7 @@ export class WorkoutAssignmentsApi {
   cancel(assignmentId: string): Observable<WorkoutAssignmentResponse> {
     return this.http.post<WorkoutAssignmentResponse>(
       apiUrl(this.config, workoutAssignmentOperationPath('cancel', assignmentId)),
-      {},
+      null,
     );
   }
 }
