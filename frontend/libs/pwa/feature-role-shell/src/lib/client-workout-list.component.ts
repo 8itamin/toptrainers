@@ -1,8 +1,15 @@
 import { ChangeDetectionStrategy, Component, inject, signal } from '@angular/core';
 import { ActivatedRoute, RouterLink } from '@angular/router';
 
-import type { WorkoutAssignmentResponse } from '@toptrainers/shared/contracts';
 import { WorkoutAssignmentsApi } from '@toptrainers/shared/data-access';
+
+import {
+  assignmentIdFromQueryParam,
+  clientAssignmentDetailsQueryParams,
+  clientAssignmentReadErrorMessage,
+  type ClientWorkoutAssignmentDetails,
+  toClientAssignmentDetails,
+} from './client-workout-assignment-view';
 
 @Component({
   selector: 'tt-client-workout-list',
@@ -27,18 +34,18 @@ import { WorkoutAssignmentsApi } from '@toptrainers/shared/data-access';
       } @else if (assignment(); as item) {
         <section class="workout-heading" aria-labelledby="workout-title">
           <p>НАЗНАЧЕННАЯ ТРЕНИРОВКА · {{ item.status }}</p>
-          <h1 id="workout-title">{{ item.workout_snapshot.title }}</h1>
+          <h1 id="workout-title">{{ item.title }}</h1>
           <div class="workout-meta">
-            <span>{{ exerciseCount(item) }} упражнений</span>
-            <span>{{ item.scheduled_date }}</span>
+            <span>{{ item.exerciseCount }} упражнений</span>
+            <span>{{ item.scheduledDate }}</span>
           </div>
-          @if (item.workout_snapshot.description) {
-            <p class="description">{{ item.workout_snapshot.description }}</p>
+          @if (item.description) {
+            <p class="description">{{ item.description }}</p>
           }
         </section>
 
         <section class="exercise-list" aria-label="Упражнения назначенной тренировки">
-          @for (block of item.workout_snapshot.blocks; track block.position) {
+          @for (block of item.blocks; track block.position) {
             <h2>{{ block.kind }}</h2>
             @for (exercise of block.exercises; track exercise.position) {
               <article class="exercise">
@@ -68,7 +75,11 @@ import { WorkoutAssignmentsApi } from '@toptrainers/shared/data-access';
       <nav class="tabbar" aria-label="Навигация клиента">
         <a class="tab" routerLink="/client"><svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M3 12l9-9 9 9M5 10v10h14V10" /></svg><span>Сегодня</span></a>
         <a class="tab" href="#calendar"><svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="4" width="18" height="18" rx="2" /><path d="M3 10h18M8 2v4M16 2v4" /></svg><span>Календарь</span></a>
-        <a class="tab is-active" routerLink="/client/workout"><svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="4" width="18" height="16" rx="2" /><path d="M3 9h18M8 4v16" /></svg><span>Тренировка</span></a>
+        @if (assignment(); as item) {
+          <a class="tab is-active" routerLink="/client/workout" [queryParams]="detailsQueryParams(item.id)"><svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="4" width="18" height="16" rx="2" /><path d="M3 9h18M8 4v16" /></svg><span>Тренировка</span></a>
+        } @else {
+          <span class="tab is-active" aria-current="page"><svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="4" width="18" height="16" rx="2" /><path d="M3 9h18M8 4v16" /></svg><span>Тренировка</span></span>
+        }
         <a class="tab" href="#competitions"><svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="8" r="5" /><path d="M8.5 12.5 7 21l5-3 5 3-1.5-8.5" /></svg><span>Соревн.</span></a>
         <a class="tab" href="#profile"><svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="8" r="4" /><path d="M4 21c0-4 4-6 8-6s8 2 8 6" /></svg><span>Профиль</span></a>
       </nav>
@@ -108,12 +119,14 @@ export class ClientWorkoutListComponent {
   private readonly route = inject(ActivatedRoute);
   private readonly assignmentsApi = inject(WorkoutAssignmentsApi);
 
-  protected readonly assignment = signal<WorkoutAssignmentResponse | null>(null);
+  protected readonly assignment = signal<ClientWorkoutAssignmentDetails | null>(null);
   protected readonly loading = signal(true);
   protected readonly errorMessage = signal('');
 
   constructor() {
-    const assignmentId = this.route.snapshot.queryParamMap.get('assignment_id');
+    const assignmentId = assignmentIdFromQueryParam(
+      this.route.snapshot.queryParamMap.get('assignment_id'),
+    );
     if (!assignmentId) {
       this.errorMessage.set('Тренировка не выбрана. Откройте назначение с экрана «Сегодня».');
       this.loading.set(false);
@@ -121,19 +134,16 @@ export class ClientWorkoutListComponent {
     }
 
     this.assignmentsApi.get(assignmentId).subscribe({
-      next: (assignment) => this.assignment.set(assignment),
-      error: () => {
-        this.errorMessage.set('Не удалось загрузить назначенную тренировку.');
+      next: (assignment) => this.assignment.set(toClientAssignmentDetails(assignment)),
+      error: (error: unknown) => {
+        this.errorMessage.set(clientAssignmentReadErrorMessage(error));
         this.loading.set(false);
       },
       complete: () => this.loading.set(false),
     });
   }
 
-  protected exerciseCount(assignment: WorkoutAssignmentResponse): number {
-    return assignment.workout_snapshot.blocks.reduce(
-      (total, block) => total + block.exercises.length,
-      0,
-    );
+  protected detailsQueryParams(assignmentId: string): { assignment_id: string } {
+    return clientAssignmentDetailsQueryParams(assignmentId);
   }
 }
