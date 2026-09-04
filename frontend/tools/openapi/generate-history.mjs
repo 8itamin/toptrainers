@@ -1,0 +1,137 @@
+import { mkdir, readFile, writeFile } from 'node:fs/promises';
+import { dirname, resolve } from 'node:path';
+import { fileURLToPath } from 'node:url';
+
+const toolDirectory = dirname(fileURLToPath(import.meta.url));
+const frontendRoot = resolve(toolDirectory, '../..');
+const schemaPath = resolve(frontendRoot, '../backend/openapi/openapi.json');
+const generatedDirectory = resolve(frontendRoot, 'libs/shared/contracts/src/generated');
+const outputPath = resolve(generatedDirectory, 'workout-history.ts');
+
+function isRecord(value) {
+  return typeof value === 'object' && value !== null && !Array.isArray(value);
+}
+
+function refName(ref) {
+  const prefix = '#/components/schemas/';
+  if (typeof ref !== 'string' || !ref.startsWith(prefix)) {
+    throw new Error(`Unsupported OpenAPI reference: ${String(ref)}`);
+  }
+  return ref.slice(prefix.length);
+}
+
+function findOperation(document, operationId) {
+  for (const [path, pathItem] of Object.entries(document.paths ?? {})) {
+    if (!isRecord(pathItem)) continue;
+    for (const [method, operation] of Object.entries(pathItem)) {
+      if (isRecord(operation) && operation.operationId === operationId) {
+        return { method: method.toUpperCase(), path, operation };
+      }
+    }
+  }
+  throw new Error(`OpenAPI operation not found: ${operationId}`);
+}
+
+function assertResponseRef(operation, statusCode, schemaName) {
+  const ref = operation.responses?.[statusCode]?.content?.['application/json']?.schema?.$ref;
+  if (refName(ref) !== schemaName) {
+    throw new Error(`Unexpected response schema for ${operation.operationId} ${statusCode}`);
+  }
+}
+
+function assertQueryParameter(operation, name) {
+  const parameter = operation.parameters?.find((item) => item?.name === name && item?.in === 'query');
+  if (!parameter) throw new Error(`Missing query parameter ${name} for ${operation.operationId}`);
+}
+
+function assertPathParameter(operation, name) {
+  const parameter = operation.parameters?.find((item) => item?.name === name && item?.in === 'path');
+  if (!parameter || parameter.required !== true) {
+    throw new Error(`Missing required path parameter ${name} for ${operation.operationId}`);
+  }
+}
+
+function relativeApiPath(path) {
+  const prefix = '/api/v1';
+  if (!path.startsWith(`${prefix}/`)) throw new Error(`History path outside API prefix: ${path}`);
+  return path.slice(prefix.length);
+}
+
+function renderSchemaType(schema) {
+  if (!isRecord(schema)) return 'unknown';
+  if ('$ref' in schema) return refName(schema.$ref);
+  if (Array.isArray(schema.anyOf)) return schema.anyOf.map(renderSchemaType).join(' | ');
+  if (Array.isArray(schema.enum)) return schema.enum.map((value) => JSON.stringify(value)).join(' | ');
+  switch (schema.type) {
+    case 'string': return 'string';
+    case 'integer':
+    case 'number': return 'number';
+    case 'boolean': return 'boolean';
+    case 'null': return 'null';
+    case 'array': return `Array<${renderSchemaType(schema.items)}>`;
+    default: return 'unknown';
+  }
+}
+
+function renderSchemaDeclaration(name, schema) {
+  if (!isRecord(schema) || schema.type !== 'object' || !isRecord(schema.properties)) {
+    throw new Error(`Missing object OpenAPI schema: ${name}`);
+  }
+  const required = new Set(Array.isArray(schema.required) ? schema.required : []);
+  return [
+    `export interface ${name} {`,
+    ...Object.entries(schema.properties).map(([propertyName, propertySchema]) =>
+      `  ${propertyName}${required.has(propertyName) ? '' : '?'}: ${renderSchemaType(propertySchema)};`,
+    ),
+    '}',
+  ].join('\n');
+}
+
+const document = JSON.parse(await readFile(schemaPath, 'utf8'));
+if (!isRecord(document) || !isRecord(document.paths) || !isRecord(document.components?.schemas)) {
+  throw new Error('The input is not a valid OpenAPI document with paths and schemas.');
+}
+
+const client = findOperation(document, 'listClientWorkoutHistory');
+const trainer = findOperation(document, 'listTrainerClientWorkoutHistory');
+
+assertResponseRef(client.operation, '200', 'WorkoutHistoryPage');
+assertResponseRef(trainer.operation, '200', 'WorkoutHistoryPage');
+for (const operation of [client.operation, trainer.operation]) {
+  assertQueryParameter(operation, 'limit');
+  assertQueryParameter(operation, 'cursor');
+}
+assertPathParameter(trainer.operation, 'client_id');
+if (client.path.includes('{client_id}')) throw new Error('Client self-history must not require client_id');
+
+const operations = {
+  client: {
+    method: client.method,
+    path: client.path,
+    relativePath: relativeApiPath(client.path),
+    operationId: 'listClientWorkoutHistory',
+    successStatus: 200,
+  },
+  trainer: {
+    method: trainer.method,
+    path: trainer.path,
+    relativePath: relativeApiPath(trainer.path),
+    operationId: 'listTrainerClientWorkoutHistory',
+    successStatus: 200,
+  },
+};
+
+const schemas = document.components.schemas;
+const generated = [
+  '/** This file is generated by tools/openapi/generate-history.mjs. Do not edit manually. */',
+  `export const WORKOUT_HISTORY_OPERATIONS = ${JSON.stringify(operations, null, 2)} as const;`,
+  '',
+  renderSchemaDeclaration('WorkoutHistoryItem', schemas.WorkoutHistoryItem),
+  '',
+  renderSchemaDeclaration('WorkoutHistoryPage', schemas.WorkoutHistoryPage),
+  '',
+].join('\n\n');
+
+await mkdir(generatedDirectory, { recursive: true });
+await writeFile(outputPath, generated, 'utf8');
+console.info(`Generated workout history contract: ${outputPath}`);
