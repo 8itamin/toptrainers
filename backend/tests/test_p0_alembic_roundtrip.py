@@ -158,7 +158,7 @@ def test_p0_alembic_upgrade_downgrade_upgrade_roundtrip(monkeypatch: pytest.Monk
         assert tables >= RELATIONSHIP_TABLES | {ASSIGNMENT_TABLE, EXECUTION_TABLE}
         assert invitation_columns >= V2_INVITATION_COLUMNS
         assert HISTORY_INDEX in execution_indexes
-        assert revision == "20260904_0008"
+        assert revision == "20260904_0009"
 
         command.downgrade(config, "20260813_0004")
         tables, revision, invitation_columns, execution_indexes = asyncio.run(
@@ -179,6 +179,6 @@ def test_p0_alembic_upgrade_downgrade_upgrade_roundtrip(monkeypatch: pytest.Monk
         assert tables >= RELATIONSHIP_TABLES | {ASSIGNMENT_TABLE, EXECUTION_TABLE}
         assert invitation_columns >= V2_INVITATION_COLUMNS
         assert HISTORY_INDEX in execution_indexes
-        assert revision == "20260904_0008"
+        assert revision == "20260904_0009"
     finally:
         asyncio.run(_reset_public_schema(database_url))

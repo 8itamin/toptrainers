@@ -1,9 +1,9 @@
 from __future__ import annotations
 
 from datetime import date, datetime
-from typing import Literal
+from typing import Literal, Self
 
-from pydantic import BaseModel, ConfigDict, Field
+from pydantic import BaseModel, ConfigDict, Field, model_validator
 
 
 class CreateWorkoutAssignmentRequest(BaseModel):
@@ -69,6 +69,26 @@ class WorkoutExecutionResponse(BaseModel):
     status: Literal["IN_PROGRESS", "COMPLETED"]
     started_at: datetime
     completed_at: datetime | None
+
+
+class WorkoutExecutionSetResultUpsertRequest(BaseModel):
+    actual_reps: int | None = Field(default=None, ge=0, le=1000)
+    actual_weight_kg: float | None = Field(default=None, ge=0, le=1000)
+
+    @model_validator(mode="after")
+    def require_at_least_one_actual(self) -> Self:
+        if self.actual_reps is None and self.actual_weight_kg is None:
+            raise ValueError("At least one actual value is required")
+        return self
+
+
+class WorkoutExecutionSetResultResponse(BaseModel):
+    execution_id: str
+    block_position: int
+    exercise_position: int
+    set_index: int
+    actual_reps: int | None
+    actual_weight_kg: float | None
 
 
 class WorkoutHistoryItem(BaseModel):

@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 from datetime import date, datetime
+from decimal import Decimal
 from enum import StrEnum
 
 from sqlalchemy import (
@@ -10,6 +11,7 @@ from sqlalchemy import (
     ForeignKey,
     Index,
     Integer,
+    Numeric,
     String,
     UniqueConstraint,
     text,
@@ -90,3 +92,37 @@ class WorkoutExecution(Base):
     )
     started_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), nullable=False)
     completed_at: Mapped[datetime | None] = mapped_column(DateTime(timezone=True), nullable=True)
+
+
+class WorkoutExecutionSetResult(Base):
+    __tablename__ = "workout_execution_set_results"
+    __table_args__ = (
+        CheckConstraint("block_position >= 0", name="ck_execution_set_results_block_position"),
+        CheckConstraint(
+            "exercise_position >= 0",
+            name="ck_execution_set_results_exercise_position",
+        ),
+        CheckConstraint("set_index >= 0", name="ck_execution_set_results_set_index"),
+        CheckConstraint(
+            "actual_reps IS NULL OR (actual_reps >= 0 AND actual_reps <= 1000)",
+            name="ck_execution_set_results_actual_reps",
+        ),
+        CheckConstraint(
+            "actual_weight_kg IS NULL OR (actual_weight_kg >= 0 AND actual_weight_kg <= 1000)",
+            name="ck_execution_set_results_actual_weight_kg",
+        ),
+        CheckConstraint(
+            "actual_reps IS NOT NULL OR actual_weight_kg IS NOT NULL",
+            name="ck_execution_set_results_any_actual",
+        ),
+    )
+
+    execution_id: Mapped[str] = mapped_column(
+        ForeignKey("workout_executions.id"),
+        primary_key=True,
+    )
+    block_position: Mapped[int] = mapped_column(Integer, primary_key=True)
+    exercise_position: Mapped[int] = mapped_column(Integer, primary_key=True)
+    set_index: Mapped[int] = mapped_column(Integer, primary_key=True)
+    actual_reps: Mapped[int | None] = mapped_column(Integer, nullable=True)
+    actual_weight_kg: Mapped[Decimal | None] = mapped_column(Numeric(6, 2), nullable=True)
