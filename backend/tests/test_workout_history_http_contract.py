@@ -13,8 +13,6 @@ from toptrainers_api.core.auth import current_account
 from toptrainers_api.core.db import get_session
 from toptrainers_api.modules.assignments.history_router import router as history_router
 
-pytestmark = pytest.mark.asyncio
-
 
 def test_workout_history_openapi_is_authoritative_and_minimal() -> None:
     schema = create_app().openapi()
@@ -65,6 +63,7 @@ async def _http_client(role: str) -> AsyncClient:
     return AsyncClient(transport=transport, base_url="http://testserver")
 
 
+@pytest.mark.asyncio
 async def test_history_endpoints_enforce_role_boundary_before_query() -> None:
     client = await _http_client("trainer")
     async with client:
@@ -81,6 +80,7 @@ async def test_history_endpoints_enforce_role_boundary_before_query() -> None:
     assert trainer_side.json()["detail"]["code"] == "ROLE_NOT_ALLOWED"
 
 
+@pytest.mark.asyncio
 async def test_malformed_history_cursor_returns_422() -> None:
     client = await _http_client("client")
     async with client:
