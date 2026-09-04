@@ -34,6 +34,7 @@ def _require_trainer(account: dict[str, object]) -> str:
         )
     return str(account["sub"])
 
+
 def _invalid_cursor() -> HTTPException:
     return HTTPException(
         status_code=status.HTTP_422_UNPROCESSABLE_ENTITY,
