@@ -1,8 +1,6 @@
-import '@angular/compiler';
-
 import { describe, expect, it } from 'vitest';
 
-import { authorizedSurfaceForUrl } from './app.component';
+import { authorizedSurfaceForUrl } from './authorized-surface';
 
 describe('authorized account access placement', () => {
   it('exposes account access across Client routes', () => {
