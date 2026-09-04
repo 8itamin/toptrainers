@@ -3,14 +3,7 @@ import { NavigationEnd, Router, RouterOutlet } from '@angular/router';
 
 import { AuthorizedAccountMenuComponent } from '@toptrainers/pwa/feature-role-shell';
 
-type AuthorizedSurface = 'client' | 'trainer' | null;
-
-export function authorizedSurfaceForUrl(url: string): AuthorizedSurface {
-  const path = url.split(/[?#]/, 1)[0] ?? '';
-  if (path === '/client' || path.startsWith('/client/')) return 'client';
-  if (path === '/trainer' || path.startsWith('/trainer/')) return 'trainer';
-  return null;
-}
+import { authorizedSurfaceForUrl, type AuthorizedSurface } from './authorized-surface';
 
 @Component({
   selector: 'tt-root',
