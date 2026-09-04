@@ -39,7 +39,7 @@ import { authorizedSurfaceForUrl, type AuthorizedSurface } from './authorized-su
       bottom: calc(.75rem + env(safe-area-inset-bottom));
     }
     .account-access--trainer-desktop { display: none; }
-    @media (min-width: 980px) {
+    @media (min-width: 1080px) {
       .account-access--trainer-mobile { display: none; }
       .account-access--trainer-desktop { display: inline-flex; left: 1rem; bottom: 1rem; }
     }
