@@ -1,0 +1,82 @@
+name: Workout Results RED fixture fix once
+
+on:
+  push:
+    branches: [feature/workout-results-v1]
+
+permissions:
+  contents: write
+
+jobs:
+  fix:
+    if: github.actor != 'github-actions[bot]'
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: feature/workout-results-v1
+      - name: Patch FK seeding order only
+        run: |
+          python - <<'PY'
+          from pathlib import Path
+
+          integration = Path('backend/tests/test_workout_results_integration.py')
+          text = integration.read_text()
+          old = '        session.add_all([relationship, workout, assignment, execution])\n        await session.commit()'
+          new = '        session.add_all([relationship, workout])\n        await session.flush()\n        session.add(assignment)\n        await session.flush()\n        session.add(execution)\n        await session.commit()'
+          if old in text:
+              text = text.replace(old, new, 1)
+              integration.write_text(text)
+
+          concurrency = Path('backend/tests/test_workout_results_concurrency.py')
+          text = concurrency.read_text()
+          start = text.index('        session.add_all(\n            [\n                TrainerClientRelationship(')
+          end = text.index('        await session.commit()', start)
+          end += len('        await session.commit()')
+          replacement = '''        relationship = TrainerClientRelationship(
+              id=RELATIONSHIP_ID,
+              trainer_id=TRAINER_ID,
+              client_id=CLIENT_ID,
+              invitation_id=invitation.id,
+              status=RelationshipStatus.ACTIVE.value,
+          )
+          workout = Workout(
+              id=WORKOUT_ID,
+              trainer_id=TRAINER_ID,
+              title="Current",
+              description="",
+          )
+          session.add_all([relationship, workout])
+          await session.flush()
+          assignment = WorkoutAssignment(
+              id=ASSIGNMENT_ID,
+              relationship_id=RELATIONSHIP_ID,
+              source_workout_id=WORKOUT_ID,
+              request_id="results-race",
+              workout_snapshot=snapshot(),
+              snapshot_schema_version=1,
+              scheduled_date=date(2026, 9, 4),
+              status=WorkoutAssignmentStatus.IN_PROGRESS.value,
+          )
+          session.add(assignment)
+          await session.flush()
+          session.add(
+              WorkoutExecution(
+                  id=EXECUTION_ID,
+                  assignment_id=ASSIGNMENT_ID,
+                  started_at=datetime(2026, 9, 4, 10, 0, tzinfo=UTC),
+                  completed_at=None,
+              )
+          )
+          await session.commit()'''
+          text = text[:start] + replacement + text[end:]
+          concurrency.write_text(text)
+          PY
+      - name: Commit test-only fixture fix
+        run: |
+          git add backend/tests/test_workout_results_integration.py backend/tests/test_workout_results_concurrency.py
+          if git diff --cached --quiet; then exit 0; fi
+          git config user.name 'github-actions[bot]'
+          git config user.email '41898282+github-actions[bot]@users.noreply.github.com'
+          git commit -m 'test: fix Workout Results RED fixture order'
+          git push origin HEAD:feature/workout-results-v1
