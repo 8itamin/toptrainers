@@ -1,8 +1,7 @@
 import { ChangeDetectionStrategy, Component, inject, signal } from '@angular/core';
 import { NavigationEnd, Router, RouterOutlet } from '@angular/router';
 
-import { AuthorizedAccountMenuComponent } from '@toptrainers/pwa/feature-role-shell';
-
+import { AuthorizedAccountMenuComponent } from './authorized-account-menu.component';
 import { authorizedSurfaceForUrl, type AuthorizedSurface } from './authorized-surface';
 
 @Component({
