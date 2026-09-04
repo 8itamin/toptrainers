@@ -1,3 +1,5 @@
+import { readFileSync } from 'node:fs';
+
 import { describe, expect, it } from 'vitest';
 
 import { authorizedSurfaceForUrl } from './authorized-surface';
@@ -18,5 +20,12 @@ describe('authorized account access placement', () => {
   it('does not expose account access in the unauthenticated flow', () => {
     expect(authorizedSurfaceForUrl('/auth')).toBeNull();
     expect(authorizedSurfaceForUrl('/auth/reset-password')).toBeNull();
+  });
+
+  it('keeps Trainer More through 1079px and switches to avatar at the 1080px role-shell breakpoint', () => {
+    const source = readFileSync(new URL('./app.component.ts', import.meta.url), 'utf8');
+
+    expect(source).toContain('@media (min-width: 1080px)');
+    expect(source).not.toContain('@media (min-width: 980px)');
   });
 });
