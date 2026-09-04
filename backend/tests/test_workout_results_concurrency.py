@@ -91,40 +91,42 @@ async def seed(factory: async_sessionmaker[AsyncSession]) -> None:
         )
         session.add(invitation)
         await session.flush()
-        session.add_all(
-            [
-                TrainerClientRelationship(
-                    id=RELATIONSHIP_ID,
-                    trainer_id=TRAINER_ID,
-                    client_id=CLIENT_ID,
-                    invitation_id=invitation.id,
-                    status=RelationshipStatus.ACTIVE.value,
-                ),
-                Workout(
-                    id=WORKOUT_ID,
-                    trainer_id=TRAINER_ID,
-                    title="Current",
-                    description="",
-                ),
-                WorkoutAssignment(
-                    id=ASSIGNMENT_ID,
-                    relationship_id=RELATIONSHIP_ID,
-                    source_workout_id=WORKOUT_ID,
-                    request_id="results-race",
-                    workout_snapshot=snapshot(),
-                    snapshot_schema_version=1,
-                    scheduled_date=date(2026, 9, 4),
-                    status=WorkoutAssignmentStatus.IN_PROGRESS.value,
-                ),
-                WorkoutExecution(
-                    id=EXECUTION_ID,
-                    assignment_id=ASSIGNMENT_ID,
-                    started_at=datetime(2026, 9, 4, 10, 0, tzinfo=UTC),
-                    completed_at=None,
-                ),
-            ]
-        )
-        await session.commit()
+        relationship = TrainerClientRelationship(
+    id=RELATIONSHIP_ID,
+    trainer_id=TRAINER_ID,
+    client_id=CLIENT_ID,
+    invitation_id=invitation.id,
+    status=RelationshipStatus.ACTIVE.value,
+)
+workout = Workout(
+    id=WORKOUT_ID,
+    trainer_id=TRAINER_ID,
+    title="Current",
+    description="",
+)
+session.add_all([relationship, workout])
+await session.flush()
+assignment = WorkoutAssignment(
+    id=ASSIGNMENT_ID,
+    relationship_id=RELATIONSHIP_ID,
+    source_workout_id=WORKOUT_ID,
+    request_id="results-race",
+    workout_snapshot=snapshot(),
+    snapshot_schema_version=1,
+    scheduled_date=date(2026, 9, 4),
+    status=WorkoutAssignmentStatus.IN_PROGRESS.value,
+)
+session.add(assignment)
+await session.flush()
+session.add(
+    WorkoutExecution(
+        id=EXECUTION_ID,
+        assignment_id=ASSIGNMENT_ID,
+        started_at=datetime(2026, 9, 4, 10, 0, tzinfo=UTC),
+        completed_at=None,
+    )
+)
+await session.commit()
 
 
 async def release_gate(session: AsyncSession) -> None:

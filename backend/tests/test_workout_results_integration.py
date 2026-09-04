@@ -145,7 +145,11 @@ async def seed_execution(factory: async_sessionmaker[AsyncSession]) -> None:
             started_at=STARTED_AT,
             completed_at=None,
         )
-        session.add_all([relationship, workout, assignment, execution])
+        session.add_all([relationship, workout])
+        await session.flush()
+        session.add(assignment)
+        await session.flush()
+        session.add(execution)
         await session.commit()
 
 
