@@ -121,7 +121,8 @@ async def seed_execution(factory: async_sessionmaker[AsyncSession]) -> None:
             invitation_id=invitation.id,
             status=RelationshipStatus.ACTIVE.value,
         )
-        # Deliberately keep the current Workout empty. Result mapping must come from the frozen snapshot.
+        # Deliberately keep the current Workout empty. Result mapping must come
+        # from the frozen Assignment snapshot rather than the live template.
         workout = Workout(
             id=WORKOUT_ID,
             trainer_id=TRAINER_ID,
