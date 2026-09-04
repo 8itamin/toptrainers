@@ -1,0 +1,26 @@
+name: Results OpenAPI Export
+
+on:
+  push:
+    branches: [feature/workout-results-v1]
+
+permissions:
+  contents: read
+
+jobs:
+  export:
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: backend
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.13'
+      - run: python -m pip install -q '.[dev]'
+      - run: python scripts/export_openapi.py
+      - uses: actions/upload-artifact@v4
+        with:
+          name: results-openapi
+          path: backend/openapi/openapi.json
