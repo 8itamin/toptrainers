@@ -69,3 +69,19 @@ class WorkoutExecutionResponse(BaseModel):
     status: Literal["IN_PROGRESS", "COMPLETED"]
     started_at: datetime
     completed_at: datetime | None
+
+
+class WorkoutHistoryItem(BaseModel):
+    assignment_id: str
+    relationship_id: str
+    trainer_id: str
+    client_id: str
+    workout_title: str
+    scheduled_date: date
+    started_at: datetime
+    completed_at: datetime
+
+
+class WorkoutHistoryPage(BaseModel):
+    items: list[WorkoutHistoryItem]
+    next_cursor: str | None = None
