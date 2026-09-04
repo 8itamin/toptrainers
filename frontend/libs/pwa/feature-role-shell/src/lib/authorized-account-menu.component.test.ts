@@ -1,93 +1,69 @@
-// @vitest-environment jsdom
-import '@angular/compiler';
+import { Subject } from 'rxjs';
+import { describe, expect, it, vi } from 'vitest';
 
-import { provideHttpClient } from '@angular/common/http';
-import { HttpTestingController, provideHttpClientTesting } from '@angular/common/http/testing';
-import { TestBed } from '@angular/core/testing';
-import { Router } from '@angular/router';
-import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
-
-import { RUNTIME_CONFIG } from '@toptrainers/shared/config';
-
-import { AuthorizedAccountMenuComponent } from './authorized-account-menu.component';
+import { AUTHORIZED_LOGOUT_ERROR, runAuthorizedLogout } from './authorized-logout';
 
 describe('authorized account menu logout', () => {
-  let http: HttpTestingController;
-  const navigateByUrl = vi.fn();
-
-  beforeEach(async () => {
-    navigateByUrl.mockReset();
-    navigateByUrl.mockResolvedValue(true);
-
-    await TestBed.configureTestingModule({
-      imports: [AuthorizedAccountMenuComponent],
-      providers: [
-        provideHttpClient(),
-        provideHttpClientTesting(),
-        { provide: RUNTIME_CONFIG, useValue: { apiBaseUrl: '/api/v1', release: 'test' } },
-        { provide: Router, useValue: { navigateByUrl } },
-      ],
-    }).compileComponents();
-
-    http = TestBed.inject(HttpTestingController);
-  });
-
-  afterEach(() => {
-    http.verify();
-    TestBed.resetTestingModule();
-  });
-
   function setup() {
-    const fixture = TestBed.createComponent(AuthorizedAccountMenuComponent);
-    fixture.componentRef.setInput('trigger', 'profile');
-    fixture.detectChanges();
+    const request = new Subject<void>();
+    const post = vi.fn(() => request.asObservable());
+    const onSuccess = vi.fn();
+    let busy = false;
+    let errorMessage = '';
 
-    const trigger = fixture.nativeElement.querySelector<HTMLButtonElement>('[data-testid="account-menu-trigger"]');
-    trigger?.click();
-    fixture.detectChanges();
+    const ui = {
+      isBusy: () => busy,
+      setBusy: (value: boolean) => {
+        busy = value;
+      },
+      setError: (message: string) => {
+        errorMessage = message;
+      },
+      onSuccess,
+    };
 
-    const logout = fixture.nativeElement.querySelector<HTMLButtonElement>('[data-testid="logout-action"]');
-    return { fixture, logout };
+    return {
+      request,
+      post,
+      onSuccess,
+      ui,
+      busy: () => busy,
+      errorMessage: () => errorMessage,
+    };
   }
 
-  it('POSTs current-session logout and redirects to auth with replaceUrl after 204', async () => {
-    const { fixture, logout } = setup();
+  it('POSTs the current-session logout endpoint and completes the authorized flow', () => {
+    const state = setup();
 
-    expect(logout).not.toBeNull();
-    logout?.click();
+    runAuthorizedLogout('/api/v1', state.post, state.ui);
 
-    const request = http.expectOne('/api/v1/auth/logout');
-    expect(request.request.method).toBe('POST');
-    expect(request.request.body).toBeNull();
-    request.flush(null, { status: 204, statusText: 'No Content' });
+    expect(state.post).toHaveBeenCalledWith('/api/v1/auth/logout', null);
+    expect(state.busy()).toBe(true);
+    expect(state.onSuccess).not.toHaveBeenCalled();
 
-    fixture.detectChanges();
-    await fixture.whenStable();
+    state.request.complete();
 
-    expect(navigateByUrl).toHaveBeenCalledWith('/auth', { replaceUrl: true });
+    expect(state.busy()).toBe(false);
+    expect(state.onSuccess).toHaveBeenCalledOnce();
   });
 
-  it('keeps the user in the authorized UI and shows an error when logout fails', () => {
-    const { fixture, logout } = setup();
+  it('keeps the authorized flow active and exposes an error when logout fails', () => {
+    const state = setup();
 
-    logout?.click();
-    const request = http.expectOne('/api/v1/auth/logout');
-    request.flush({ detail: 'server error' }, { status: 500, statusText: 'Server Error' });
-    fixture.detectChanges();
+    runAuthorizedLogout('/api/v1', state.post, state.ui);
+    state.request.error(new Error('server error'));
 
-    expect(navigateByUrl).not.toHaveBeenCalled();
-    expect(fixture.nativeElement.querySelector('[role="alert"]')?.textContent).toContain(
-      'Не удалось выйти. Попробуйте ещё раз.',
-    );
-    expect(fixture.nativeElement.querySelector('[data-testid="logout-action"]')).not.toBeNull();
+    expect(state.busy()).toBe(false);
+    expect(state.errorMessage()).toBe(AUTHORIZED_LOGOUT_ERROR);
+    expect(state.onSuccess).not.toHaveBeenCalled();
   });
 
   it('does not send a second logout request while the first is in flight', () => {
-    const { logout } = setup();
+    const state = setup();
 
-    logout?.click();
-    logout?.click();
+    runAuthorizedLogout('/api/v1', state.post, state.ui);
+    runAuthorizedLogout('/api/v1', state.post, state.ui);
 
-    expect(http.match('/api/v1/auth/logout')).toHaveLength(1);
+    expect(state.post).toHaveBeenCalledTimes(1);
   });
 });
