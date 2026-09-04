@@ -3,9 +3,11 @@ name: Results OpenAPI Export
 on:
   push:
     branches: [feature/workout-results-v1]
+    paths-ignore:
+      - backend/openapi/openapi.json
 
 permissions:
-  contents: read
+  contents: write
 
 jobs:
   export:
@@ -20,7 +22,13 @@ jobs:
           python-version: '3.13'
       - run: python -m pip install -q '.[dev]'
       - run: python scripts/export_openapi.py
-      - uses: actions/upload-artifact@v4
-        with:
-          name: results-openapi
-          path: backend/openapi/openapi.json
+      - name: Commit authoritative OpenAPI
+        run: |
+          git add openapi/openapi.json
+          if git diff --cached --quiet; then
+            exit 0
+          fi
+          git config user.name github-actions[bot]
+          git config user.email 41898282+github-actions[bot]@users.noreply.github.com
+          git commit -m "chore: refresh workout results OpenAPI"
+          git push origin HEAD:feature/workout-results-v1
