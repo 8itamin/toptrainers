@@ -20,7 +20,7 @@ def test_results_table_uses_only_execution_and_frozen_coordinates_as_identity() 
         "set_index",
     ]
     assert "source_exercise_id" not in table.columns
-    assert set(table.columns) == {
+    assert set(table.columns.keys()) == {
         "execution_id",
         "block_position",
         "exercise_position",
