@@ -4,6 +4,8 @@ import { Router } from '@angular/router';
 
 import { RUNTIME_CONFIG, type RuntimeConfig } from '@toptrainers/shared/config';
 
+import { runAuthorizedLogout } from './authorized-logout';
+
 export type AuthorizedAccountMenuTrigger = 'profile' | 'more' | 'avatar';
 
 @Component({
@@ -90,20 +92,18 @@ export class AuthorizedAccountMenuComponent {
   }
 
   protected logout(): void {
-    if (this.busy()) return;
-
-    this.busy.set(true);
-    this.errorMessage.set('');
-    this.http.post<void>(`${this.config.apiBaseUrl}/auth/logout`, null).subscribe({
-      error: () => {
-        this.busy.set(false);
-        this.errorMessage.set('Не удалось выйти. Попробуйте ещё раз.');
+    runAuthorizedLogout(
+      this.config.apiBaseUrl,
+      (url, body) => this.http.post<void>(url, body),
+      {
+        isBusy: () => this.busy(),
+        setBusy: (value) => this.busy.set(value),
+        setError: (message) => this.errorMessage.set(message),
+        onSuccess: () => {
+          this.open.set(false);
+          void this.router.navigateByUrl('/auth', { replaceUrl: true });
+        },
       },
-      complete: () => {
-        this.busy.set(false);
-        this.open.set(false);
-        void this.router.navigateByUrl('/auth', { replaceUrl: true });
-      },
-    });
+    );
   }
 }
