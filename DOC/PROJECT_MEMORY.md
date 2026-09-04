@@ -229,3 +229,5 @@ Angular/Nx и Docker-проверки не выполнялись, потому 
 3. зафиксировать OpenAPI и первую миграцию для `identity`, `programs` и `assignments`;
 4. реализовать первый вертикальный сценарий «тренер → программа/витрина → приглашённый клиент → выполненная тренировка»;
 5. до публичного запуска отдельно утвердить домен, TLS/ingress, резервное копирование и мониторинг.
+
+> Workout History P0 read-side (2026-09-04): completed workout history is a read projection over Relationship + Assignment + Execution, with no persistent History entity. Client self-history and Trainer→target-client pair history include only COMPLETED assignments with non-null execution.completed_at, aggregate active/terminated and repeated relationships, use frozen assignment snapshot title, deterministic keyset pagination, and migration 20260904_0008 adds only the partial completion index.

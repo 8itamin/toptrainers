@@ -19,6 +19,7 @@ RELATIONSHIP_TABLES = {
 }
 ASSIGNMENT_TABLE = "workout_assignments"
 EXECUTION_TABLE = "workout_executions"
+HISTORY_INDEX = "ix_workout_executions_history_completed"
 V2_INVITATION_COLUMNS = {
     "resolved_at",
     "resolved_by_account_id",
@@ -52,7 +53,9 @@ async def _reset_public_schema(database_url: str) -> None:
         await engine.dispose()
 
 
-async def _database_state(database_url: str) -> tuple[set[str], str, set[str]]:
+async def _database_state(
+    database_url: str,
+) -> tuple[set[str], str, set[str], set[str]]:
     engine = create_async_engine(database_url)
     try:
         async with engine.connect() as connection:
@@ -69,11 +72,19 @@ async def _database_state(database_url: str) -> tuple[set[str], str, set[str]]:
                         )
                     }
                 )
+            execution_indexes: set[str] = set()
+            if EXECUTION_TABLE in tables:
+                execution_indexes = await connection.run_sync(
+                    lambda sync_connection: {
+                        index["name"]
+                        for index in inspect(sync_connection).get_indexes(EXECUTION_TABLE)
+                    }
+                )
             revision = await connection.scalar(text("SELECT version_num FROM alembic_version"))
     finally:
         await engine.dispose()
     assert isinstance(revision, str)
-    return tables, revision, invitation_columns
+    return tables, revision, invitation_columns, execution_indexes
 
 
 def test_p0_alembic_upgrade_downgrade_upgrade_roundtrip(monkeypatch: pytest.MonkeyPatch) -> None:
@@ -84,52 +95,90 @@ def test_p0_alembic_upgrade_downgrade_upgrade_roundtrip(monkeypatch: pytest.Monk
     asyncio.run(_reset_public_schema(database_url))
     try:
         command.upgrade(config, "20260822_0005")
-        tables, revision, invitation_columns = asyncio.run(_database_state(database_url))
+        tables, revision, invitation_columns, execution_indexes = asyncio.run(
+            _database_state(database_url)
+        )
         assert tables >= RELATIONSHIP_TABLES
         assert ASSIGNMENT_TABLE not in tables
         assert EXECUTION_TABLE not in tables
         assert invitation_columns >= V2_INVITATION_COLUMNS
+        assert execution_indexes == set()
         assert revision == "20260822_0005"
 
         command.upgrade(config, "20260822_0006")
-        tables, revision, invitation_columns = asyncio.run(_database_state(database_url))
+        tables, revision, invitation_columns, execution_indexes = asyncio.run(
+            _database_state(database_url)
+        )
         assert tables >= RELATIONSHIP_TABLES | {ASSIGNMENT_TABLE}
         assert EXECUTION_TABLE not in tables
         assert invitation_columns >= V2_INVITATION_COLUMNS
+        assert execution_indexes == set()
         assert revision == "20260822_0006"
 
         command.upgrade(config, "20260824_0007")
-        tables, revision, invitation_columns = asyncio.run(_database_state(database_url))
+        tables, revision, invitation_columns, execution_indexes = asyncio.run(
+            _database_state(database_url)
+        )
         assert tables >= RELATIONSHIP_TABLES | {ASSIGNMENT_TABLE, EXECUTION_TABLE}
         assert invitation_columns >= V2_INVITATION_COLUMNS
+        assert HISTORY_INDEX not in execution_indexes
+        assert revision == "20260824_0007"
+
+        command.upgrade(config, "20260904_0008")
+        tables, revision, invitation_columns, execution_indexes = asyncio.run(
+            _database_state(database_url)
+        )
+        assert tables >= RELATIONSHIP_TABLES | {ASSIGNMENT_TABLE, EXECUTION_TABLE}
+        assert invitation_columns >= V2_INVITATION_COLUMNS
+        assert HISTORY_INDEX in execution_indexes
+        assert revision == "20260904_0008"
+
+        command.downgrade(config, "20260824_0007")
+        tables, revision, invitation_columns, execution_indexes = asyncio.run(
+            _database_state(database_url)
+        )
+        assert tables >= RELATIONSHIP_TABLES | {ASSIGNMENT_TABLE, EXECUTION_TABLE}
+        assert HISTORY_INDEX not in execution_indexes
         assert revision == "20260824_0007"
 
         command.downgrade(config, "20260822_0006")
-        tables, revision, invitation_columns = asyncio.run(_database_state(database_url))
+        tables, revision, invitation_columns, execution_indexes = asyncio.run(
+            _database_state(database_url)
+        )
         assert tables >= RELATIONSHIP_TABLES | {ASSIGNMENT_TABLE}
         assert EXECUTION_TABLE not in tables
         assert invitation_columns >= V2_INVITATION_COLUMNS
+        assert execution_indexes == set()
         assert revision == "20260822_0006"
 
         command.upgrade(config, "head")
-        tables, revision, invitation_columns = asyncio.run(_database_state(database_url))
+        tables, revision, invitation_columns, execution_indexes = asyncio.run(
+            _database_state(database_url)
+        )
         assert tables >= RELATIONSHIP_TABLES | {ASSIGNMENT_TABLE, EXECUTION_TABLE}
         assert invitation_columns >= V2_INVITATION_COLUMNS
-        assert revision == "20260824_0007"
+        assert HISTORY_INDEX in execution_indexes
+        assert revision == "20260904_0008"
 
         command.downgrade(config, "20260813_0004")
-        tables, revision, invitation_columns = asyncio.run(_database_state(database_url))
+        tables, revision, invitation_columns, execution_indexes = asyncio.run(
+            _database_state(database_url)
+        )
         assert RELATIONSHIP_TABLES.isdisjoint(tables)
         assert ASSIGNMENT_TABLE not in tables
         assert EXECUTION_TABLE not in tables
         assert invitation_columns == set()
+        assert execution_indexes == set()
         assert "accounts" in tables
         assert revision == "20260813_0004"
 
         command.upgrade(config, "head")
-        tables, revision, invitation_columns = asyncio.run(_database_state(database_url))
+        tables, revision, invitation_columns, execution_indexes = asyncio.run(
+            _database_state(database_url)
+        )
         assert tables >= RELATIONSHIP_TABLES | {ASSIGNMENT_TABLE, EXECUTION_TABLE}
         assert invitation_columns >= V2_INVITATION_COLUMNS
-        assert revision == "20260824_0007"
+        assert HISTORY_INDEX in execution_indexes
+        assert revision == "20260904_0008"
     finally:
         asyncio.run(_reset_public_schema(database_url))

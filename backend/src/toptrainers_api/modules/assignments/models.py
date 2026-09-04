@@ -12,6 +12,7 @@ from sqlalchemy import (
     Integer,
     String,
     UniqueConstraint,
+    text,
 )
 from sqlalchemy.dialects.postgresql import JSONB
 from sqlalchemy.orm import Mapped, mapped_column
@@ -74,6 +75,12 @@ class WorkoutExecution(Base):
         UniqueConstraint(
             "assignment_id",
             name="uq_workout_executions_assignment_id",
+        ),
+        Index(
+            "ix_workout_executions_history_completed",
+            text("completed_at DESC"),
+            text("assignment_id DESC"),
+            postgresql_where=text("completed_at IS NOT NULL"),
         ),
     )
 
