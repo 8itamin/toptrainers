@@ -89,6 +89,16 @@ export const APP_ROUTES: Routes = [
       import('@toptrainers/pwa/feature-role-shell').then((module) => module.ClientTodayComponent),
   },
   {
+    path: 'client/history',
+    pathMatch: 'full',
+    title: 'TopTrainers — История тренировок',
+    canActivate: [clientGuard],
+    loadComponent: () =>
+      import('@toptrainers/pwa/feature-role-shell').then(
+        (module) => module.ClientWorkoutHistoryComponent,
+      ),
+  },
+  {
     path: 'client/workout',
     pathMatch: 'full',
     title: 'TopTrainers — Упражнения на сегодня',
