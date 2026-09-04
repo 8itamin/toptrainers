@@ -24,7 +24,7 @@ import {
 
       @if (initialLoading()) {
         <section class="state" aria-live="polite">Загружаем историю…</section>
-      } @else if (isEmpty()) {
+      } @else if (!errorMessage() && isEmpty()) {
         <section class="state">
           <strong>Завершённых тренировок пока нет</strong>
           <span>Здесь появятся тренировки после завершения.</span>
