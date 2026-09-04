@@ -1,6 +1,7 @@
 export * from './lib/auth.component';
 export * from './lib/auth-action.component';
 export * from './lib/client-today.component';
+export * from './lib/client-workout-history.component';
 export * from './lib/client-workout-list.component';
 export * from './lib/program-builder.component';
 export * from './lib/trainer-clients.component';
