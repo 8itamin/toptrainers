@@ -3,24 +3,27 @@ from __future__ import annotations
 from datetime import date
 from typing import Annotated, Any
 
-from fastapi import APIRouter, Depends, HTTPException, status
+from fastapi import APIRouter, Depends, HTTPException, Path, Response, status
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from toptrainers_api.core.auth import current_account
 from toptrainers_api.core.db import get_session
 from toptrainers_api.core.errors import BusinessErrorResponse, BusinessRuleError, as_http_exception
-from toptrainers_api.modules.assignments import service
+from toptrainers_api.modules.assignments import results_service, service
 from toptrainers_api.modules.assignments.schemas import (
     CreateWorkoutAssignmentRequest,
     RescheduleWorkoutAssignmentRequest,
     WorkoutAssignmentResponse,
     WorkoutExecutionResponse,
+    WorkoutExecutionSetResultResponse,
+    WorkoutExecutionSetResultUpsertRequest,
 )
 
 router = APIRouter(prefix="/assignments", tags=["assignments"])
 
 CurrentAccountDep = Annotated[dict[str, object], Depends(current_account)]
 SessionDep = Annotated[AsyncSession, Depends(get_session)]
+ResultCoordinate = Annotated[int, Path(ge=0)]
 
 _BUSINESS_RESPONSES: dict[int | str, dict[str, Any]] = {
     403: {"model": BusinessErrorResponse},
@@ -242,3 +245,89 @@ async def complete_workout_execution(
     except BusinessRuleError as error:
         raise as_http_exception(error) from error
     return service.execution_to_response(execution)
+
+
+@router.get(
+    "/{assignment_id}/execution/results",
+    operation_id="listWorkoutExecutionResults",
+    response_model=list[WorkoutExecutionSetResultResponse],
+    responses=_BUSINESS_RESPONSES,
+)
+async def list_workout_execution_results(
+    assignment_id: str,
+    account: CurrentAccountDep,
+    session: SessionDep,
+) -> list[WorkoutExecutionSetResultResponse]:
+    actor_id = _require_assignment_reader(account)
+    actor_role = str(account["role"])
+    try:
+        results = await results_service.list_results(
+            session,
+            actor_id,
+            actor_role,
+            assignment_id,
+        )
+    except BusinessRuleError as error:
+        raise as_http_exception(error) from error
+    return [results_service.to_response(result) for result in results]
+
+
+@router.put(
+    "/{assignment_id}/execution/results/{block_position}/{exercise_position}/{set_index}",
+    operation_id="putWorkoutExecutionSetResult",
+    response_model=WorkoutExecutionSetResultResponse,
+    responses=_BUSINESS_RESPONSES,
+)
+async def put_workout_execution_set_result(
+    assignment_id: str,
+    block_position: ResultCoordinate,
+    exercise_position: ResultCoordinate,
+    set_index: ResultCoordinate,
+    payload: WorkoutExecutionSetResultUpsertRequest,
+    account: CurrentAccountDep,
+    session: SessionDep,
+) -> WorkoutExecutionSetResultResponse:
+    client_id = _require_execution_client(account)
+    try:
+        result = await results_service.put_result(
+            session,
+            client_id,
+            assignment_id,
+            block_position,
+            exercise_position,
+            set_index,
+            payload,
+        )
+    except BusinessRuleError as error:
+        raise as_http_exception(error) from error
+    return results_service.to_response(result)
+
+
+@router.delete(
+    "/{assignment_id}/execution/results/{block_position}/{exercise_position}/{set_index}",
+    operation_id="deleteWorkoutExecutionSetResult",
+    status_code=status.HTTP_204_NO_CONTENT,
+    response_class=Response,
+    responses=_BUSINESS_RESPONSES,
+)
+async def delete_workout_execution_set_result(
+    assignment_id: str,
+    block_position: ResultCoordinate,
+    exercise_position: ResultCoordinate,
+    set_index: ResultCoordinate,
+    account: CurrentAccountDep,
+    session: SessionDep,
+) -> Response:
+    client_id = _require_execution_client(account)
+    try:
+        await results_service.delete_result(
+            session,
+            client_id,
+            assignment_id,
+            block_position,
+            exercise_position,
+            set_index,
+        )
+    except BusinessRuleError as error:
+        raise as_http_exception(error) from error
+    return Response(status_code=status.HTTP_204_NO_CONTENT)
