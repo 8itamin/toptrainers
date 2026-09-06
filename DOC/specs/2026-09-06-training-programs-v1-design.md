@@ -4,7 +4,7 @@
 
 Evolve the existing Trainer `Program` metadata into a mutable scheduled training program that can be atomically issued to a Client as a set of ordinary `WorkoutAssignment` children, without introducing a second execution engine or changing the existing `Assignment → Execution → Results → History` lifecycle.
 
-Product intent: let a Trainer define a multi-week schedule once and issue it as a coherent plan, while preserving the existing reliable semantics of each workout assignment.
+Product intent: let a Trainer define a multi-week schedule once and issue it as a coherent plan while preserving the proven semantics of every child workout assignment.
 
 ## Scope
 
@@ -15,7 +15,7 @@ Product intent: let a Trainer define a multi-week schedule once and issue it as 
 - immutable `ProgramAssignment` issuance parent;
 - immutable Program snapshot containing schedule and Workout IDs only;
 - ordinary child `WorkoutAssignment` rows with frozen Workout snapshots;
-- nullable provenance on child Assignments;
+- nullable child provenance;
 - parent-level idempotency for atomic issuance;
 - explicit ProgramAssignment cancellation that cancels only still-`PLANNED` children.
 
@@ -25,9 +25,8 @@ Out of scope:
 - editing an issued ProgramAssignment;
 - adding/removing children after issuance;
 - lazy/background issuance;
-- parent auto-completion;
-- parent status synchronization from child lifecycle;
-- schedule recurrence rules;
+- parent auto-completion or parent status synchronization from child lifecycle;
+- recurrence rules;
 - multiple workouts in one `(week_number, day_number)` slot;
 - whole-program reschedule;
 - adherence/analytics;
@@ -36,25 +35,19 @@ Out of scope:
 
 ## Existing baseline
 
-The existing `programs` table contains:
+The existing `programs` table contains `id`, `trainer_id`, `title`, `description` and physical `weeks`.
 
-- `id`
-- `trainer_id`
-- `title`
-- `description`
-- physical `weeks`
-
-The existing `WorkoutAssignment` is lifecycle authority for workouts and owns an immutable frozen `workout_snapshot`. `WorkoutExecution`, Results and History already operate only through ordinary `WorkoutAssignment` rows and must remain Program-agnostic.
+`WorkoutAssignment` remains the lifecycle authority and already owns immutable `workout_snapshot`. `WorkoutExecution`, Results and History operate through ordinary `WorkoutAssignment` rows and remain Program-agnostic.
 
 ## Public Program contract
 
-The existing physical `programs.weeks` column is preserved. The canonical public API field is renamed to:
+The physical `programs.weeks` column is preserved. The canonical public field is:
 
 ```text
 duration_weeks
 ```
 
-`weeks` becomes an internal persistence detail and MUST NOT appear in the public Program DTOs.
+`weeks` is persistence-only and MUST NOT leak into public Program DTOs.
 
 Allowed duration:
 
@@ -62,20 +55,32 @@ Allowed duration:
 1 <= duration_weeks <= 52
 ```
 
-A Program may have an empty schedule and still be saved.
+A Program may be saved with `slots: []`.
+
+Mutable Program request/response slots use only:
+
+```text
+week_number
+day_number
+workout_id
+```
+
+The internal live `ProgramSlot.id` is not part of the mutable Program command contract and must not be treated as a stable public identity.
+
+All mutable Program schedule responses are ordered deterministically by:
+
+```text
+week_number ASC, day_number ASC
+```
 
 ## Calendar semantics
-
-A slot is identified by:
 
 ```text
 week_number = 1..duration_weeks
 day_number  = 1..7
 ```
 
-`start_date` means day 1 of Program week 1. It is not required to be Monday.
-
-A child scheduled date is calculated as:
+`start_date` is day 1 of Program week 1 and need not be Monday.
 
 ```text
 scheduled_date = start_date
@@ -89,47 +94,43 @@ Examples:
 - `(1,7)` => `start_date + 6 days`
 - `(2,1)` => `start_date + 7 days`
 
-## Persistence
+## Migration
 
-Add migration:
+Add:
 
 ```text
 20260906_0010_training_programs_v1
 ```
 
-with `down_revision = 20260904_0009`.
+with:
 
-The migration is additive: no backfill is required.
+```text
+down_revision = 20260904_0009
+```
+
+The migration is additive and requires no backfill.
 
 ### `program_slots`
 
 ```text
-program_slots
-
 id            VARCHAR(36) PK
 program_id    FK programs.id NOT NULL
 week_number   INTEGER NOT NULL
 day_number    INTEGER NOT NULL
 workout_id    FK workouts.id NOT NULL
-```
 
-Constraints:
-
-```text
 UNIQUE(program_id, week_number, day_number)
 CHECK week_number >= 1
 CHECK day_number BETWEEN 1 AND 7
 ```
 
-`week_number <= Program.duration_weeks` is an application invariant because it depends on another row.
+`week_number <= duration_weeks` is an application invariant because it depends on another row.
 
-Program update is full schedule replacement. Live slot IDs are not historical identities and may be replaced on each full update.
+Program update is full schedule replacement. New persisted live slots receive backend-generated IDs; old live slot IDs are not historical version IDs.
 
 ### `program_assignments`
 
 ```text
-program_assignments
-
 id                       VARCHAR(36) PK
 relationship_id          FK trainer_client_relationships.id NOT NULL
 source_program_id        FK programs.id NOT NULL
@@ -140,33 +141,29 @@ snapshot_schema_version   INTEGER NOT NULL DEFAULT 1
 status                    VARCHAR(16) NOT NULL
 created_at                TIMESTAMPTZ NOT NULL
 cancelled_at              TIMESTAMPTZ NULL
-```
 
-Constraints:
-
-```text
 UNIQUE(relationship_id, request_id)
 CHECK snapshot_schema_version = 1
 CHECK status IN ('ACTIVE', 'CANCELLED')
 ```
 
-Parent status has deliberately narrow meaning:
+Parent status semantics are deliberately narrow:
 
-- `ACTIVE`: no explicit ProgramAssignment cancellation was performed;
-- `CANCELLED`: Trainer explicitly cancelled the ProgramAssignment and all children that were `PLANNED` at that moment were cancelled.
+- `ACTIVE` — no explicit ProgramAssignment cancellation was performed;
+- `CANCELLED` — Trainer explicitly cancelled the ProgramAssignment and all children that were `PLANNED` at that moment were cancelled.
 
-Parent status does not auto-follow child lifecycle and does not auto-complete.
+Parent status does not auto-follow child state and does not auto-complete.
 
 ### Child provenance in `workout_assignments`
 
-Add nullable fields:
+Add:
 
 ```text
 program_assignment_id  VARCHAR(36) NULL FK program_assignments.id
 program_slot_id        VARCHAR(36) NULL
 ```
 
-`program_slot_id` is immutable copied provenance and MUST NOT be a foreign key to live `program_slots`, because Program updates replace live slots while historical issued Assignments must remain traceable to their frozen Program snapshot.
+`program_slot_id` is immutable copied provenance and MUST NOT be a FK to live `program_slots`. Program updates replace live slots, while historical issued children must remain traceable to the slot occurrence frozen in their parent snapshot.
 
 Constraint:
 
@@ -176,7 +173,7 @@ OR
 (program_assignment_id IS NOT NULL AND program_slot_id IS NOT NULL)
 ```
 
-Add an index on `workout_assignments.program_assignment_id` for child lookup/cancellation.
+Add an index on `workout_assignments.program_assignment_id`.
 
 Direct Assignments remain:
 
@@ -187,9 +184,7 @@ program_slot_id = NULL
 
 ## Program snapshot v1
 
-`ProgramAssignment.program_snapshot` is immutable and contains Program metadata plus frozen schedule coordinates and Workout IDs, but never Workout content.
-
-Shape:
+`ProgramAssignment.program_snapshot` is immutable and contains Program metadata, frozen schedule coordinates and Workout IDs, but never Workout content.
 
 ```json
 {
@@ -207,33 +202,35 @@ Shape:
 }
 ```
 
+Snapshot slots are sorted by `(week_number, day_number)`.
+
 The child `WorkoutAssignment.workout_snapshot` remains the authoritative frozen Workout content.
 
-Therefore:
+Consequences:
 
-- later Program edits do not affect the ProgramAssignment snapshot or children;
-- later Workout edits do not affect child Workout snapshots;
-- current Program/Workout rows are never needed to interpret historical issued children.
+- later Program edits do not change parent snapshot or children;
+- later Workout edits do not change child Workout snapshots;
+- current Program/Workout rows are not required to interpret historical issued children.
 
 ## Program API
 
-Keep the existing `/api/v1/programs` resource and evolve its contract.
-
-### List
+Keep `/api/v1/programs` and evolve its contract.
 
 ```text
-GET /api/v1/programs
+GET  /api/v1/programs
 operationId: listTrainingPrograms
-```
 
-### Create
-
-```text
 POST /api/v1/programs
 operationId: createTrainingProgram
+
+GET  /api/v1/programs/{program_id}
+operationId: getTrainingProgram
+
+PUT  /api/v1/programs/{program_id}
+operationId: replaceTrainingProgram
 ```
 
-Request:
+Create/replace body:
 
 ```json
 {
@@ -250,27 +247,9 @@ Request:
 }
 ```
 
-Empty `slots` is valid.
+`slots: []` is valid.
 
-### Get
-
-```text
-GET /api/v1/programs/{program_id}
-operationId: getTrainingProgram
-```
-
-Trainer may read only own Program.
-
-### Full replacement update
-
-```text
-PUT /api/v1/programs/{program_id}
-operationId: replaceTrainingProgram
-```
-
-PUT replaces Program metadata and complete schedule in one transaction.
-
-Flow:
+PUT is full replacement:
 
 ```text
 Program FOR UPDATE
@@ -280,13 +259,13 @@ Program FOR UPDATE
 → commit once
 ```
 
-Any validation/write failure preserves the previous complete Program state.
+Any failure preserves the previous complete Program state.
 
-Every newly persisted live slot gets a backend-generated `id`; old slot IDs are not reused as historical version IDs.
+Trainer may read/mutate only own Programs.
 
 ## Program validation
 
-Pydantic/request-level bounds:
+Request-level bounds:
 
 - `duration_weeks: 1..52`
 - `week_number >= 1`
@@ -295,10 +274,10 @@ Pydantic/request-level bounds:
 Business invariants:
 
 - duplicate `(week_number, day_number)` => `409 PROGRAM_SLOT_DUPLICATE`;
-- slot with `week_number > duration_weeks` => `409 PROGRAM_SLOT_OUTSIDE_DURATION`;
-- nonexistent or foreign Trainer Workout is hidden as `404 PROGRAM_WORKOUT_NOT_FOUND`.
+- `week_number > duration_weeks` => `409 PROGRAM_SLOT_OUTSIDE_DURATION`;
+- nonexistent or foreign Trainer Workout => `404 PROGRAM_WORKOUT_NOT_FOUND`.
 
-A Program may be empty, but an empty Program cannot be assigned.
+Foreign ownership is intentionally hidden as not-found.
 
 ## ProgramAssignment API
 
@@ -324,9 +303,11 @@ Required:
 - active Trainer–Client Relationship;
 - Program belongs to Trainer;
 - Program contains at least one slot;
-- every referenced Workout remains available to the Trainer at issuance time.
+- every referenced Workout is still available to that Trainer at issuance time.
 
-If a previously saved Program contains a now unavailable Workout, issuance fails atomically with `409 PROGRAM_NOT_ASSIGNABLE`; no slot is silently skipped.
+Empty Program => `409 PROGRAM_EMPTY`.
+
+If a previously valid Program cannot now materialize all referenced Workouts, issuance fails atomically with `409 PROGRAM_NOT_ASSIGNABLE`; no slot is skipped.
 
 ### Get ProgramAssignment
 
@@ -335,15 +316,9 @@ GET /api/v1/program-assignments/{program_assignment_id}
 operationId: getProgramAssignment
 ```
 
-Readable by the Trainer/Client party of the Relationship, including a terminated historical Relationship.
+Readable by the Trainer/Client party of the Relationship, including terminated historical Relationships.
 
-The response contains parent snapshot and a lightweight child list, not child full Workout snapshots.
-
-Child detail continues through the existing:
-
-```text
-GET /api/v1/assignments/{assignment_id}
-```
+The response contains the parent snapshot plus a lightweight child list. Full child Workout snapshots remain available only through existing Assignment detail.
 
 No ProgramAssignment list endpoint is required in v1.
 
@@ -358,17 +333,15 @@ Trainer-only and idempotent.
 
 Cancellation:
 
-- cancels only child Assignments currently `PLANNED`;
+- cancels only children currently `PLANNED`;
 - leaves `IN_PROGRESS` untouched;
 - leaves `COMPLETED`, Results and History untouched;
-- sets parent status to `CANCELLED` and `cancelled_at` once;
-- repeated cancellation returns the existing parent state.
+- sets parent `status=CANCELLED` and `cancelled_at` once;
+- repeated cancellation returns the same parent state.
 
-Individual child reschedule/cancel continues to affect only that child and never siblings or parent status.
+Individual child reschedule/cancel affects only that child and never siblings or parent status.
 
 ## ProgramAssignment response
-
-Recommended response shape:
 
 ```json
 {
@@ -406,6 +379,8 @@ Recommended response shape:
 }
 ```
 
+`assignments[]` is ordered by the frozen schedule order `(week_number, day_number)` represented by `program_slot_id` in the parent snapshot.
+
 ## Parent idempotency
 
 Authoritative key:
@@ -414,7 +389,7 @@ Authoritative key:
 (relationship_id, request_id)
 ```
 
-For an existing key, command equality is defined only by immutable original command fields:
+For an existing key, command equality uses only:
 
 ```text
 source_program_id
@@ -423,19 +398,19 @@ start_date
 
 Rules:
 
-- same request ID + same Program + same start date => return original ProgramAssignment and original children;
-- this remains true after Program edits or Workout edits;
-- same request ID + different Program or different start date => `409 PROGRAM_ASSIGNMENT_REQUEST_ID_CONFLICT`.
+- same request ID + same Program + same start date => return original parent and original children;
+- retry remains original after Program/Workout edits;
+- same request ID + different Program or start date => `409 PROGRAM_ASSIGNMENT_REQUEST_ID_CONFLICT`.
 
-Current Program state MUST NOT be used to decide retry equality.
+Current Program state MUST NOT participate in retry equality.
 
-Child request IDs are generated by the backend and are not the Program API idempotency contract.
+Child request IDs are opaque backend-generated values and are not the Program API idempotency contract.
 
 ## Shared commit-free Assignment materializer
 
-The existing `assignments.service.create_assignment()` currently owns authorization/idempotency/snapshot/persistence/commit. It MUST NOT be called in a Program slot loop because its internal commit would make atomic rollback impossible.
+The existing `assignments.service.create_assignment()` commits internally and MUST NOT be called in a Program slot loop.
 
-Extract one shared Assignment materialization contract inside the `assignments` module, conceptually:
+Extract a shared commit-free materializer in the `assignments` module, conceptually:
 
 ```python
 async def materialize_assignment(
@@ -454,18 +429,15 @@ async def materialize_assignment(
 
 Responsibilities:
 
-- verify/load Trainer-owned Workout;
+- load/verify Trainer-owned Workout;
 - load required Exercises;
-- build the existing `WorkoutSnapshotV1`;
+- build existing `WorkoutSnapshotV1`;
 - instantiate/add `WorkoutAssignment(PLANNED)`;
 - populate optional Program provenance;
-- optionally `flush()`;
-- never `commit()`;
-- never `rollback()`.
+- optionally flush;
+- never commit or rollback.
 
-Direct Assignment refactors to use the same materializer and retains existing external behavior/idempotency, then commits once at its own service boundary.
-
-`programs.service` uses the public `assignments.service` materializer; it MUST NOT import `assignments.repository` directly.
+Direct Assignment refactors to use the same materializer and keeps its existing external behavior/idempotency before committing at its own service boundary.
 
 ## Atomic issuance transaction
 
@@ -476,26 +448,24 @@ BEGIN
 
 Client Account FOR UPDATE
 → ACTIVE Relationship FOR UPDATE
-→ lookup existing ProgramAssignment by (relationship_id, request_id)
+→ lookup ProgramAssignment by (relationship_id, request_id)
 
 if existing:
     same original command => return original
     different command => 409
 
 → Program FOR UPDATE
-→ load complete current schedule
+→ load complete current slots ordered by week/day
 → validate non-empty / ownership
 → freeze Program snapshot
 → create ProgramAssignment
 → flush parent ID
-→ materialize every child WorkoutAssignment without commits
+→ materialize every child without commits
 → flush
 → COMMIT ONCE
 ```
 
-Any failure before final commit rolls back parent and every child.
-
-No partial Program issuance is allowed.
+Any failure rolls back parent and every child. Partial issuance is forbidden.
 
 ## Locking and concurrency
 
@@ -506,75 +476,88 @@ No partial Program issuance is allowed.
 Edit:
 
 ```text
-Program FOR UPDATE
-→ replace full schedule
-→ commit
+Program FOR UPDATE → replace complete schedule → commit
 ```
 
 Assign:
 
 ```text
-Account
-→ Relationship
-→ Program FOR UPDATE
-→ snapshot/materialize
-→ commit
+Account → Relationship → Program FOR UPDATE → snapshot/materialize → commit
 ```
 
-Concurrent Edit vs Assign therefore yields either the complete old schedule or the complete new schedule, never a mixture.
+The race yields either all-old or all-new schedule, never mixed.
 
 ### Concurrent identical first Assign
 
-Relationship locking serializes first issuance. The loser observes the already committed parent by `(relationship_id, request_id)` and returns it when command equality matches. DB uniqueness remains defense in depth.
+Relationship locking serializes competing first issuance attempts. The loser observes the committed `(relationship_id, request_id)` parent and returns it when original command fields match. DB uniqueness is defense in depth.
 
 ### Program cancellation vs child Start
 
-Existing child Start lock order is:
+Existing Start lock order:
 
 ```text
 Client Account → Relationship → Assignment → Execution
 ```
 
-Program cancellation must acquire the same Relationship serialization point before locking parent/children:
+Program cancellation:
 
 ```text
 Client Account → Relationship → ProgramAssignment → child Assignments
 ```
 
+The Relationship lock is the common serialization point.
+
 Outcomes:
 
-- cancellation wins: `PLANNED` child becomes `CANCELLED`; later Start is rejected by existing Assignment lifecycle;
-- Start wins: child becomes `IN_PROGRESS` and Execution is created; later Program cancellation leaves that child untouched.
+- Cancel wins => PLANNED child becomes CANCELLED; later Start is rejected by existing lifecycle;
+- Start wins => child becomes IN_PROGRESS with Execution; later Program cancellation leaves it untouched.
 
-The system MUST never produce `Assignment=CANCELLED` with an existing started Execution due to this race.
+The race MUST NOT produce a cancelled Assignment with a started Execution.
 
-For v1, lock/select all children `FOR UPDATE` before cancellation. Maximum theoretical schedule size is 364 children, so explicit row locking is acceptable and safer than an unsynchronized bulk update.
+At most 364 schedule slots exist (`52 × 7`), so v1 may explicitly lock all children `FOR UPDATE` before applying PLANNED-only cancellation.
+
+## Assignment-module ownership for child operations
+
+`WorkoutAssignment` remains owned by the `assignments` module.
+
+Therefore `programs.repository` MUST NOT query/update child `WorkoutAssignment` rows directly.
+
+The `assignments` module exposes commit-free public service contracts for Program orchestration, conceptually:
+
+```text
+materialize_assignment(...)
+list_program_children(...)
+cancel_planned_program_children(...)
+```
+
+`cancel_planned_program_children(...)` performs required child `FOR UPDATE` locking and PLANNED-only state changes but never commits. `programs.service` owns the parent transaction and final commit.
+
+This keeps Assignment lifecycle authority and persistence ownership in one module and avoids `programs → assignments.repository` coupling.
 
 ## Relationship termination
 
 No Program-specific termination logic is added.
 
-Existing Relationship termination already cancels ordinary child Assignments whose status is `PLANNED`, so it naturally applies to Program-derived children as well.
+Existing Relationship termination already cancels ordinary `PLANNED` child Assignments and therefore automatically applies to Program-derived children.
 
-`ProgramAssignment.status` is not changed by Relationship termination; otherwise the system would require continuous parent/child synchronization, which is explicitly out of scope.
+`ProgramAssignment.status` is not changed by Relationship termination. Synchronizing parent status from child/Relationship lifecycle would introduce Program Sync, which is out of scope.
 
 ## Existing core compatibility
 
-Program-derived children are ordinary `WorkoutAssignment` rows. Existing APIs and lifecycle remain authoritative:
+Program-derived children are ordinary `WorkoutAssignment` rows. Existing APIs remain authoritative for:
 
-- child reschedule;
-- child cancel;
+- child reschedule/cancel;
 - Execution Start/Complete;
-- Results mutation/read;
-- Workout History.
+- Results;
+- History.
 
-Existing Direct Assignment response semantics need not expose Program provenance in v1. Program provenance is available through ProgramAssignment reads.
+Direct Assignment behavior remains unchanged and its provenance fields stay NULL.
 
-History and Results require no Program-specific production logic. Completed Program-derived children must appear through existing History and Results flows automatically.
+Existing `WorkoutAssignmentResponse` need not expose Program provenance in v1; provenance is available through ProgramAssignment reads.
+
+History and Results require no Program-specific production branches. Completed Program-derived children must work through the existing flows unchanged.
 
 ## Error contract
-
-Recommended business codes:
 
 - `PROGRAM_NOT_FOUND`
 - `PROGRAM_SLOT_DUPLICATE`
@@ -588,11 +571,9 @@ Recommended business codes:
 - `PROGRAM_ASSIGNMENT_TRAINER_REQUIRED`
 - `ROLE_NOT_ALLOWED`
 
-Foreign Workout ownership is intentionally hidden as not-found to avoid information disclosure.
-
 ## Component boundaries
 
-Target module structure:
+Target `programs` module:
 
 ```text
 backend/src/toptrainers_api/modules/programs/
@@ -603,48 +584,44 @@ backend/src/toptrainers_api/modules/programs/
   router.py
 ```
 
-`programs.service` owns:
+`programs.repository` owns only Program, ProgramSlot and ProgramAssignment persistence/locking.
 
-- Program create/read/update;
-- full schedule replacement;
-- Program row locking orchestration;
-- ProgramAssignment issuance;
-- parent idempotency;
-- ProgramAssignment read;
-- Program cancellation.
+`programs.service` owns Program commands, schedule replacement, parent issuance/idempotency/read/cancel orchestration and the single transaction boundary.
 
-`programs.repository` owns Program/slot/parent persistence and SQL locking queries.
+`assignments.service` owns child materialization, Program-child read/cancel helpers and all Assignment lifecycle transitions.
 
-`assignments.service` owns shared commit-free child materialization and existing child lifecycle.
+`programs` MUST NOT import `assignments.repository` directly.
 
-## Migration / rollback policy
+## Rollback policy
 
-Migration `0010` must support isolated dev/test upgrade/downgrade roundtrip.
+Migration `0010` supports isolated dev/test upgrade/downgrade roundtrip.
 
-Operationally, after production writes exist in `program_slots`, `program_assignments` or child provenance, destructive database downgrade `0010 → 0009` is not a normal rollback path. Application rollback is app-only; database recovery uses backup/PITR policy.
+After production writes exist in `program_slots`, `program_assignments` or child provenance, destructive DB downgrade `0010 → 0009` is not a normal rollback path. Application rollback is app-only; database recovery uses backup/PITR policy.
 
 ## Required tests
 
 ### Program schedule
 
 - empty Program saves;
-- public `duration_weeks` is used and `weeks` does not leak;
+- `duration_weeks` is public and `weeks` does not leak;
+- deterministic slot ordering;
 - duplicate week/day rejected;
 - slot beyond duration rejected;
-- foreign Trainer Workout rejected/hidden;
-- PUT is full schedule replacement;
-- failed replacement preserves previous complete schedule.
+- foreign Trainer Workout hidden/rejected;
+- PUT is full replacement;
+- failed replacement preserves the old complete schedule.
 
 ### Issuance
 
 - empty Program assign rejected;
-- full issuance produces exact child count;
-- scheduled-date mapping across week boundary;
+- exact child count;
+- scheduled-date mapping including week boundary;
+- deterministic child order;
 - parent snapshot frozen;
 - child Workout snapshots frozen;
 - Program edit after issuance leaves parent/children unchanged;
 - Workout edit after issuance leaves children unchanged;
-- failure on any slot rolls back parent and every child.
+- any slot failure rolls back parent and every child.
 
 ### Idempotency
 
@@ -652,42 +629,40 @@ Operationally, after production writes exist in `program_slots`, `program_assign
 - retry after Program edit returns original issuance;
 - same request ID/different Program => 409;
 - same request ID/different start date => 409;
-- concurrent identical first Assign => one parent and exact child count.
+- concurrent identical first Assign => one parent and exact children.
 
 ### Concurrency / lifecycle
 
-- concurrent Edit vs Assign yields all-old or all-new schedule, never mixed;
+- Edit vs Assign => all-old or all-new, never mixed;
 - child reschedule does not affect siblings;
 - child cancel does not affect siblings;
-- Program cancellation cancels `PLANNED` only;
+- Program cancellation cancels PLANNED only;
 - repeated Program cancellation is idempotent;
-- cancellation vs Start race verifies both winner orders;
+- Program cancellation vs Start verifies both winner orders;
 - Relationship termination preserves existing semantics.
 
 ### Existing core regression
 
-- Direct Assignment remains unchanged with NULL provenance;
-- Program-derived child can Start and Complete;
+- Direct Assignment unchanged with NULL provenance;
+- Program-derived child Start/Complete works;
 - Program-derived completed child Results work through existing Results API;
 - Program-derived completed child appears in existing History;
-- current Program/Workout edits do not alter historical Results/History mapping.
+- later Program/Workout edits do not alter historical Results/History behavior.
 
 ### Migration / OpenAPI
 
 - `0009 → 0010` upgrade;
-- schema columns, FKs, constraints and index;
+- expected tables/columns/FKs/checks/index;
 - existing Assignments survive with NULL provenance;
 - isolated `0010 → 0009 → 0010` roundtrip;
 - canonical Alembic head becomes `20260906_0010_training_programs_v1`;
-- authoritative OpenAPI is generated from FastAPI, never edited manually;
-- expected operation IDs and DTO schemas are present;
+- authoritative OpenAPI is generated from FastAPI, never manually edited;
+- operation IDs/DTO schemas are present;
 - full PostgreSQL regression suite passes.
 
 ## ADR numbering
 
-`DOC/DECISIONS.md` currently ends at ADR-014 (WorkoutExecution), while Workout Results v1 is already an accepted production architecture. This change must close the numbering drift as follows:
+`DOC/DECISIONS.md` previously ended at ADR-014 while Workout Results v1 was already accepted and released. Numbering is closed as:
 
 - ADR-015 — Workout Results v1;
 - ADR-016 — Training Programs v1.
-
-ADR-015 records the already accepted Results architecture; ADR-016 records this approved Program architecture.
