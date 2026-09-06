@@ -278,11 +278,11 @@ async def logout(
     response: Response,
     account: dict[str, object] = Depends(current_account),
     session: AsyncSession = Depends(get_session),
-) -> Response:
+) -> None:
     session_id = str(account["sid"])
     auth_session = await session.get(AuthSession, session_id)
     if auth_session:
         auth_session.revoked_at = utcnow()
         await session.commit()
     response.delete_cookie(settings.auth_cookie_name, path="/api/v1")
-    return response
+    return None
