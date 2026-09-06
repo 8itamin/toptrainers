@@ -50,7 +50,7 @@ async def _http_client(
     factory: async_sessionmaker[AsyncSession],
 ) -> AsyncIterator[AsyncClient]:
     app = FastAPI()
-    app.include_router(router)
+    app.include_router(router, prefix="/api/v1")
 
     async def override_session() -> AsyncIterator[AsyncSession]:
         async with factory() as session:
@@ -69,7 +69,7 @@ async def test_logout_returns_204_revokes_session_and_deletes_cookie(
 
     async with _http_client(p0_session_factory) as client:
         client.cookies.set(settings.auth_cookie_name, token, path="/api/v1")
-        response = await client.post("/auth/logout")
+        response = await client.post("/api/v1/auth/logout")
 
         assert response.status_code == 204
         assert response.content == b""
@@ -79,7 +79,7 @@ async def test_logout_returns_204_revokes_session_and_deletes_cookie(
         assert "Path=/api/v1" in set_cookie
 
         stale_session = await client.get(
-            "/auth/session",
+            "/api/v1/auth/session",
             headers={"Authorization": f"Bearer {token}"},
         )
         assert stale_session.status_code == 401
