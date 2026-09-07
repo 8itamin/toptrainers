@@ -1,13 +1,13 @@
 from collections.abc import Sequence
 
-from sqlalchemy import select
+from sqlalchemy import Select, select
 from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy.orm import selectinload
 
 from toptrainers_api.modules.programs.models import Program, ProgramAssignment
 
 
-def _owned_program_query(trainer_id: str, program_id: str):
+def _owned_program_query(trainer_id: str, program_id: str) -> Select[tuple[Program]]:
     return (
         select(Program)
         .where(Program.trainer_id == trainer_id, Program.id == program_id)
@@ -30,7 +30,8 @@ async def get_owned_program(
     trainer_id: str,
     program_id: str,
 ) -> Program | None:
-    return await session.scalar(_owned_program_query(trainer_id, program_id))
+    rows = await session.scalars(_owned_program_query(trainer_id, program_id))
+    return rows.unique().first()
 
 
 async def lock_owned_program(
@@ -38,20 +39,20 @@ async def lock_owned_program(
     trainer_id: str,
     program_id: str,
 ) -> Program | None:
-    return await session.scalar(
-        _owned_program_query(trainer_id, program_id).with_for_update()
-    )
+    rows = await session.scalars(_owned_program_query(trainer_id, program_id).with_for_update())
+    return rows.unique().first()
 
 
 async def get_assignment_by_request_id(
     session: AsyncSession, relationship_id: str, request_id: str
 ) -> ProgramAssignment | None:
-    return await session.scalar(
+    rows = await session.scalars(
         select(ProgramAssignment).where(
             ProgramAssignment.relationship_id == relationship_id,
             ProgramAssignment.request_id == request_id,
         )
     )
+    return rows.first()
 
 
 async def get_program_assignment(
@@ -63,8 +64,9 @@ async def get_program_assignment(
 async def lock_program_assignment(
     session: AsyncSession, program_assignment_id: str
 ) -> ProgramAssignment | None:
-    return await session.scalar(
+    rows = await session.scalars(
         select(ProgramAssignment)
         .where(ProgramAssignment.id == program_assignment_id)
         .with_for_update()
     )
+    return rows.first()
