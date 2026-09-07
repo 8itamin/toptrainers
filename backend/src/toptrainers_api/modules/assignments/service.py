@@ -158,6 +158,45 @@ def _result(
     )
 
 
+async def materialize_assignment(
+    session: AsyncSession,
+    relationship: TrainerClientRelationship,
+    trainer_id: str,
+    workout_id: str,
+    request_id: str,
+    scheduled_date: date,
+    *,
+    program_assignment_id: str | None = None,
+    program_slot_id: str | None = None,
+) -> WorkoutAssignment:
+    """Add one frozen child assignment to a caller-owned transaction without committing."""
+    workout = await workouts_service.get_owned_workout(session, trainer_id, workout_id)
+    if workout is None:
+        raise _not_found("WORKOUT_NOT_FOUND", "Workout template was not found")
+
+    exercise_ids = {item.exercise_id for block in workout.blocks for item in block.items}
+    exercises = await exercises_service.get_owned_exercises(session, trainer_id, exercise_ids)
+    exercises_by_id = {exercise.id: exercise for exercise in exercises}
+    if set(exercises_by_id) != exercise_ids:
+        raise RuntimeError("Workout references exercises unavailable for snapshot")
+
+    snapshot = build_workout_snapshot_v1(workout, exercises_by_id)
+    assignment = WorkoutAssignment(
+        id=str(uuid4()),
+        relationship_id=relationship.id,
+        source_workout_id=workout_id,
+        program_assignment_id=program_assignment_id,
+        program_slot_id=program_slot_id,
+        request_id=request_id,
+        workout_snapshot=snapshot.model_dump(mode="json"),
+        snapshot_schema_version=1,
+        scheduled_date=scheduled_date,
+        status=WorkoutAssignmentStatus.PLANNED.value,
+    )
+    session.add(assignment)
+    return assignment
+
+
 async def get_assignment(
     session: AsyncSession,
     actor_id: str,
@@ -233,28 +272,14 @@ async def create_assignment(
             )
         return AssignmentResult(existing, trainer_id, payload.client_id)
 
-    workout = await workouts_service.get_owned_workout(session, trainer_id, payload.workout_id)
-    if workout is None:
-        raise _not_found("WORKOUT_NOT_FOUND", "Workout template was not found")
-
-    exercise_ids = {item.exercise_id for block in workout.blocks for item in block.items}
-    exercises = await exercises_service.get_owned_exercises(session, trainer_id, exercise_ids)
-    exercises_by_id = {exercise.id: exercise for exercise in exercises}
-    if set(exercises_by_id) != exercise_ids:
-        raise RuntimeError("Workout references exercises unavailable for snapshot")
-
-    snapshot = build_workout_snapshot_v1(workout, exercises_by_id)
-    assignment = WorkoutAssignment(
-        id=str(uuid4()),
-        relationship_id=relationship.id,
-        source_workout_id=payload.workout_id,
-        request_id=payload.request_id,
-        workout_snapshot=snapshot.model_dump(mode="json"),
-        snapshot_schema_version=1,
-        scheduled_date=payload.scheduled_date,
-        status=WorkoutAssignmentStatus.PLANNED.value,
+    assignment = await materialize_assignment(
+        session,
+        relationship,
+        trainer_id,
+        payload.workout_id,
+        payload.request_id,
+        payload.scheduled_date,
     )
-    session.add(assignment)
     try:
         await session.commit()
     except IntegrityError as error:
@@ -349,6 +374,14 @@ async def cancel_planned_for_relationship(
 ) -> None:
     """Cancel PLANNED rows inside a caller-owned Relationship transaction; no commit."""
     await repository.cancel_planned_for_relationship(session, relationship_id)
+
+
+async def cancel_planned_for_program_assignment(
+    session: AsyncSession,
+    program_assignment_id: str,
+) -> None:
+    """Cancel only PLANNED children inside a caller-owned parent transaction."""
+    await repository.cancel_planned_for_program_assignment(session, program_assignment_id)
 
 
 async def start_execution(

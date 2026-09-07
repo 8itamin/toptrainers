@@ -12,6 +12,7 @@ from toptrainers_api.modules.assignments import models as _assignment_models  # 
 from toptrainers_api.modules.clients import models as _client_models  # noqa: F401
 from toptrainers_api.modules.exercises import models as _exercise_models  # noqa: F401
 from toptrainers_api.modules.identity import models as _identity_models  # noqa: F401
+from toptrainers_api.modules.programs import models as _program_models  # noqa: F401
 from toptrainers_api.modules.workouts import models as _workout_models  # noqa: F401
 
 

@@ -1801,6 +1801,167 @@
         ]
       }
     },
+    "/api/v1/programs/{program_id}": {
+      "put": {
+        "tags": [
+          "programs"
+        ],
+        "summary": "Replace Program",
+        "operationId": "replace_program_api_v1_programs__program_id__put",
+        "security": [
+          {
+            "HTTPBearer": []
+          }
+        ],
+        "parameters": [
+          {
+            "name": "program_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "title": "Program Id"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/ProgramCreate"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProgramResponse"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/programs/{program_id}/assignments": {
+      "post": {
+        "tags": [
+          "programs"
+        ],
+        "summary": "Issue Program",
+        "operationId": "issue_program_api_v1_programs__program_id__assignments_post",
+        "security": [
+          {
+            "HTTPBearer": []
+          }
+        ],
+        "parameters": [
+          {
+            "name": "program_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "title": "Program Id"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/IssueProgramRequest"
+              }
+            }
+          }
+        },
+        "responses": {
+          "201": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProgramAssignmentResponse"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/program-assignments/{program_assignment_id}/cancel": {
+      "post": {
+        "tags": [
+          "program-assignments"
+        ],
+        "summary": "Cancel Program Assignment",
+        "operationId": "cancel_program_assignment_api_v1_program_assignments__program_assignment_id__cancel_post",
+        "security": [
+          {
+            "HTTPBearer": []
+          }
+        ],
+        "parameters": [
+          {
+            "name": "program_assignment_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "title": "Program Assignment Id"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProgramAssignmentResponse"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
     "/api/v1/exercises": {
       "get": {
         "tags": [
@@ -2378,6 +2539,34 @@
         ],
         "title": "InvitationStatus"
       },
+      "IssueProgramRequest": {
+        "properties": {
+          "client_id": {
+            "type": "string",
+            "maxLength": 36,
+            "minLength": 36,
+            "title": "Client Id"
+          },
+          "start_date": {
+            "type": "string",
+            "format": "date",
+            "title": "Start Date"
+          },
+          "request_id": {
+            "type": "string",
+            "maxLength": 128,
+            "minLength": 1,
+            "title": "Request Id"
+          }
+        },
+        "type": "object",
+        "required": [
+          "client_id",
+          "start_date",
+          "request_id"
+        ],
+        "title": "IssueProgramRequest"
+      },
       "LoginRequest": {
         "properties": {
           "email": {
@@ -2434,6 +2623,68 @@
         ],
         "title": "PasswordResetRequest"
       },
+      "ProgramAssignmentResponse": {
+        "properties": {
+          "id": {
+            "type": "string",
+            "title": "Id"
+          },
+          "program_id": {
+            "type": "string",
+            "title": "Program Id"
+          },
+          "relationship_id": {
+            "type": "string",
+            "title": "Relationship Id"
+          },
+          "request_id": {
+            "type": "string",
+            "title": "Request Id"
+          },
+          "start_date": {
+            "type": "string",
+            "format": "date",
+            "title": "Start Date"
+          },
+          "status": {
+            "type": "string",
+            "title": "Status"
+          },
+          "snapshot_schema_version": {
+            "type": "integer",
+            "title": "Snapshot Schema Version"
+          },
+          "program_snapshot": {
+            "additionalProperties": true,
+            "type": "object",
+            "title": "Program Snapshot"
+          },
+          "created_at": {
+            "type": "string",
+            "format": "date-time",
+            "title": "Created At"
+          },
+          "updated_at": {
+            "type": "string",
+            "format": "date-time",
+            "title": "Updated At"
+          }
+        },
+        "type": "object",
+        "required": [
+          "id",
+          "program_id",
+          "relationship_id",
+          "request_id",
+          "start_date",
+          "status",
+          "snapshot_schema_version",
+          "program_snapshot",
+          "created_at",
+          "updated_at"
+        ],
+        "title": "ProgramAssignmentResponse"
+      },
       "ProgramCreate": {
         "properties": {
           "title": {
@@ -2448,12 +2699,20 @@
             "title": "Description",
             "default": ""
           },
-          "weeks": {
+          "duration_weeks": {
             "type": "integer",
             "maximum": 52.0,
             "minimum": 1.0,
-            "title": "Weeks",
+            "title": "Duration Weeks",
             "default": 1
+          },
+          "slots": {
+            "items": {
+              "$ref": "#/components/schemas/ProgramSlotWrite"
+            },
+            "type": "array",
+            "maxItems": 364,
+            "title": "Slots"
           }
         },
         "type": "object",
@@ -2476,12 +2735,19 @@
             "title": "Description",
             "default": ""
           },
-          "weeks": {
+          "duration_weeks": {
             "type": "integer",
             "maximum": 52.0,
             "minimum": 1.0,
-            "title": "Weeks",
+            "title": "Duration Weeks",
             "default": 1
+          },
+          "slots": {
+            "items": {
+              "$ref": "#/components/schemas/ProgramSlotResponse"
+            },
+            "type": "array",
+            "title": "Slots"
           },
           "id": {
             "type": "string",
@@ -2495,10 +2761,74 @@
         "type": "object",
         "required": [
           "title",
+          "slots",
           "id",
           "trainer_id"
         ],
         "title": "ProgramResponse"
+      },
+      "ProgramSlotResponse": {
+        "properties": {
+          "week_number": {
+            "type": "integer",
+            "maximum": 52.0,
+            "minimum": 1.0,
+            "title": "Week Number"
+          },
+          "day_number": {
+            "type": "integer",
+            "maximum": 7.0,
+            "minimum": 1.0,
+            "title": "Day Number"
+          },
+          "workout_id": {
+            "type": "string",
+            "maxLength": 36,
+            "minLength": 36,
+            "title": "Workout Id"
+          },
+          "id": {
+            "type": "string",
+            "title": "Id"
+          }
+        },
+        "type": "object",
+        "required": [
+          "week_number",
+          "day_number",
+          "workout_id",
+          "id"
+        ],
+        "title": "ProgramSlotResponse"
+      },
+      "ProgramSlotWrite": {
+        "properties": {
+          "week_number": {
+            "type": "integer",
+            "maximum": 52.0,
+            "minimum": 1.0,
+            "title": "Week Number"
+          },
+          "day_number": {
+            "type": "integer",
+            "maximum": 7.0,
+            "minimum": 1.0,
+            "title": "Day Number"
+          },
+          "workout_id": {
+            "type": "string",
+            "maxLength": 36,
+            "minLength": 36,
+            "title": "Workout Id"
+          }
+        },
+        "type": "object",
+        "required": [
+          "week_number",
+          "day_number",
+          "workout_id"
+        ],
+        "title": "ProgramSlotWrite"
       },
       "PublicUserRole": {
         "type": "string",

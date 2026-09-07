@@ -44,6 +44,8 @@
 
 > Deployment permissions follow-up (2026-08-13): because the production deploy process uses `umask 077`, it must normalise read/traverse permissions after every `git checkout`, not only on the initial bootstrap. This is required for migration and runtime containers that execute as unprivileged users; `.git` remains private.
 
+> Training Programs v1 (2026-09-07): `Program` now exposes canonical `duration_weeks` while retaining physical `weeks`, and stores a mutable full schedule in `program_slots`. A Trainer can issue a non-empty Program to an active client relationship as an idempotent `ProgramAssignment`; all child `WorkoutAssignment` snapshots are materialized in one transaction and retain nullable parent/slot provenance. Program edits never synchronize existing parents or children. Parent cancellation cancels only PLANNED children; direct assignments, execution, Results, History and termination behavior remain unchanged. Migration `20260906_0010` is destructive on downgrade after issuance and is not a production rollback path.
+
 _Обновлено: 19 июля 2026_
 
 ## Зачем существует продукт

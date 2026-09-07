@@ -58,6 +58,14 @@ class WorkoutAssignment(Base):
         ForeignKey("trainer_client_relationships.id"), index=True
     )
     source_workout_id: Mapped[str] = mapped_column(ForeignKey("workouts.id"), index=True)
+    program_assignment_id: Mapped[str | None] = mapped_column(
+        ForeignKey("program_assignments.id"),
+        nullable=True,
+        index=True,
+    )
+    # Slots are replaced as part of mutable Program schedule updates, so this is provenance,
+    # not an FK that would prevent an issued Program from being edited.
+    program_slot_id: Mapped[str | None] = mapped_column(String(36), nullable=True, index=True)
     request_id: Mapped[str] = mapped_column(String(128), nullable=False)
     workout_snapshot: Mapped[dict[str, object]] = mapped_column(JSONB, nullable=False)
     snapshot_schema_version: Mapped[int] = mapped_column(Integer, nullable=False, default=1)

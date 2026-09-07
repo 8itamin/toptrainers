@@ -1,13 +1,15 @@
-from uuid import uuid4
-
-from fastapi import APIRouter, Depends, HTTPException
-from sqlalchemy import select
+from fastapi import APIRouter, Depends
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from toptrainers_api.core.auth import current_account
 from toptrainers_api.core.db import get_session
-from toptrainers_api.modules.programs.models import Program
-from toptrainers_api.modules.programs.schemas import ProgramCreate, ProgramResponse
+from toptrainers_api.modules.programs import service
+from toptrainers_api.modules.programs.schemas import (
+    IssueProgramRequest,
+    ProgramAssignmentResponse,
+    ProgramCreate,
+    ProgramResponse,
+)
 
 router = APIRouter(prefix="/programs", tags=["programs"])
 
@@ -17,12 +19,8 @@ async def list_programs(
     account: dict[str, object] = Depends(current_account),
     session: AsyncSession = Depends(get_session),
 ) -> list[ProgramResponse]:
-    rows = await session.scalars(
-        select(Program)
-        .where(Program.trainer_id == str(account["sub"]))
-        .order_by(Program.id)
-    )
-    return [ProgramResponse.model_validate(row, from_attributes=True) for row in rows]
+    programs = await service.list_programs(session, account)
+    return [service.to_response(program) for program in programs]
 
 
 @router.post("", response_model=ProgramResponse, status_code=201)
@@ -31,14 +29,28 @@ async def create_program(
     account: dict[str, object] = Depends(current_account),
     session: AsyncSession = Depends(get_session),
 ) -> ProgramResponse:
-    if account.get("role") != "trainer":
-        raise HTTPException(status_code=403, detail="Trainer role required")
-    program = Program(
-        id=str(uuid4()),
-        trainer_id=str(account["sub"]),
-        **payload.model_dump(),
+    return service.to_response(await service.create_program(session, account, payload))
+
+
+@router.put("/{program_id}", response_model=ProgramResponse)
+async def replace_program(
+    program_id: str,
+    payload: ProgramCreate,
+    account: dict[str, object] = Depends(current_account),
+    session: AsyncSession = Depends(get_session),
+) -> ProgramResponse:
+    return service.to_response(
+        await service.replace_program(session, account, program_id, payload)
     )
-    session.add(program)
-    await session.commit()
-    await session.refresh(program)
-    return ProgramResponse.model_validate(program, from_attributes=True)
+
+
+@router.post("/{program_id}/assignments", response_model=ProgramAssignmentResponse, status_code=201)
+async def issue_program(
+    program_id: str,
+    payload: IssueProgramRequest,
+    account: dict[str, object] = Depends(current_account),
+    session: AsyncSession = Depends(get_session),
+) -> ProgramAssignmentResponse:
+    return service.program_assignment_to_response(
+        await service.issue_program(session, account, program_id, payload)
+    )

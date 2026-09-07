@@ -223,11 +223,29 @@ def cancel_planned_for_relationship_query(relationship_id: str) -> Update:
     )
 
 
+def cancel_planned_for_program_assignment_query(program_assignment_id: str) -> Update:
+    return (
+        update(WorkoutAssignment)
+        .where(
+            WorkoutAssignment.program_assignment_id == program_assignment_id,
+            WorkoutAssignment.status == WorkoutAssignmentStatus.PLANNED.value,
+        )
+        .values(status=WorkoutAssignmentStatus.CANCELLED.value)
+    )
+
+
 async def cancel_planned_for_relationship(
     session: AsyncSession,
     relationship_id: str,
 ) -> None:
     await session.execute(cancel_planned_for_relationship_query(relationship_id))
+
+
+async def cancel_planned_for_program_assignment(
+    session: AsyncSession,
+    program_assignment_id: str,
+) -> None:
+    await session.execute(cancel_planned_for_program_assignment_query(program_assignment_id))
 
 
 def create_payload_matches(
