@@ -6,3 +6,4 @@ export * from './generated/openapi-schema';
 export * from './generated/workout-assignments';
 export * from './generated/workout-executions';
 export * from './generated/workout-history';
+export * from './generated/programs';

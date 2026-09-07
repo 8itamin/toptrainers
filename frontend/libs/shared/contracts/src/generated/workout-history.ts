@@ -18,6 +18,7 @@ export const WORKOUT_HISTORY_OPERATIONS = {
 } as const;
 
 
+
 export interface WorkoutHistoryItem {
   assignment_id: string;
   relationship_id: string;
@@ -28,6 +29,7 @@ export interface WorkoutHistoryItem {
   started_at: string;
   completed_at: string;
 }
+
 
 
 export interface WorkoutHistoryPage {

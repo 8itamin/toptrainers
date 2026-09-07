@@ -46,6 +46,8 @@
 
 > Training Programs v1 (2026-09-07): `Program` now exposes canonical `duration_weeks` while retaining physical `weeks`, and stores a mutable full schedule in `program_slots`. A Trainer can issue a non-empty Program to an active client relationship as an idempotent `ProgramAssignment`; all child `WorkoutAssignment` snapshots are materialized in one transaction and retain nullable parent/slot provenance. Program edits never synchronize existing parents or children. Parent cancellation cancels only PLANNED children; direct assignments, execution, Results, History and termination behavior remain unchanged. Migration `20260906_0010` is destructive on downgrade after issuance and is not a production rollback path.
 
+> Training Programs frontend integration (2026-09-07): the Trainer Program Builder now uses generated OpenAPI contracts to load/save `duration_weeks` and sparse program slots, and issues only non-empty saved programs to active client relationships. It sends client ID, start date and a request ID; scheduled child dates remain backend-authoritative. Client labels are currently IDs because the relationship contract does not expose profile display data.
+
 _Обновлено: 19 июля 2026_
 
 ## Зачем существует продукт
