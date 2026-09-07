@@ -29,10 +29,13 @@ class ProgramSlotResponse(ProgramSlotWrite):
     id: str
 
 
-class ProgramResponse(ProgramCreate):
+class ProgramResponse(BaseModel):
+    title: str = Field(min_length=1, max_length=160)
+    description: str = Field(default="", max_length=2_000)
+    duration_weeks: int = Field(default=1, ge=1, le=52)
+    slots: list[ProgramSlotResponse]
     id: str
     trainer_id: str
-    slots: list[ProgramSlotResponse]
 
 
 class IssueProgramRequest(BaseModel):

@@ -89,7 +89,7 @@ def test_results_0009_upgrade_downgrade_upgrade_roundtrip(
         command.upgrade(config, "head")
         tables, revision, indexes = asyncio.run(_state(database_url))
         assert RESULTS_TABLE in tables
-        assert revision == "20260904_0009"
+        assert revision == "20260906_0010"
         assert indexes == []
     finally:
         asyncio.run(_reset_public_schema(database_url))
