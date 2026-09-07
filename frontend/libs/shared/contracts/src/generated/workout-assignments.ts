@@ -38,6 +38,8 @@ export const WORKOUT_ASSIGNMENT_OPERATIONS = {
   }
 } as const;
 
+
+
 export interface BusinessErrorDetail {
   code: string;
   message: string;
