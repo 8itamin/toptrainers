@@ -114,6 +114,14 @@ async def list_relationships_for_client(
     return await repository.list_relationships_for_client(session, client_id)
 
 
+async def list_active_relationships_for_trainer(
+    session: AsyncSession,
+    trainer_id: str,
+) -> list[TrainerClientRelationship]:
+    """Return only the trainer's current assignable client relationships; no lock."""
+    return await repository.list_active_relationships_for_trainer(session, trainer_id)
+
+
 async def create_invitation(
     session: AsyncSession,
     trainer_id: str,

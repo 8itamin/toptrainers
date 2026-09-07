@@ -119,6 +119,23 @@ async def cancel_invitation(
     return InvitationResponse.model_validate(invitation)
 
 
+@router.get(
+    "/relationships/active",
+    response_model=list[RelationshipResponse],
+    responses=_BUSINESS_RESPONSES,
+)
+async def list_active_trainer_relationships(
+    account: CurrentAccountDep,
+    session: SessionDep,
+) -> list[RelationshipResponse]:
+    _require_role(account, "trainer")
+    relationships = await service.list_active_relationships_for_trainer(
+        session,
+        str(account["sub"]),
+    )
+    return [RelationshipResponse.model_validate(relationship) for relationship in relationships]
+
+
 @router.post(
     "/relationships/{relationship_id}/terminate",
     response_model=RelationshipResponse,

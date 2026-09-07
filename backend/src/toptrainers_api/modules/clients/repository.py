@@ -212,6 +212,21 @@ async def list_relationships_for_client(
     return list(relationships)
 
 
+async def list_active_relationships_for_trainer(
+    session: AsyncSession,
+    trainer_id: str,
+) -> list[TrainerClientRelationship]:
+    relationships = await session.scalars(
+        select(TrainerClientRelationship)
+        .where(
+            TrainerClientRelationship.trainer_id == trainer_id,
+            TrainerClientRelationship.status == RelationshipStatus.ACTIVE.value,
+        )
+        .order_by(TrainerClientRelationship.created_at, TrainerClientRelationship.id)
+    )
+    return list(relationships)
+
+
 async def lock_relationship_by_invitation(
     session: AsyncSession,
     invitation_id: str,

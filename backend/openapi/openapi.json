@@ -625,6 +625,66 @@
         }
       }
     },
+    "/api/v1/clients/relationships/active": {
+      "get": {
+        "tags": [
+          "clients"
+        ],
+        "summary": "List Active Trainer Relationships",
+        "operationId": "list_active_trainer_relationships_api_v1_clients_relationships_active_get",
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "items": {
+                    "$ref": "#/components/schemas/RelationshipResponse"
+                  },
+                  "type": "array",
+                  "title": "Response List Active Trainer Relationships Api V1 Clients Relationships Active Get"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "Forbidden",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/BusinessErrorResponse"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Not Found",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/BusinessErrorResponse"
+                }
+              }
+            }
+          },
+          "409": {
+            "description": "Conflict",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/BusinessErrorResponse"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "HTTPBearer": []
+          }
+        ]
+      }
+    },
     "/api/v1/clients/relationships/{relationship_id}/terminate": {
       "post": {
         "tags": [
