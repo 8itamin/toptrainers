@@ -10,10 +10,13 @@ import type { ProgramResponse, WorkoutResponse } from '@toptrainers/shared/contr
 
 import {
   createProgramDraft,
+  nextProgramIssueRequestId,
   programDraftPayload,
+  releaseBusyOnFinalize,
   setProgramDraftDuration,
   setProgramDraftSlot,
   type ProgramDraft,
+  TRAINER_PROGRAM_BUILDER_NAVIGATION,
 } from './program-builder-state';
 
 const DAY_LABELS = [
@@ -32,6 +35,16 @@ const DAY_LABELS = [
   imports: [FormsModule, RouterLink],
   template: `
     <main class="workspace">
+      <aside class="sidebar desktop-only">
+        <a class="sidebar-logo" routerLink="/trainer" aria-label="TopTrainers: Сегодня">⌂</a>
+        <nav class="sidebar-nav" aria-label="Навигация тренера">
+          @for (item of navItems; track item.path) {
+            <a class="side-item" [class.is-active]="item.path === '/trainer/programs'" [routerLink]="item.path"><span class="side-icon">{{ item.icon }}</span><span>{{ item.label }}</span></a>
+          }
+        </nav>
+        <span class="sidebar-avatar" aria-hidden="true"></span>
+      </aside>
+      <div class="screen">
       <header class="toolbar">
         <div>
           <a class="back" routerLink="/trainer">← Сегодня</a>
@@ -138,7 +151,7 @@ const DAY_LABELS = [
               <p class="state">Нет активных клиентов для назначения.</p>
             } @else {
               <label
-                >Клиент<select name="client" [(ngModel)]="selectedClientId">
+                >Клиент<select name="client" [ngModel]="selectedClientId" (ngModelChange)="changeClient($event)">
                   <option value="">Выберите ID клиента</option>
                   @for (relationship of relationships(); track relationship.id) {
                     <option [value]="relationship.client_id">{{ relationship.client_id }}</option>
@@ -146,7 +159,7 @@ const DAY_LABELS = [
                 </select></label
               >
               <label
-                >Дата старта<input name="startDate" [(ngModel)]="startDate" type="date" required
+                >Дата старта<input name="startDate" [ngModel]="startDate" (ngModelChange)="changeStartDate($event)" type="date" required
               /></label>
               <button type="button" class="primary" (click)="issue()" [disabled]="issuing()">
                 {{ issuing() ? 'Назначаем…' : 'Назначить программу' }}
@@ -155,6 +168,12 @@ const DAY_LABELS = [
           </aside>
         </div>
       }
+      </div>
+      <nav class="mobile-nav mobile-only" aria-label="Навигация тренера">
+        @for (item of navItems; track item.path) {
+          <a [class.is-active]="item.path === '/trainer/programs'" [routerLink]="item.path"><span>{{ item.icon }}</span>{{ item.label }}</a>
+        }
+      </nav>
     </main>
   `,
   styles: `
@@ -163,12 +182,18 @@ const DAY_LABELS = [
     }
     .workspace {
       min-height: 100dvh;
+      background: #14181d;
+    }
+    .screen {
+      min-width: 0;
+      min-height: 100dvh;
       box-sizing: border-box;
       padding: clamp(1rem, 3vw, 2rem);
-      background: #14181d;
       color: #f5f7fa;
       font-family: 'Golos Text', system-ui, sans-serif;
     }
+    .sidebar { width:5.5rem; height:100dvh; position:sticky; top:0; flex-shrink:0; overflow-y:auto; background:#0e1116; border-right:1px solid rgb(245 247 250 / 6%); display:flex; flex-direction:column; align-items:center; padding:1.25rem 0; box-sizing:border-box; }
+    .sidebar-logo{color:#c9f24b;font-size:1.75rem;text-decoration:none}.sidebar-nav{display:flex;flex-direction:column;align-items:center;gap:1.375rem;margin-top:2rem}.side-item{display:flex;flex-direction:column;align-items:center;gap:.3125rem;color:#8a94a6;text-decoration:none;font-size:.5625rem}.side-icon{display:grid;place-items:center;width:2.75rem;height:2.75rem;border-radius:.75rem;font-size:1.25rem}.side-item.is-active{color:#c9f24b;font-weight:600}.side-item.is-active .side-icon{background:rgb(201 242 75 / 12%)}.sidebar-avatar{margin-top:auto;width:2.5rem;height:2.5rem;border-radius:999px;background:repeating-linear-gradient(135deg,#2a323d,#2a323d 6px,#242b34 6px,#242b34 12px)}.mobile-only{display:none}
     .toolbar,
     .panel-head {
       display: flex;
@@ -326,6 +351,8 @@ const DAY_LABELS = [
       color: #f5f7fa;
     }
     @media (min-width: 1080px) {
+      .workspace { display:flex; align-items:flex-start; }
+      .screen { flex:1; }
       .layout {
         grid-template-columns: minmax(14rem, 0.75fr) minmax(28rem, 1.6fr) minmax(16rem, 0.8fr);
         grid-template-areas: 'list editor issue';
@@ -336,13 +363,16 @@ const DAY_LABELS = [
       }
     }
     @media (max-width: 1079.98px) {
+      .desktop-only { display:none; }
+      .mobile-only { display:flex; }
       .layout {
         grid-template-columns: 1fr;
         grid-template-areas: 'editor' 'issue' 'list';
       }
-      .workspace {
+      .screen {
         padding-bottom: calc(5rem + env(safe-area-inset-bottom));
       }
+      .mobile-nav{position:fixed;z-index:10;inset-inline:0;bottom:0;justify-content:space-around;padding:.625rem 1rem calc(.625rem + env(safe-area-inset-bottom));border-top:1px solid rgb(245 247 250 / 8%);background:rgb(14 17 22 / 96%);backdrop-filter:blur(12px)}.mobile-nav a{display:flex;flex-direction:column;align-items:center;gap:.2rem;color:#8a94a6;text-decoration:none;font-size:.625rem}.mobile-nav a span{font-size:1.125rem;line-height:1}.mobile-nav .is-active{color:#c9f24b;font-weight:700}
     }
     @media (max-width: 30rem) {
       .toolbar,
@@ -362,6 +392,7 @@ export class ProgramBuilderComponent {
   private readonly http = inject(HttpClient);
   private readonly config = inject<RuntimeConfig>(RUNTIME_CONFIG);
   protected readonly dayLabels = DAY_LABELS;
+  protected readonly navItems = TRAINER_PROGRAM_BUILDER_NAVIGATION;
   protected readonly programs = signal<ProgramResponse[]>([]);
   protected readonly workouts = signal<WorkoutResponse[]>([]);
   protected readonly relationships = signal<Array<{ id: string; client_id: string }>>([]);
@@ -379,13 +410,16 @@ export class ProgramBuilderComponent {
   protected draftDescription = '';
   protected selectedClientId = '';
   protected startDate = '';
+  private issueRequestId: string | null = null;
   constructor() {
     this.load();
   }
   protected newProgram(): void {
+    this.issueRequestId = null;
     this.setDraft(createProgramDraft());
   }
   protected selectProgram(program: ProgramResponse): void {
+    this.issueRequestId = null;
     this.setDraft({
       id: program.id,
       title: program.title,
@@ -418,6 +452,14 @@ export class ProgramBuilderComponent {
   protected canIssueCurrentProgram(): boolean {
     return this.draft().slots.length > 0;
   }
+  protected changeClient(clientId: string): void {
+    this.selectedClientId = clientId;
+    this.issueRequestId = null;
+  }
+  protected changeStartDate(startDate: string): void {
+    this.startDate = startDate;
+    this.issueRequestId = null;
+  }
   protected save(): void {
     this.draft.update((draft) => ({
       ...draft,
@@ -433,7 +475,7 @@ export class ProgramBuilderComponent {
     this.saving.set(true);
     this.clearMessage();
     const request = programId ? this.api.replace(programId, payload) : this.api.create(payload);
-    request.subscribe({
+    releaseBusyOnFinalize(request, () => this.saving.set(false)).subscribe({
       next: (program) => {
         this.programs.update((items) => [
           ...items.filter((item) => item.id !== program.id),
@@ -443,7 +485,6 @@ export class ProgramBuilderComponent {
         this.showMessage('Программа сохранена.');
       },
       error: (error) => this.showMessage(this.errorMessage(error), true),
-      complete: () => this.saving.set(false),
     });
   }
   protected issue(): void {
@@ -458,16 +499,23 @@ export class ProgramBuilderComponent {
     }
     this.issuing.set(true);
     this.clearMessage();
-    this.api
+    const requestId = nextProgramIssueRequestId(this.issueRequestId, () => crypto.randomUUID());
+    this.issueRequestId = requestId;
+    releaseBusyOnFinalize(
+      this.api
       .issue(programId, {
         client_id: this.selectedClientId,
         start_date: this.startDate,
-        request_id: crypto.randomUUID(),
-      })
+        request_id: requestId,
+      }),
+      () => this.issuing.set(false),
+    )
       .subscribe({
-        next: () => this.showMessage('Программа назначена. Даты тренировок определены сервером.'),
+        next: () => {
+          this.issueRequestId = null;
+          this.showMessage('Программа назначена. Даты тренировок определены сервером.');
+        },
         error: (error) => this.showMessage(this.errorMessage(error), true),
-        complete: () => this.issuing.set(false),
       });
   }
   private load(): void {

@@ -1,4 +1,13 @@
 import type { ProgramCreate, ProgramSlotWrite } from '@toptrainers/shared/contracts';
+import { finalize, type Observable } from 'rxjs';
+
+export const TRAINER_PROGRAM_BUILDER_NAVIGATION = [
+  { path: '/trainer', label: 'Сегодня', icon: '⌂' },
+  { path: '/trainer/clients', label: 'Клиенты', icon: '♙' },
+  { path: '/trainer/programs', label: 'Программы', icon: '▦' },
+  { path: '/trainer/chats', label: 'Чаты', icon: '◌' },
+  { path: '/trainer/competitions', label: 'Ещё', icon: '♜' },
+] as const;
 
 export interface ProgramDraft {
   id: string | null;
@@ -51,4 +60,15 @@ export function setProgramDraftSlot(
       (left, right) => left.week_number - right.week_number || left.day_number - right.day_number,
     ),
   };
+}
+
+export function nextProgramIssueRequestId(
+  currentRequestId: string | null,
+  createRequestId: () => string,
+): string {
+  return currentRequestId ?? createRequestId();
+}
+
+export function releaseBusyOnFinalize<T>(source: Observable<T>, release: () => void): Observable<T> {
+  return source.pipe(finalize(release));
 }

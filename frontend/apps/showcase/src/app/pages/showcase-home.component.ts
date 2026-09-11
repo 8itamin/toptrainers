@@ -24,8 +24,8 @@ import { TrainerShowcaseComponent } from './trainer-showcase.component';
           <a href="#pricing">Тарифы</a>
         </nav>
         <div class="nav-actions">
-          <a class="outline-button" href="https://app.toptrainers.ru/auth?mode=login">Войти</a>
-          <a class="nav-cta" href="https://app.toptrainers.ru/auth?mode=register">Начать бесплатно</a>
+          <a class="outline-button" href="mailto:hello@toptrainers.ru">Поддержка</a>
+          <a class="nav-cta" href="https://app.toptrainers.ru/auth?mode=login">Войти</a>
         </div>
       </header>
 
@@ -35,8 +35,8 @@ import { TrainerShowcaseComponent } from './trainer-showcase.component';
           <h1>Где тренеры растят <em>чемпионов</em></h1>
           <p class="lead">Инструмент, витрина и соревнования в одном приложении. Тренировки, оплаты и прогресс клиентов — без Excel, WhatsApp и App Store.</p>
           <div class="hero-actions">
-            <a class="lime-button" href="https://app.toptrainers.ru/auth?mode=register&role=trainer">Создать кабинет тренера <span>→</span></a>
-            <a class="ghost-button" href="https://app.toptrainers.ru/auth?mode=login&role=client">Я клиент — войти по ссылке</a>
+            <a class="lime-button" href="https://app.toptrainers.ru/auth?mode=login&role=client">К тренировкам <span>→</span></a>
+            <a class="ghost-button" href="https://app.toptrainers.ru/auth?mode=login&role=trainer">В кабинет тренера</a>
           </div>
           <div class="hero-proof"><span>✓ Первые 3 клиента бесплатно</span><span>✓ Перенос из Excel под ключ</span></div>
         </div>
