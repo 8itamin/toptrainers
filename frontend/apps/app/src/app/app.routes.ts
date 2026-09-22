@@ -81,12 +81,60 @@ export const APP_ROUTES: Routes = [
   },
   { path: 'trainer/programs/builder', pathMatch: 'full', redirectTo: 'trainer/programs' },
   {
+    path: 'trainer/library',
+    pathMatch: 'full',
+    title: 'TopTrainers — Программы',
+    canActivate: [trainerGuard],
+    loadComponent: () =>
+      import('@toptrainers/pwa/feature-role-shell').then((module) => module.LibraryHubComponent),
+  },
+  {
+    path: 'trainer/library/exercise',
+    pathMatch: 'full',
+    title: 'TopTrainers — Упражнение',
+    canActivate: [trainerGuard],
+    loadComponent: () =>
+      import('@toptrainers/pwa/feature-role-shell').then((module) => module.ExerciseEditorComponent),
+  },
+  {
+    path: 'trainer/library/workout',
+    pathMatch: 'full',
+    title: 'TopTrainers — Конструктор тренировки',
+    canActivate: [trainerGuard],
+    loadComponent: () =>
+      import('@toptrainers/pwa/feature-role-shell').then((module) => module.WorkoutConstructorComponent),
+  },
+  {
+    path: 'trainer/library/program',
+    pathMatch: 'full',
+    title: 'TopTrainers — Расписание программы',
+    canActivate: [trainerGuard],
+    loadComponent: () =>
+      import('@toptrainers/pwa/feature-role-shell').then((module) => module.ProgramScheduleComponent),
+  },
+  {
+    path: 'trainer/tasks',
+    pathMatch: 'full',
+    title: 'TopTrainers — Задачи',
+    canActivate: [trainerGuard],
+    loadComponent: () =>
+      import('@toptrainers/pwa/feature-role-shell').then((module) => module.TrainerTasksComponent),
+  },
+  {
     path: 'client',
     pathMatch: 'full',
     title: 'TopTrainers — Сегодня',
     canActivate: [clientGuard],
     loadComponent: () =>
       import('@toptrainers/pwa/feature-role-shell').then((module) => module.ClientTodayComponent),
+  },
+  {
+    path: 'client/tasks',
+    pathMatch: 'full',
+    title: 'TopTrainers — Задачи',
+    canActivate: [clientGuard],
+    loadComponent: () =>
+      import('@toptrainers/pwa/feature-role-shell').then((module) => module.ClientTasksComponent),
   },
   {
     path: 'client/history',
