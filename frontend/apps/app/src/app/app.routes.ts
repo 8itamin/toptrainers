@@ -70,7 +70,7 @@ export const APP_ROUTES: Routes = [
     title: 'TopTrainers — Программы',
     canActivate: [trainerGuard],
     loadComponent: () =>
-      import('@toptrainers/pwa/feature-role-shell').then((module) => module.ProgramBuilderComponent),
+      import('@toptrainers/pwa/feature-role-shell').then((module) => module.LibraryHubComponent),
   },
   {
     path: 'trainer/programs/library',
@@ -79,14 +79,18 @@ export const APP_ROUTES: Routes = [
     loadComponent: () =>
       import('@toptrainers/pwa/feature-role-shell').then((module) => module.TrainerProgramsComponent),
   },
-  { path: 'trainer/programs/builder', pathMatch: 'full', redirectTo: 'trainer/programs' },
+  {
+    path: 'trainer/programs/builder',
+    pathMatch: 'full',
+    title: 'TopTrainers — Конструктор программ',
+    canActivate: [trainerGuard],
+    loadComponent: () =>
+      import('@toptrainers/pwa/feature-role-shell').then((module) => module.ProgramBuilderComponent),
+  },
   {
     path: 'trainer/library',
     pathMatch: 'full',
-    title: 'TopTrainers — Программы',
-    canActivate: [trainerGuard],
-    loadComponent: () =>
-      import('@toptrainers/pwa/feature-role-shell').then((module) => module.LibraryHubComponent),
+    redirectTo: 'trainer/programs',
   },
   {
     path: 'trainer/library/exercise',
