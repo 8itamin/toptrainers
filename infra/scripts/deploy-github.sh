@@ -41,16 +41,26 @@ cd "$REPOSITORY_DIR"
 [[ "$(git config --get remote.origin.url)" == "$REMOTE_URL" ]] || fail "Unexpected origin remote."
 [[ -z "$(git status --porcelain)" ]] || fail "Refusing to overwrite a dirty production checkout."
 
-git -c core.hooksPath=/dev/null fetch --prune origin "refs/heads/$BRANCH:refs/remotes/origin/$BRANCH"
-readonly REVISION="$(git rev-parse --verify "refs/remotes/origin/$BRANCH^{commit}")"
-git -c core.hooksPath=/dev/null checkout --detach --force "$REVISION"
-# `umask 077` protects deployment state, but Git applies it to files written by
-# every checkout. Runtime images need the application source to be readable by
-# their unprivileged users; leave the Git metadata private.
-find "$REPOSITORY_DIR" -path "$REPOSITORY_DIR/.git" -prune -o -type d -exec chmod a+rx {} +
-find "$REPOSITORY_DIR" -path "$REPOSITORY_DIR/.git" -prune -o -type f -exec chmod a+r {} +
+while true; do
+    git -c core.hooksPath=/dev/null fetch --prune origin "refs/heads/$BRANCH:refs/remotes/origin/$BRANCH"
+    REVISION="$(git rev-parse --verify "refs/remotes/origin/$BRANCH^{commit}")"
+    git -c core.hooksPath=/dev/null checkout --detach --force "$REVISION"
+    # `umask 077` protects deployment state, but Git applies it to files written by
+    # every checkout. Runtime images need the application source to be readable by
+    # their unprivileged users; leave the Git metadata private.
+    find "$REPOSITORY_DIR" -path "$REPOSITORY_DIR/.git" -prune -o -type d -exec chmod a+rx {} +
+    find "$REPOSITORY_DIR" -path "$REPOSITORY_DIR/.git" -prune -o -type f -exec chmod a+r {} +
 
-printf 'Deploying revision %s\n' "$REVISION"
-bash "$REPOSITORY_DIR/infra/scripts/deploy-tailnet.sh"
+    printf 'Deploying revision %s\n' "$REVISION"
+    bash "$REPOSITORY_DIR/infra/scripts/deploy-tailnet.sh"
 
-printf 'Deployment succeeded: %s\n' "$REVISION"
+    git -c core.hooksPath=/dev/null fetch --prune origin "refs/heads/$BRANCH:refs/remotes/origin/$BRANCH"
+    LATEST_REVISION="$(git rev-parse --verify "refs/remotes/origin/$BRANCH^{commit}")"
+    if [[ "$LATEST_REVISION" == "$REVISION" ]]; then
+        printf 'Deployment succeeded: %s\n' "$REVISION"
+        break
+    fi
+
+    printf 'A newer revision %s arrived during deployment of %s; deploying the latest revision.\n' \
+        "$LATEST_REVISION" "$REVISION"
+done

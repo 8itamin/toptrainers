@@ -12,6 +12,8 @@
 
 > Deployment reliability update (2026-08-13): the first managed release exhausted the original 30-minute systemd timeout while Docker built the two Angular apps in parallel, making the host temporarily unresponsive. Production Docker builds now disable the Nx daemon/plugin auto-discovery, build application images sequentially, and have a 90-minute bounded deployment timeout. Existing services remain running until replacement images are ready.
 
+> Deployment queue repair (2026-09-23): a push received while `toptrainers-deploy` was building could be missed because the job fetched `main` only once. The deployment job now refetches after each completed deployment and repeats for the latest revision when necessary, so serialized webhook releases coalesce rather than silently dropping the newest commit.
+
 > Identity security update (2026-08-13): public registration is restricted to trainer/client roles. New accounts require email verification before a server-side, revocable session is issued in a Secure, HttpOnly, SameSite cookie; access tokens are no longer stored in browser storage. Verification and password-reset secrets are random, single-use, expiry-bound and stored only as hashes. Login, registration and reset requests are rate-limited in Redis. SMTP configuration is external to Git and required in production.
 
 > Identity schema repair (2026-08-13): password-hash storage was expanded from 128 to 255 characters. The PBKDF2 encoding used by the secure identity flow exceeds the former legacy column limit; the migration preserves all existing data and allows registration to complete.
