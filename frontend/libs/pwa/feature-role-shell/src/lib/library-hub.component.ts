@@ -1,16 +1,18 @@
-import { ChangeDetectionStrategy, Component, signal } from '@angular/core';
+import { ChangeDetectionStrategy, Component, computed, signal } from '@angular/core';
 import { RouterLink } from '@angular/router';
 
 import { TrainerTasksComponent } from './trainer-tasks.component';
 import { TrainerSidebarComponent } from './trainer-sidebar.component';
 
 type Tab = 'exercises' | 'workouts' | 'programs' | 'tasks';
-type Direction = 'strength' | 'speed' | 'endurance' | 'mobility' | 'technique';
+type Direction = 'all' | 'strength' | 'speed' | 'endurance' | 'mobility' | 'technique';
+type ExerciseDirection = Exclude<Direction, 'all'>;
 
 interface ExerciseCard {
   id: string;
   title: string;
   duration: string | null;
+  direction: ExerciseDirection;
   directionLabel: string;
   directionTone: 'lime' | 'copper' | 'blue';
   group: string;
@@ -21,6 +23,7 @@ interface WorkoutRow { id: string; title: string; meta: string; tone: 'lime' | '
 interface ProgramRow { id: string; title: string; meta: string; assigned: number; }
 
 const DIRECTIONS: readonly { key: Direction; label: string }[] = [
+  { key: 'all', label: 'Все' },
   { key: 'strength', label: 'Сила' },
   { key: 'speed', label: 'Скорость' },
   { key: 'endurance', label: 'Выносливость' },
@@ -33,19 +36,14 @@ const MUSCLES: readonly { name: string; count: number }[] = [
   { name: 'Плечи', count: 21 }, { name: 'Руки', count: 30 }, { name: 'Кор', count: 26 }, { name: 'Всё тело', count: 33 },
 ];
 
-const CATEGORIES: readonly { tag: string; label: string }[] = [
-  { tag: 'КГ×ПОВТ', label: 'Сила' }, { tag: 'ПОВТ', label: 'Вес тела' },
-  { tag: 'ВРЕМЯ', label: 'Статика / кардио' }, { tag: 'МЕТРЫ', label: 'Дистанция' },
-];
-
 const EXERCISES: readonly ExerciseCard[] = [
-  { id: 'squat', title: 'Присед со штангой', duration: '0:42', directionLabel: 'СИЛА', directionTone: 'lime', group: 'НОГИ', count: 'КГ×ПОВТ' },
-  { id: 'legpress', title: 'Жим ногами', duration: '0:31', directionLabel: 'СИЛА', directionTone: 'lime', group: 'НОГИ', count: 'КГ×ПОВТ' },
-  { id: 'lunges', title: 'Выпады с гантелями', duration: '0:28', directionLabel: 'СИЛА', directionTone: 'lime', group: 'НОГИ', count: 'КГ×ПОВТ' },
-  { id: 'bulgarian', title: 'Болгарский присед', duration: null, directionLabel: 'СИЛА', directionTone: 'lime', group: 'НОГИ', count: 'ПОВТ' },
-  { id: 'plank', title: 'Планка на локтях', duration: '0:19', directionLabel: 'ВЫНОСЛ.', directionTone: 'blue', group: 'КОР', count: 'ВРЕМЯ' },
-  { id: 'sprint', title: 'Спринт 30 м', duration: '0:24', directionLabel: 'СКОРОСТЬ', directionTone: 'copper', group: 'НОГИ', count: 'МЕТРЫ' },
-  { id: 'pullups', title: 'Подтягивания', duration: '0:36', directionLabel: 'СИЛА', directionTone: 'lime', group: 'СПИНА', count: 'ПОВТ' },
+  { id: 'squat', title: 'Присед со штангой', duration: '0:42', direction: 'strength', directionLabel: 'СИЛА', directionTone: 'lime', group: 'НОГИ', count: 'КГ×ПОВТ' },
+  { id: 'legpress', title: 'Жим ногами', duration: '0:31', direction: 'strength', directionLabel: 'СИЛА', directionTone: 'lime', group: 'НОГИ', count: 'КГ×ПОВТ' },
+  { id: 'lunges', title: 'Выпады с гантелями', duration: '0:28', direction: 'strength', directionLabel: 'СИЛА', directionTone: 'lime', group: 'НОГИ', count: 'КГ×ПОВТ' },
+  { id: 'bulgarian', title: 'Болгарский присед', duration: null, direction: 'strength', directionLabel: 'СИЛА', directionTone: 'lime', group: 'НОГИ', count: 'ПОВТ' },
+  { id: 'plank', title: 'Планка на локтях', duration: '0:19', direction: 'endurance', directionLabel: 'ВЫНОСЛ.', directionTone: 'blue', group: 'КОР', count: 'ВРЕМЯ' },
+  { id: 'sprint', title: 'Спринт 30 м', duration: '0:24', direction: 'speed', directionLabel: 'СКОРОСТЬ', directionTone: 'copper', group: 'НОГИ', count: 'МЕТРЫ' },
+  { id: 'pullups', title: 'Подтягивания', duration: '0:36', direction: 'strength', directionLabel: 'СИЛА', directionTone: 'lime', group: 'СПИНА', count: 'ПОВТ' },
 ];
 
 const WORKOUTS: readonly WorkoutRow[] = [
@@ -93,6 +91,7 @@ const PROGRAMS: readonly ProgramRow[] = [
           @case ('exercises') {
             <div class="body">
               <aside class="filters">
+                <h2>Фильтры</h2>
                 <div class="filter-group">
                   <div class="filter-label">НАПРАВЛЕНИЕ</div>
                   <div class="dir-chips">
@@ -105,19 +104,11 @@ const PROGRAMS: readonly ProgramRow[] = [
                   <div class="filter-label">ГРУППА МЫШЦ</div>
                   <div class="muscle-list">
                     @for (m of muscles; track m.name) {
-                      <button type="button" class="muscle" [class.is-active]="m.name === activeMuscle()" (click)="toggleMuscle(m.name)">
+                      <button type="button" class="muscle" [class.is-active]="selectedMuscles().has(m.name)" (click)="toggleMuscle(m.name)">
                         <span class="mcheck"><svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="#14181d" stroke-width="3.4" stroke-linecap="round" stroke-linejoin="round"><path d="M5 13l4 4 10-10" /></svg></span>
                         <span class="mname">{{ m.name }}</span>
                         <span class="mcount">{{ m.count }}</span>
                       </button>
-                    }
-                  </div>
-                </div>
-                <div class="filter-group">
-                  <div class="filter-label">КАТЕГОРИЯ · ЧТО СЧИТАЕМ</div>
-                  <div class="cat-list">
-                    @for (c of categories; track c.tag) {
-                      <div class="cat"><span class="cat-tag">{{ c.tag }}</span><span class="cat-name">{{ c.label }}</span></div>
                     }
                   </div>
                 </div>
@@ -126,11 +117,11 @@ const PROGRAMS: readonly ProgramRow[] = [
 
               <div class="grid-col">
                 <div class="grid-head">
-                  <span>СИЛА · НОГИ · 42 НАЙДЕНО</span>
+                  <span>{{ exerciseFilterSummary() }} · {{ filteredExercises().length }} НАЙДЕНО</span>
                   <span>сортировка: по популярности ▾</span>
                 </div>
                 <div class="grid">
-                  @for (ex of exercises; track ex.id) {
+                  @for (ex of filteredExercises(); track ex.id) {
                     <a class="card" routerLink="/trainer/library/exercise">
                       <div class="card-media">
                         @if (ex.duration) { <span class="card-play"><svg width="16" height="16" viewBox="0 0 24 24" fill="#14181d" stroke="none"><path d="M8 5v14l11-7z" /></svg></span><span class="card-dur">{{ ex.duration }}</span> }
@@ -216,6 +207,7 @@ const PROGRAMS: readonly ProgramRow[] = [
     .tabs button.is-active b { color: #8a94a6; }
     .body { display: flex; flex-direction: column; }
     .filters { padding: 1.25rem 1.25rem; display: flex; flex-direction: column; gap: 1.375rem; border-bottom: 1px solid rgb(245 247 250 / 6%); }
+    .filters h2 { margin: 0; font-family: 'Unbounded', sans-serif; font-size: 0.875rem; color: #f5f7fa; }
     .filter-label { font-family: 'JetBrains Mono', monospace; font-size: 0.625rem; letter-spacing: 0.1em; color: #8a94a6; margin-bottom: 0.625rem; }
     .dir-chips { display: flex; flex-wrap: wrap; gap: 0.4375rem; }
     .dir { font: inherit; font-size: 0.75rem; font-weight: 500; color: #f5f7fa; background: #1c222b; border: 1px solid rgb(245 247 250 / 8%); padding: 0.4375rem 0.6875rem; border-radius: 0.5rem; cursor: pointer; }
@@ -296,21 +288,48 @@ const PROGRAMS: readonly ProgramRow[] = [
 export class LibraryHubComponent {
   protected readonly directions = DIRECTIONS;
   protected readonly muscles = MUSCLES;
-  protected readonly categories = CATEGORIES;
   protected readonly exercises = EXERCISES;
   protected readonly workouts = WORKOUTS;
   protected readonly programs = PROGRAMS;
 
   protected readonly tab = signal<Tab>('exercises');
-  protected readonly direction = signal<Direction>('strength');
-  protected readonly activeMuscle = signal<string>('Ноги');
+  protected readonly direction = signal<Direction>('all');
+  protected readonly selectedMuscles = signal<ReadonlySet<string>>(new Set());
+  protected readonly filteredExercises = computed(() => {
+    const direction = this.direction();
+    const selectedMuscles = this.selectedMuscles();
+
+    return this.exercises.filter(
+      (exercise) =>
+        (direction === 'all' || exercise.direction === direction) &&
+        (selectedMuscles.size === 0 || selectedMuscles.has(this.muscleNameFor(exercise.group))),
+    );
+  });
+  protected readonly exerciseFilterSummary = computed(() => {
+    const direction = this.directions.find((item) => item.key === this.direction())?.label ?? 'Все';
+    const muscles = [...this.selectedMuscles()];
+
+    return [direction, ...muscles].join(' · ').toLocaleUpperCase('ru-RU');
+  });
 
   protected toggleMuscle(name: string): void {
-    this.activeMuscle.update((cur) => (cur === name ? '' : name));
+    this.selectedMuscles.update((current) => {
+      const next = new Set(current);
+      if (next.has(name)) {
+        next.delete(name);
+      } else {
+        next.add(name);
+      }
+      return next;
+    });
   }
 
   protected resetFilters(): void {
-    this.direction.set('strength');
-    this.activeMuscle.set('');
+    this.direction.set('all');
+    this.selectedMuscles.set(new Set());
+  }
+
+  private muscleNameFor(group: string): string {
+    return group.charAt(0) + group.slice(1).toLocaleLowerCase('ru-RU');
   }
 }
