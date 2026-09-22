@@ -44,8 +44,8 @@ import {
       :host { display: block; width: 5.5rem; flex: 0 0 5.5rem; }
       .sidebar { position: sticky; top: 0; height: 100dvh; box-sizing: border-box; display: flex; flex-direction: column; align-items: center; padding: 1.5rem 0; background: #0e1116; border-right: 1px solid rgb(245 247 250 / 6%); }
       .sidebar-logo { color: #c9f24b; }
-      .sidebar-nav { display: flex; flex-direction: column; align-items: center; gap: 1.375rem; margin-top: 2rem; }
-      .side-item { display: flex; flex-direction: column; align-items: center; gap: 0.3125rem; color: #8a94a6; text-decoration: none; font-size: 0.5625rem; }
+      .sidebar-nav { display: flex; width: 4rem; flex-direction: column; align-items: center; gap: 1.375rem; margin-top: 2rem; }
+      .side-item { display: flex; width: 100%; flex-direction: column; align-items: center; gap: 0.3125rem; color: #8a94a6; text-align: center; text-decoration: none; white-space: nowrap; font-size: 0.5625rem; }
       .side-icon { display: grid; place-items: center; width: 2.75rem; height: 2.75rem; border-radius: 0.75rem; }
       .side-item.is-active { color: #c9f24b; font-weight: 600; }
       .side-item.is-active .side-icon { background: rgb(201 242 75 / 12%); }
