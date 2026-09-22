@@ -1,5 +1,7 @@
-import { ChangeDetectionStrategy, Component, signal } from '@angular/core';
+import { ChangeDetectionStrategy, Component, input, output, signal } from '@angular/core';
 import { RouterLink } from '@angular/router';
+
+import type { ExerciseModalMode } from './exercise-modal-state';
 
 type Direction = 'strength' | 'speed' | 'endurance' | 'mobility' | 'technique';
 type CountKind = 'load' | 'bodyweight' | 'time' | 'distance';
@@ -27,18 +29,22 @@ const COUNT_KINDS: readonly CountOption[] = [
   standalone: true,
   imports: [RouterLink],
   template: `
-    <div class="backdrop">
+    <div class="backdrop" [class.backdrop--embedded]="embedded()">
       <div class="modal">
         <header class="modal-head">
           <div class="head-left">
-            <span class="kicker">УПРАЖНЕНИЕ</span>
-            <span class="name">Присед со штангой</span>
-            <span class="usage">в 7 тренировках</span>
+            <span class="kicker">{{ mode() === 'create' ? 'НОВОЕ УПРАЖНЕНИЕ' : 'УПРАЖНЕНИЕ' }}</span>
+            <span class="name">{{ mode() === 'create' ? 'Новое упражнение' : 'Присед со штангой' }}</span>
+            @if (mode() === 'edit') { <span class="usage">в 7 тренировках</span> }
           </div>
           <div class="head-right">
-            <button type="button" class="ghost" (click)="duplicate()">Дублировать</button>
+            @if (mode() === 'edit') { <button type="button" class="ghost" (click)="duplicate()">Дублировать</button> }
             <button type="button" class="save" (click)="save()">Сохранить</button>
-            <a class="close" routerLink="/trainer/library" aria-label="Закрыть">✕</a>
+            @if (embedded()) {
+              <button type="button" class="close" (click)="closeRequested.emit()" aria-label="Закрыть">✕</button>
+            } @else {
+              <a class="close" routerLink="/trainer/library" aria-label="Закрыть">✕</a>
+            }
           </div>
         </header>
 
@@ -127,7 +133,8 @@ const COUNT_KINDS: readonly CountOption[] = [
     .head-right { display: flex; align-items: center; gap: 0.625rem; }
     .ghost { border: 0; background: none; color: #8a94a6; font: inherit; font-size: 0.8125rem; cursor: pointer; }
     .save { border: 0; font: inherit; font-size: 0.875rem; font-weight: 700; color: #14181d; background: #c9f24b; padding: 0.625rem 1.125rem; border-radius: 0.5625rem; cursor: pointer; }
-    .close { color: #8a94a6; text-decoration: none; font-size: 1rem; }
+    .close { border: 0; background: transparent; color: #8a94a6; text-decoration: none; font: inherit; font-size: 1rem; cursor: pointer; }
+    .backdrop--embedded { min-height: 0; padding: 0; background: transparent; }
     .body { display: flex; }
     .video-col { width: 25rem; flex: none; padding: 1.5rem; border-right: 1px solid rgb(245 247 250 / 6%); display: flex; flex-direction: column; gap: 0.875rem; }
     .label { font-family: 'JetBrains Mono', monospace; font-size: 0.625rem; letter-spacing: 0.1em; color: #8a94a6; }
@@ -175,11 +182,16 @@ const COUNT_KINDS: readonly CountOption[] = [
       .body { flex-direction: column; }
       .video-col { width: auto; border-right: 0; border-bottom: 1px solid rgb(245 247 250 / 6%); }
       .count-grid { grid-template-columns: 1fr; }
+      .backdrop--embedded .modal { min-height: 100dvh; border: 0; border-radius: 0; }
     }
   `,
   changeDetection: ChangeDetectionStrategy.OnPush,
 })
 export class ExerciseEditorComponent {
+  readonly mode = input<ExerciseModalMode>('edit');
+  readonly embedded = input(false);
+  readonly closeRequested = output<void>();
+
   protected readonly directions = DIRECTIONS;
   protected readonly countKinds = COUNT_KINDS;
   protected readonly direction = signal<Direction>('strength');

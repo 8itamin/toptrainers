@@ -1,6 +1,13 @@
-import { ChangeDetectionStrategy, Component, computed, signal } from '@angular/core';
+import { ChangeDetectionStrategy, Component, computed, HostListener, signal } from '@angular/core';
 import { RouterLink } from '@angular/router';
 
+import { ExerciseEditorComponent } from './exercise-editor.component';
+import {
+  closeExerciseModal,
+  openExerciseModal,
+  type ExerciseModalMode,
+  type ExerciseModalState,
+} from './exercise-modal-state';
 import { TrainerTasksComponent } from './trainer-tasks.component';
 import { TrainerSidebarComponent } from './trainer-sidebar.component';
 
@@ -62,7 +69,7 @@ const PROGRAMS: readonly ProgramRow[] = [
 @Component({
   selector: 'tt-library-hub',
   standalone: true,
-  imports: [RouterLink, TrainerSidebarComponent, TrainerTasksComponent],
+  imports: [RouterLink, ExerciseEditorComponent, TrainerSidebarComponent, TrainerTasksComponent],
   template: `
     <div class="hub">
       <tt-trainer-sidebar />
@@ -76,7 +83,7 @@ const PROGRAMS: readonly ProgramRow[] = [
             </div>
             <div class="tools">
               <label class="search"><svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="#5b6472" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="11" cy="11" r="7" /><path d="m20 20-4.5-4.5" /></svg><input type="search" placeholder="Поиск по названию · /" /></label>
-              <a class="add" routerLink="/trainer/library/exercise"><svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round"><path d="M12 5v14M5 12h14" /></svg>Упражнение</a>
+              <button type="button" class="add" (click)="openExerciseModal('create')"><svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round"><path d="M12 5v14M5 12h14" /></svg>Упражнение</button>
             </div>
           </div>
           <div class="tabs">
@@ -122,7 +129,7 @@ const PROGRAMS: readonly ProgramRow[] = [
                 </div>
                 <div class="grid">
                   @for (ex of filteredExercises(); track ex.id) {
-                    <a class="card" routerLink="/trainer/library/exercise">
+                    <button type="button" class="card" (click)="openExerciseModal('edit')">
                       <div class="card-media">
                         @if (ex.duration) { <span class="card-play"><svg width="16" height="16" viewBox="0 0 24 24" fill="#14181d" stroke="none"><path d="M8 5v14l11-7z" /></svg></span><span class="card-dur">{{ ex.duration }}</span> }
                         @else { <span class="card-novideo">БЕЗ ВИДЕО</span> }
@@ -135,13 +142,13 @@ const PROGRAMS: readonly ProgramRow[] = [
                           <span class="ctag ctag--muted">{{ ex.count }}</span>
                         </div>
                       </div>
-                    </a>
+                    </button>
                   }
-                  <a class="card card--add" routerLink="/trainer/library/exercise">
+                  <button type="button" class="card card--add" (click)="openExerciseModal('create')">
                     <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 5v14M5 12h14" /></svg>
                     <span class="add-title">Новое упражнение</span>
                     <span class="add-hint">ИЛИ ПЕРЕТАЩИТЕ ВИДЕО</span>
-                  </a>
+                  </button>
                 </div>
               </div>
             </div>
@@ -176,6 +183,14 @@ const PROGRAMS: readonly ProgramRow[] = [
         }
       </div>
 
+      @if (exerciseModal()) {
+        <div class="exercise-overlay" (click)="closeExerciseModal()">
+          <div class="exercise-dialog" role="dialog" aria-modal="true" [attr.aria-label]="exerciseModal()?.mode === 'create' ? 'Создание упражнения' : 'Редактирование упражнения'" (click)="$event.stopPropagation()">
+            <tt-exercise-editor [embedded]="true" [mode]="exerciseModal()!.mode" (closeRequested)="closeExerciseModal()" />
+          </div>
+        </div>
+      }
+
       <nav class="tabbar" aria-label="Навигация">
         <a class="tab" routerLink="/trainer"><svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 12l9-9 9 9M5 10v10h14V10" /></svg><span>Сегодня</span></a>
         <a class="tab" routerLink="/trainer/clients"><svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="9" cy="8" r="4" /><path d="M2 21c0-3.5 3-5 7-5M16 3.5a4 4 0 0 1 0 7.5M15 21c.5-3 3-5 7-5" /></svg><span>Клиенты</span></a>
@@ -199,7 +214,7 @@ const PROGRAMS: readonly ProgramRow[] = [
     .search { display: flex; align-items: center; gap: 0.5625rem; height: 2.5rem; padding: 0 0.875rem; background: #1c222b; border: 1px solid rgb(245 247 250 / 8%); border-radius: 0.625rem; color: #5b6472; }
     .search input { background: transparent; border: 0; color: #f5f7fa; font: inherit; font-size: 0.8125rem; min-width: 0; }
     .search input:focus { outline: none; }
-    .add { display: flex; align-items: center; gap: 0.4375rem; font-size: 0.875rem; font-weight: 700; color: #14181d; background: #c9f24b; padding: 0.6875rem 1rem; border-radius: 0.625rem; text-decoration: none; white-space: nowrap; }
+    .add { display: flex; align-items: center; gap: 0.4375rem; border: 0; font: inherit; font-size: 0.875rem; font-weight: 700; color: #14181d; background: #c9f24b; padding: 0.6875rem 1rem; border-radius: 0.625rem; text-decoration: none; white-space: nowrap; cursor: pointer; }
     .tabs { display: flex; gap: 1.625rem; margin-top: 1.125rem; overflow-x: auto; }
     .tabs button { border: 0; background: none; font: inherit; font-weight: 500; font-size: 0.875rem; color: #8a94a6; padding-bottom: 0.75rem; border-bottom: 2px solid transparent; cursor: pointer; white-space: nowrap; }
     .tabs button.is-active { font-weight: 600; color: #f5f7fa; border-bottom-color: #c9f24b; }
@@ -233,7 +248,7 @@ const PROGRAMS: readonly ProgramRow[] = [
     .grid-col { padding: 1.25rem 1.25rem; }
     .grid-head { display: flex; align-items: center; justify-content: space-between; margin-bottom: 1rem; font-family: 'JetBrains Mono', monospace; font-size: 0.6875rem; color: #8a94a6; letter-spacing: 0.06em; }
     .grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(9.5rem, 1fr)); gap: 0.875rem; }
-    .card { background: #1c222b; border: 1px solid rgb(245 247 250 / 6%); border-radius: 1rem; overflow: hidden; text-decoration: none; color: inherit; }
+    .card { width: 100%; padding: 0; text-align: left; font: inherit; background: #1c222b; border: 1px solid rgb(245 247 250 / 6%); border-radius: 1rem; overflow: hidden; text-decoration: none; color: inherit; cursor: pointer; }
     .card:first-child { border-color: #c9f24b; }
     .card-media { height: 7.375rem; background: repeating-linear-gradient(135deg, #1c222b, #1c222b 12px, #20272f 12px, #20272f 24px); display: flex; align-items: center; justify-content: center; position: relative; }
     .card-play { width: 2.375rem; height: 2.375rem; border-radius: 999px; background: rgb(201 242 75 / 90%); display: flex; align-items: center; justify-content: center; }
@@ -261,6 +276,8 @@ const PROGRAMS: readonly ProgramRow[] = [
     .row-arrow { color: #8a94a6; }
     .row-add { text-align: center; padding: 0.875rem; border: 1.5px dashed rgb(245 247 250 / 18%); border-radius: 0.875rem; color: #8a94a6; text-decoration: none; font-size: 0.8125rem; font-weight: 600; }
     .tasks-wrap { padding: 1.25rem; }
+    .exercise-overlay { position: fixed; inset: 0; z-index: 20; display: grid; align-items: start; justify-items: center; overflow: auto; padding: clamp(1rem, 4vw, 2.5rem) 1rem; background: rgb(14 17 22 / 78%); }
+    .exercise-dialog { width: min(100%, 61.25rem); }
     .tabbar { position: fixed; inset-inline: 0; bottom: 0; display: flex; justify-content: space-between; padding: 0.75rem 1.25rem calc(0.75rem + env(safe-area-inset-bottom)); background: #14181d; border-top: 1px solid rgb(245 247 250 / 6%); }
     .tab { display: flex; flex-direction: column; align-items: center; gap: 0.25rem; color: #5b6472; text-decoration: none; font-size: 0.625rem; }
     .tab.is-active { color: #c9f24b; font-weight: 600; }
@@ -282,6 +299,10 @@ const PROGRAMS: readonly ProgramRow[] = [
       .filters { width: 15.5rem; flex: none; border-bottom: 0; border-right: 1px solid rgb(245 247 250 / 6%); }
       .grid-col { flex: 1; min-width: 0; padding: 1.375rem 1.75rem; }
     }
+    @media (max-width: 860px) {
+      .exercise-overlay { padding: 0; }
+      .exercise-dialog { width: 100%; }
+    }
   `,
   changeDetection: ChangeDetectionStrategy.OnPush,
 })
@@ -293,6 +314,7 @@ export class LibraryHubComponent {
   protected readonly programs = PROGRAMS;
 
   protected readonly tab = signal<Tab>('exercises');
+  protected readonly exerciseModal = signal<ExerciseModalState | null>(null);
   protected readonly direction = signal<Direction>('all');
   protected readonly selectedMuscles = signal<ReadonlySet<string>>(new Set());
   protected readonly filteredExercises = computed(() => {
@@ -327,6 +349,21 @@ export class LibraryHubComponent {
   protected resetFilters(): void {
     this.direction.set('all');
     this.selectedMuscles.set(new Set());
+  }
+
+  protected openExerciseModal(mode: ExerciseModalMode): void {
+    this.exerciseModal.set(openExerciseModal(mode));
+  }
+
+  protected closeExerciseModal(): void {
+    this.exerciseModal.set(closeExerciseModal());
+  }
+
+  @HostListener('document:keydown.escape')
+  protected closeExerciseModalOnEscape(): void {
+    if (this.exerciseModal()) {
+      this.closeExerciseModal();
+    }
   }
 
   private muscleNameFor(group: string): string {
