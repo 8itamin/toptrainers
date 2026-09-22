@@ -1,5 +1,8 @@
+import { NgTemplateOutlet } from '@angular/common';
 import { ChangeDetectionStrategy, Component, signal } from '@angular/core';
 import { RouterLink } from '@angular/router';
+
+import { TRAINER_PROGRAM_BUILDER_NAVIGATION } from './program-builder-state';
 
 interface LeaderboardEntry {
   rank: number;
@@ -20,18 +23,24 @@ const LEADERBOARD: readonly LeaderboardEntry[] = [
 @Component({
   selector: 'tt-trainer-competitions',
   standalone: true,
-  imports: [RouterLink],
+  imports: [NgTemplateOutlet, RouterLink],
   template: `
+    <ng-template #navIcon let-icon>
+      @switch (icon) {
+        @case ('home') { <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 12l9-9 9 9M5 10v10h14V10" /></svg> }
+        @case ('clients') { <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="9" cy="8" r="4" /><path d="M2 21c0-3.5 3-5 7-5M16 3.5a4 4 0 0 1 0 7.5M15 21c.5-3 3-5 7-5" /></svg> }
+        @case ('programs') { <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="4" width="18" height="16" rx="2" /><path d="M3 9h18M8 4v16" /></svg> }
+        @case ('chats') { <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 11.5a8.4 8.4 0 0 1-9 8 8.4 8.4 0 0 1-4-1L3 20l1.5-4a8.4 8.4 0 0 1-1-4 8.4 8.4 0 0 1 8.5-8 8.4 8.4 0 0 1 9 7.5z" /></svg> }
+        @case ('competitions') { <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="8" r="5" /><path d="M8.5 12.5 7 21l5-3 5 3-1.5-8.5" /></svg> }
+      }
+    </ng-template>
     <div class="competitions-shell">
       <aside class="sidebar desktop-only">
         <a class="sidebar-logo" routerLink="/trainer" aria-label="TopTrainers: Сегодня"><svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round"><polyline points="4 12 12 5 20 12" /><polyline points="4 19 12 12 20 19" /></svg></a>
         <nav class="sidebar-nav" aria-label="Навигация тренера">
-          <a class="side-item" routerLink="/trainer"><span class="side-icon">⌂</span><span>Сегодня</span></a>
-          <a class="side-item" routerLink="/trainer/clients"><span class="side-icon">♙</span><span>Клиенты</span></a>
-          <a class="side-item" routerLink="/trainer/programs"><span class="side-icon">▦</span><span>Программы</span></a>
-          <a class="side-item" routerLink="/trainer/chats"><span class="side-icon">◌</span><span>Чаты</span></a>
-          <a class="side-item is-active" routerLink="/trainer/competitions"><span class="side-icon">♜</span><span>Соревн.</span></a>
-          <a class="side-item" routerLink="/trainer/showcase"><span class="side-icon">▣</span><span>Витрина</span></a>
+          @for (item of navItems; track item.path) {
+            <a class="side-item" [class.is-active]="item.path === '/trainer/competitions'" [routerLink]="item.path"><span class="side-icon"><ng-container *ngTemplateOutlet="navIcon; context: { $implicit: item.icon }" /></span><span>{{ item.label }}</span></a>
+          }
         </nav><span class="sidebar-avatar" aria-hidden="true"></span>
       </aside>
 
@@ -43,7 +52,7 @@ const LEADERBOARD: readonly LeaderboardEntry[] = [
       </main>
 
       <aside class="rules"><p>УСЛОВИЯ</p><div class="prize"><span>ПРИЗ</span><strong>−50% на след. месяц + мерч</strong></div><ul><li>+100 баллов за тренировку</li><li>+50 за видеоотчёт</li><li>×2 за серию без пропусков</li></ul><button type="button" class="rules-button" (click)="configureRules()">Настроить правила</button></aside>
-      <nav class="mobile-nav mobile-only" aria-label="Навигация тренера"><a routerLink="/trainer"><span>⌂</span>Сегодня</a><a routerLink="/trainer/clients"><span>♙</span>Клиенты</a><a routerLink="/trainer/programs"><span>▦</span>Программы</a><a routerLink="/trainer/chats"><span>◌</span>Чаты</a><a class="is-active" routerLink="/trainer/competitions"><span>♜</span>Ещё</a><a routerLink="/trainer/showcase"><span>▣</span>Витрина</a></nav>
+      <nav class="mobile-nav mobile-only" aria-label="Навигация тренера">@for (item of navItems; track item.path) { <a [class.is-active]="item.path === '/trainer/competitions'" [routerLink]="item.path"><span><ng-container *ngTemplateOutlet="navIcon; context: { $implicit: item.icon }" /></span>{{ item.label }}</a> }</nav>
     </div>
   `,
   styles: `
@@ -52,6 +61,9 @@ const LEADERBOARD: readonly LeaderboardEntry[] = [
   changeDetection: ChangeDetectionStrategy.OnPush,
 })
 export class TrainerCompetitionsComponent {
+  protected readonly navItems = TRAINER_PROGRAM_BUILDER_NAVIGATION.map((item) =>
+    item.path === '/trainer/competitions' ? { ...item, label: 'Соревн.' } : item,
+  );
   protected readonly leaderboard = LEADERBOARD;
   protected readonly message = signal('');
   protected createCompetition(): void { this.message.set('Создание соревнования появится вместе с модулем соревнований.'); }

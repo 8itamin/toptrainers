@@ -92,4 +92,14 @@ describe('program builder state', () => {
       '/trainer/competitions',
     ]);
   });
+
+  it('uses stable vector icon identifiers for every trainer destination', () => {
+    expect(TRAINER_PROGRAM_BUILDER_NAVIGATION.map((item) => item.icon)).toEqual([
+      'home',
+      'clients',
+      'programs',
+      'chats',
+      'competitions',
+    ]);
+  });
 });

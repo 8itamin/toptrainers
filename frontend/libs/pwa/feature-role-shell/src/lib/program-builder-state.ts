@@ -2,11 +2,11 @@ import type { ProgramCreate, ProgramSlotWrite } from '@toptrainers/shared/contra
 import { finalize, type Observable } from 'rxjs';
 
 export const TRAINER_PROGRAM_BUILDER_NAVIGATION = [
-  { path: '/trainer', label: 'Сегодня', icon: '⌂' },
-  { path: '/trainer/clients', label: 'Клиенты', icon: '♙' },
-  { path: '/trainer/programs', label: 'Программы', icon: '▦' },
-  { path: '/trainer/chats', label: 'Чаты', icon: '◌' },
-  { path: '/trainer/competitions', label: 'Ещё', icon: '♜' },
+  { path: '/trainer', label: 'Сегодня', icon: 'home' },
+  { path: '/trainer/clients', label: 'Клиенты', icon: 'clients' },
+  { path: '/trainer/programs', label: 'Программы', icon: 'programs' },
+  { path: '/trainer/chats', label: 'Чаты', icon: 'chats' },
+  { path: '/trainer/competitions', label: 'Ещё', icon: 'competitions' },
 ] as const;
 
 export interface ProgramDraft {
