@@ -30,3 +30,33 @@ def test_program_response_preserves_ordered_full_schedule() -> None:
 
     assert response.duration_weeks == 2
     assert [(slot.week_number, slot.day_number) for slot in response.slots] == [(2, 1), (1, 3)]
+
+
+def test_program_response_preserves_task_target_and_position() -> None:
+    program = Program(
+        id="p" * 36,
+        trainer_id="t" * 36,
+        title="Контроль",
+        description="",
+        duration_weeks=1,
+        slots=[
+            ProgramSlot(
+                id="s" * 36,
+                week_number=1,
+                day_number=2,
+                position=3,
+                kind="TASK",
+                workout_id=None,
+                task_template_id="a" * 36,
+            )
+        ],
+    )
+
+    [slot] = to_response(program).slots
+
+    assert (slot.kind, slot.position, slot.workout_id, slot.task_template_id) == (
+        "TASK",
+        3,
+        None,
+        "a" * 36,
+    )

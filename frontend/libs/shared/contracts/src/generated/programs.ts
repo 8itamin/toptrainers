@@ -58,7 +58,7 @@ export interface ProgramCreate {
   title: string;
   description?: string;
   duration_weeks?: number;
-  slots?: Array<ProgramSlotWrite>;
+  slots?: Array<ProgramScheduleItemWrite>;
 }
 
 export interface ProgramResponse {
@@ -73,14 +73,29 @@ export interface ProgramResponse {
 export interface ProgramSlotResponse {
   week_number: number;
   day_number: number;
-  workout_id: string;
+  position?: number;
+  kind?: "WORKOUT" | "TASK";
+  workout_id?: string | null;
+  task_template_id?: string | null;
   id: string;
 }
 
 export interface ProgramSlotWrite {
   week_number: number;
   day_number: number;
-  workout_id: string;
+  position?: number;
+  kind?: "WORKOUT" | "TASK";
+  workout_id?: string | null;
+  task_template_id?: string | null;
+}
+
+export interface ProgramScheduleItemWrite {
+  week_number: number;
+  day_number: number;
+  position?: number;
+  kind?: "WORKOUT" | "TASK";
+  workout_id?: string | null;
+  task_template_id?: string | null;
 }
 
 export interface RelationshipResponse {

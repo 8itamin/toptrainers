@@ -319,6 +319,146 @@ export const openApiDocument = {
         ]
       }
     },
+    "/api/v1/media/uploads": {
+      "post": {
+        "tags": [
+          "media"
+        ],
+        "summary": "Create Upload",
+        "operationId": "create_upload_api_v1_media_uploads_post",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/CreateUploadRequest"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "201": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/CreateUploadResponse"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "HTTPBearer": []
+          }
+        ]
+      }
+    },
+    "/api/v1/media/uploads/{media_id}/confirm": {
+      "post": {
+        "tags": [
+          "media"
+        ],
+        "summary": "Confirm Upload",
+        "operationId": "confirm_upload_api_v1_media_uploads__media_id__confirm_post",
+        "security": [
+          {
+            "HTTPBearer": []
+          }
+        ],
+        "parameters": [
+          {
+            "name": "media_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "title": "Media Id"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ConfirmUploadResponse"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/media/{media_id}/read-url": {
+      "post": {
+        "tags": [
+          "media"
+        ],
+        "summary": "Create Read Url",
+        "operationId": "create_read_url_api_v1_media__media_id__read_url_post",
+        "security": [
+          {
+            "HTTPBearer": []
+          }
+        ],
+        "parameters": [
+          {
+            "name": "media_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "title": "Media Id"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/MediaReadUrlResponse"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
     "/api/v1/clients/invitations": {
       "post": {
         "tags": [
@@ -2023,6 +2163,294 @@ export const openApiDocument = {
         }
       }
     },
+    "/api/v1/tasks/templates": {
+      "get": {
+        "tags": [
+          "tasks"
+        ],
+        "summary": "List Task Templates",
+        "operationId": "listTaskTemplates",
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "items": {
+                    "$ref": "#/components/schemas/TaskTemplateResponse"
+                  },
+                  "type": "array",
+                  "title": "Response Listtasktemplates"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "HTTPBearer": []
+          }
+        ]
+      },
+      "post": {
+        "tags": [
+          "tasks"
+        ],
+        "summary": "Create Task Template",
+        "operationId": "createTaskTemplate",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/TaskTemplateWrite"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "201": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/TaskTemplateResponse"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "HTTPBearer": []
+          }
+        ]
+      }
+    },
+    "/api/v1/tasks/assignments": {
+      "get": {
+        "tags": [
+          "tasks"
+        ],
+        "summary": "List Client Task Assignments By Date",
+        "operationId": "listClientTaskAssignmentsByDate",
+        "security": [
+          {
+            "HTTPBearer": []
+          }
+        ],
+        "parameters": [
+          {
+            "name": "scheduled_date",
+            "in": "query",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "date",
+              "title": "Scheduled Date"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "array",
+                  "items": {
+                    "$ref": "#/components/schemas/TaskAssignmentResponse"
+                  },
+                  "title": "Response Listclienttaskassignmentsbydate"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/tasks/assignments/{assignment_id}/results": {
+      "post": {
+        "tags": [
+          "tasks"
+        ],
+        "summary": "Submit Task Result",
+        "operationId": "submitTaskResult",
+        "security": [
+          {
+            "HTTPBearer": []
+          }
+        ],
+        "parameters": [
+          {
+            "name": "assignment_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "title": "Assignment Id"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/SubmitTaskResultRequest"
+              }
+            }
+          }
+        },
+        "responses": {
+          "201": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/TaskResultVersionResponse"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      },
+      "get": {
+        "tags": [
+          "tasks"
+        ],
+        "summary": "List Task Results",
+        "operationId": "listTaskResultVersions",
+        "security": [
+          {
+            "HTTPBearer": []
+          }
+        ],
+        "parameters": [
+          {
+            "name": "assignment_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "title": "Assignment Id"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "array",
+                  "items": {
+                    "$ref": "#/components/schemas/TaskResultVersionResponse"
+                  },
+                  "title": "Response Listtaskresultversions"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/tasks/assignments/{assignment_id}/results/media/{media_id}/read-url": {
+      "post": {
+        "tags": [
+          "tasks"
+        ],
+        "summary": "Create Result Media Read Url",
+        "operationId": "createTaskResultMediaReadUrl",
+        "security": [
+          {
+            "HTTPBearer": []
+          }
+        ],
+        "parameters": [
+          {
+            "name": "assignment_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "title": "Assignment Id"
+            }
+          },
+          {
+            "name": "media_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "title": "Media Id"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/MediaReadUrlResponse"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
     "/api/v1/exercises": {
       "get": {
         "tags": [
@@ -2221,6 +2649,42 @@ export const openApiDocument = {
         ],
         "title": "BusinessErrorResponse"
       },
+      "CompletionResultField": {
+        "properties": {
+          "kind": {
+            "type": "string",
+            "const": "completion",
+            "title": "Kind",
+            "default": "completion"
+          },
+          "required": {
+            "type": "boolean",
+            "title": "Required",
+            "default": false
+          }
+        },
+        "type": "object",
+        "title": "CompletionResultField"
+      },
+      "ConfirmUploadResponse": {
+        "properties": {
+          "media_id": {
+            "type": "string",
+            "title": "Media Id"
+          },
+          "status": {
+            "type": "string",
+            "const": "READY",
+            "title": "Status"
+          }
+        },
+        "type": "object",
+        "required": [
+          "media_id",
+          "status"
+        ],
+        "title": "ConfirmUploadResponse"
+      },
       "CreateInvitationRequest": {
         "properties": {
           "client_id": {
@@ -2235,6 +2699,62 @@ export const openApiDocument = {
           "client_id"
         ],
         "title": "CreateInvitationRequest"
+      },
+      "CreateUploadRequest": {
+        "properties": {
+          "content_type": {
+            "type": "string",
+            "enum": [
+              "image/jpeg",
+              "image/png",
+              "image/webp"
+            ],
+            "title": "Content Type"
+          },
+          "content_length": {
+            "type": "integer",
+            "maximum": 10485760,
+            "exclusiveMinimum": 0,
+            "title": "Content Length"
+          }
+        },
+        "type": "object",
+        "required": [
+          "content_type",
+          "content_length"
+        ],
+        "title": "CreateUploadRequest"
+      },
+      "CreateUploadResponse": {
+        "properties": {
+          "media_id": {
+            "type": "string",
+            "title": "Media Id"
+          },
+          "upload_url": {
+            "type": "string",
+            "title": "Upload Url"
+          },
+          "upload_headers": {
+            "additionalProperties": {
+              "type": "string"
+            },
+            "type": "object",
+            "title": "Upload Headers"
+          },
+          "expires_in_seconds": {
+            "type": "integer",
+            "title": "Expires In Seconds"
+          }
+        },
+        "type": "object",
+        "required": [
+          "media_id",
+          "upload_url",
+          "upload_headers",
+          "expires_in_seconds"
+        ],
+        "title": "CreateUploadResponse"
       },
       "CreateWorkoutAssignmentRequest": {
         "properties": {
@@ -2649,6 +3169,55 @@ export const openApiDocument = {
         ],
         "title": "LoginRequest"
       },
+      "MeasurementResultField": {
+        "properties": {
+          "kind": {
+            "type": "string",
+            "const": "measurement",
+            "title": "Kind",
+            "default": "measurement"
+          },
+          "unit": {
+            "type": "string",
+            "maxLength": 16,
+            "minLength": 1,
+            "title": "Unit"
+          },
+          "required": {
+            "type": "boolean",
+            "title": "Required",
+            "default": false
+          }
+        },
+        "type": "object",
+        "required": [
+          "unit"
+        ],
+        "title": "MeasurementResultField"
+      },
+      "MediaReadUrlResponse": {
+        "properties": {
+          "media_id": {
+            "type": "string",
+            "title": "Media Id"
+          },
+          "read_url": {
+            "type": "string",
+            "title": "Read Url"
+          },
+          "expires_in_seconds": {
+            "type": "integer",
+            "title": "Expires In Seconds"
+          }
+        },
+        "type": "object",
+        "required": [
+          "media_id",
+          "read_url",
+          "expires_in_seconds"
+        ],
+        "title": "MediaReadUrlResponse"
+      },
       "MessageResponse": {
         "properties": {
           "message": {
@@ -2661,6 +3230,23 @@ export const openApiDocument = {
           "message"
         ],
         "title": "MessageResponse"
+      },
+      "NoteResultField": {
+        "properties": {
+          "kind": {
+            "type": "string",
+            "const": "note",
+            "title": "Kind",
+            "default": "note"
+          },
+          "required": {
+            "type": "boolean",
+            "title": "Required",
+            "default": false
+          }
+        },
+        "type": "object",
+        "title": "NoteResultField"
       },
       "PasswordResetRequest": {
         "properties": {
@@ -2683,6 +3269,23 @@ export const openApiDocument = {
           "password"
         ],
         "title": "PasswordResetRequest"
+      },
+      "PhotoResultField": {
+        "properties": {
+          "kind": {
+            "type": "string",
+            "const": "photo",
+            "title": "Kind",
+            "default": "photo"
+          },
+          "required": {
+            "type": "boolean",
+            "title": "Required",
+            "default": false
+          }
+        },
+        "type": "object",
+        "title": "PhotoResultField"
       },
       "ProgramAssignmentResponse": {
         "properties": {
@@ -2769,7 +3372,7 @@ export const openApiDocument = {
           },
           "slots": {
             "items": {
-              "$ref": "#/components/schemas/ProgramSlotWrite"
+              "$ref": "#/components/schemas/ProgramScheduleItemWrite"
             },
             "type": "array",
             "maxItems": 364,
@@ -2828,6 +3431,70 @@ export const openApiDocument = {
         ],
         "title": "ProgramResponse"
       },
+      "ProgramScheduleItemWrite": {
+        "properties": {
+          "week_number": {
+            "type": "integer",
+            "maximum": 52,
+            "minimum": 1,
+            "title": "Week Number"
+          },
+          "day_number": {
+            "type": "integer",
+            "maximum": 7,
+            "minimum": 1,
+            "title": "Day Number"
+          },
+          "position": {
+            "type": "integer",
+            "maximum": 99,
+            "minimum": 0,
+            "title": "Position",
+            "default": 0
+          },
+          "kind": {
+            "type": "string",
+            "enum": [
+              "WORKOUT",
+              "TASK"
+            ],
+            "title": "Kind",
+            "default": "WORKOUT"
+          },
+          "workout_id": {
+            "anyOf": [
+              {
+                "type": "string",
+                "maxLength": 36,
+                "minLength": 36
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Workout Id"
+          },
+          "task_template_id": {
+            "anyOf": [
+              {
+                "type": "string",
+                "maxLength": 36,
+                "minLength": 36
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Task Template Id"
+          }
+        },
+        "type": "object",
+        "required": [
+          "week_number",
+          "day_number"
+        ],
+        "title": "ProgramScheduleItemWrite"
+      },
       "ProgramSlotResponse": {
         "properties": {
           "week_number": {
@@ -2842,11 +3509,47 @@ export const openApiDocument = {
             "minimum": 1,
             "title": "Day Number"
           },
-          "workout_id": {
+          "position": {
+            "type": "integer",
+            "maximum": 99,
+            "minimum": 0,
+            "title": "Position",
+            "default": 0
+          },
+          "kind": {
             "type": "string",
-            "maxLength": 36,
-            "minLength": 36,
+            "enum": [
+              "WORKOUT",
+              "TASK"
+            ],
+            "title": "Kind",
+            "default": "WORKOUT"
+          },
+          "workout_id": {
+            "anyOf": [
+              {
+                "type": "string",
+                "maxLength": 36,
+                "minLength": 36
+              },
+              {
+                "type": "null"
+              }
+            ],
             "title": "Workout Id"
+          },
+          "task_template_id": {
+            "anyOf": [
+              {
+                "type": "string",
+                "maxLength": 36,
+                "minLength": 36
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Task Template Id"
           },
           "id": {
             "type": "string",
@@ -2857,39 +3560,9 @@ export const openApiDocument = {
         "required": [
           "week_number",
           "day_number",
-          "workout_id",
           "id"
         ],
         "title": "ProgramSlotResponse"
-      },
-      "ProgramSlotWrite": {
-        "properties": {
-          "week_number": {
-            "type": "integer",
-            "maximum": 52,
-            "minimum": 1,
-            "title": "Week Number"
-          },
-          "day_number": {
-            "type": "integer",
-            "maximum": 7,
-            "minimum": 1,
-            "title": "Day Number"
-          },
-          "workout_id": {
-            "type": "string",
-            "maxLength": 36,
-            "minLength": 36,
-            "title": "Workout Id"
-          }
-        },
-        "type": "object",
-        "required": [
-          "week_number",
-          "day_number",
-          "workout_id"
-        ],
-        "title": "ProgramSlotWrite"
       },
       "PublicUserRole": {
         "type": "string",
@@ -2996,6 +3669,217 @@ export const openApiDocument = {
           "scheduled_date"
         ],
         "title": "RescheduleWorkoutAssignmentRequest"
+      },
+      "SubmitTaskResultRequest": {
+        "properties": {
+          "request_id": {
+            "type": "string",
+            "maxLength": 128,
+            "minLength": 1,
+            "title": "Request Id"
+          },
+          "measurement_value": {
+            "anyOf": [
+              {
+                "type": "number",
+                "maximum": 100000,
+                "minimum": 0
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Measurement Value"
+          },
+          "completed": {
+            "anyOf": [
+              {
+                "type": "boolean"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Completed"
+          },
+          "note": {
+            "anyOf": [
+              {
+                "type": "string",
+                "maxLength": 2000
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Note"
+          },
+          "photo_media_ids": {
+            "items": {
+              "type": "string"
+            },
+            "type": "array",
+            "maxItems": 8,
+            "title": "Photo Media Ids"
+          }
+        },
+        "type": "object",
+        "required": [
+          "request_id"
+        ],
+        "title": "SubmitTaskResultRequest"
+      },
+      "TaskAssignmentResponse": {
+        "properties": {
+          "id": {
+            "type": "string",
+            "title": "Id"
+          },
+          "relationship_id": {
+            "type": "string",
+            "title": "Relationship Id"
+          },
+          "source_task_template_id": {
+            "type": "string",
+            "title": "Source Task Template Id"
+          },
+          "scheduled_date": {
+            "type": "string",
+            "format": "date",
+            "title": "Scheduled Date"
+          },
+          "task_snapshot": {
+            "additionalProperties": true,
+            "type": "object",
+            "title": "Task Snapshot"
+          },
+          "status": {
+            "type": "string",
+            "title": "Status"
+          }
+        },
+        "type": "object",
+        "required": [
+          "id",
+          "relationship_id",
+          "source_task_template_id",
+          "scheduled_date",
+          "task_snapshot",
+          "status"
+        ],
+        "title": "TaskAssignmentResponse"
+      },
+      "TaskResultVersionResponse": {
+        "properties": {
+          "assignment_id": {
+            "type": "string",
+            "title": "Assignment Id"
+          },
+          "version": {
+            "type": "integer",
+            "title": "Version"
+          },
+          "request_id": {
+            "type": "string",
+            "title": "Request Id"
+          },
+          "result_payload": {
+            "additionalProperties": true,
+            "type": "object",
+            "title": "Result Payload"
+          },
+          "created_at": {
+            "type": "string",
+            "format": "date-time",
+            "title": "Created At"
+          }
+        },
+        "type": "object",
+        "required": [
+          "assignment_id",
+          "version",
+          "request_id",
+          "result_payload",
+          "created_at"
+        ],
+        "title": "TaskResultVersionResponse"
+      },
+      "TaskTemplateResponse": {
+        "properties": {
+          "id": {
+            "type": "string",
+            "title": "Id"
+          },
+          "trainer_id": {
+            "type": "string",
+            "title": "Trainer Id"
+          },
+          "title": {
+            "type": "string",
+            "title": "Title"
+          },
+          "instruction": {
+            "type": "string",
+            "title": "Instruction"
+          },
+          "result_schema": {
+            "additionalProperties": true,
+            "type": "object",
+            "title": "Result Schema"
+          }
+        },
+        "type": "object",
+        "required": [
+          "id",
+          "trainer_id",
+          "title",
+          "instruction",
+          "result_schema"
+        ],
+        "title": "TaskTemplateResponse"
+      },
+      "TaskTemplateWrite": {
+        "properties": {
+          "title": {
+            "type": "string",
+            "maxLength": 160,
+            "minLength": 1,
+            "title": "Title"
+          },
+          "instruction": {
+            "type": "string",
+            "maxLength": 2000,
+            "title": "Instruction",
+            "default": ""
+          },
+          "result_fields": {
+            "items": {
+              "anyOf": [
+                {
+                  "$ref": "#/components/schemas/MeasurementResultField"
+                },
+                {
+                  "$ref": "#/components/schemas/CompletionResultField"
+                },
+                {
+                  "$ref": "#/components/schemas/PhotoResultField"
+                },
+                {
+                  "$ref": "#/components/schemas/NoteResultField"
+                }
+              ]
+            },
+            "type": "array",
+            "maxItems": 4,
+            "title": "Result Fields"
+          }
+        },
+        "type": "object",
+        "required": [
+          "title",
+          "result_fields"
+        ],
+        "title": "TaskTemplateWrite"
       },
       "TokenRequest": {
         "properties": {

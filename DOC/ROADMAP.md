@@ -34,6 +34,8 @@ _Версия плана: 1.1 · 19 июля 2026_
 
 ## Фаза 1. Вертикальный тренировочный цикл — недели 3–5
 
+**Статус 2026-09-22:** реализован следующий срез в отдельной рабочей копии: typed program tasks, immutable task-result versions и private S3 media flow. Перед включением в общий контур нужны review, применение миграций на тестовой PostgreSQL и ручная проверка UI с реальным S3.
+
 **Блоки:** `identity`, `trainers`, `showcase`, `clients`, `exercises`, `programs`, `assignments`, минимальный `workouts`.
 
 1. Регистрация тренера и базовый профиль/slug витрины.

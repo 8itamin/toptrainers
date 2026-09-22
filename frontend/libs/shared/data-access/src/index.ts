@@ -3,3 +3,4 @@ export * from './lib/workout-assignments';
 export * from './lib/workout-executions';
 export * from './lib/workout-history';
 export * from './lib/programs';
+export * from './lib/tasks';

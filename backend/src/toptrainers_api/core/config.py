@@ -70,6 +70,19 @@ class Settings(BaseSettings):
             "@localhost:5432/toptrainers"
         ):
             missing.append("TT_DATABASE_URL")
+        if not all(
+            [
+                self.s3_endpoint_url,
+                self.s3_bucket,
+                self.s3_region,
+                self.s3_access_key_id,
+                self.s3_secret_access_key,
+            ]
+        ):
+            missing.append(
+                "TT_S3_ENDPOINT_URL, TT_S3_BUCKET, TT_S3_REGION, "
+                "TT_S3_ACCESS_KEY_ID, TT_S3_SECRET_ACCESS_KEY"
+            )
         if missing:
             joined = ", ".join(missing)
             raise ValueError(f"Production configuration is incomplete: {joined}")

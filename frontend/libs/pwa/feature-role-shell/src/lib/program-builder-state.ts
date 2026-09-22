@@ -62,6 +62,35 @@ export function setProgramDraftSlot(
   };
 }
 
+export function setProgramDraftTask(
+  draft: ProgramDraft,
+  weekNumber: number,
+  dayNumber: number,
+  taskTemplateId: string | null,
+): ProgramDraft {
+  const slotsWithoutDay = draft.slots.filter(
+    (slot) => slot.week_number !== weekNumber || slot.day_number !== dayNumber,
+  );
+  const slots = taskTemplateId
+    ? [
+        ...slotsWithoutDay,
+        {
+          week_number: weekNumber,
+          day_number: dayNumber,
+          position: 0,
+          kind: 'TASK' as const,
+          task_template_id: taskTemplateId,
+        },
+      ]
+    : slotsWithoutDay;
+  return {
+    ...draft,
+    slots: slots.sort(
+      (left, right) => left.week_number - right.week_number || left.day_number - right.day_number,
+    ),
+  };
+}
+
 export function nextProgramIssueRequestId(
   currentRequestId: string | null,
   createRequestId: () => string,

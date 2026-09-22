@@ -5,8 +5,8 @@ import { RouterLink } from '@angular/router';
 import { forkJoin } from 'rxjs';
 
 import { RUNTIME_CONFIG, type RuntimeConfig } from '@toptrainers/shared/config';
-import { apiUrl, ProgramsApi } from '@toptrainers/shared/data-access';
-import type { ProgramResponse, WorkoutResponse } from '@toptrainers/shared/contracts';
+import { apiUrl, ProgramsApi, TasksApi } from '@toptrainers/shared/data-access';
+import type { ProgramResponse, TaskTemplateResponse, WorkoutResponse } from '@toptrainers/shared/contracts';
 
 import {
   createProgramDraft,
@@ -15,6 +15,7 @@ import {
   releaseBusyOnFinalize,
   setProgramDraftDuration,
   setProgramDraftSlot,
+  setProgramDraftTask,
   type ProgramDraft,
   TRAINER_PROGRAM_BUILDER_NAVIGATION,
 } from './program-builder-state';
@@ -128,13 +129,16 @@ const DAY_LABELS = [
                 <label class="day-row"
                   ><span>{{ day }}</span
                   ><select
-                    [ngModel]="slotWorkoutId(dayIndex + 1)"
+                    [ngModel]="slotValue(dayIndex + 1)"
                     [name]="'day-' + (dayIndex + 1)"
                     (ngModelChange)="changeSlot(dayIndex + 1, $event)"
                   >
                     <option value="">Без тренировки</option>
                     @for (workout of workouts(); track workout.id) {
-                      <option [value]="workout.id">{{ workout.title }}</option>
+                      <option [value]="'workout:' + workout.id">Тренировка · {{ workout.title }}</option>
+                    }
+                    @for (task of taskTemplates(); track task.id) {
+                      <option [value]="'task:' + task.id">Задача · {{ task.title }}</option>
                     }
                   </select></label
                 >
@@ -389,12 +393,14 @@ const DAY_LABELS = [
 })
 export class ProgramBuilderComponent {
   private readonly api = inject(ProgramsApi);
+  private readonly tasksApi = inject(TasksApi);
   private readonly http = inject(HttpClient);
   private readonly config = inject<RuntimeConfig>(RUNTIME_CONFIG);
   protected readonly dayLabels = DAY_LABELS;
   protected readonly navItems = TRAINER_PROGRAM_BUILDER_NAVIGATION;
   protected readonly programs = signal<ProgramResponse[]>([]);
   protected readonly workouts = signal<WorkoutResponse[]>([]);
+  protected readonly taskTemplates = signal<TaskTemplateResponse[]>([]);
   protected readonly relationships = signal<Array<{ id: string; client_id: string }>>([]);
   protected readonly draft = signal<ProgramDraft>(createProgramDraft());
   protected readonly selectedWeek = signal(1);
@@ -425,10 +431,13 @@ export class ProgramBuilderComponent {
       title: program.title,
       description: program.description ?? '',
       durationWeeks: program.duration_weeks ?? 1,
-      slots: program.slots.map(({ week_number, day_number, workout_id }) => ({
+      slots: program.slots.map(({ week_number, day_number, position, kind, workout_id, task_template_id }) => ({
         week_number,
         day_number,
+        position,
+        kind,
         workout_id,
+        task_template_id,
       })),
     });
   }
@@ -437,17 +446,20 @@ export class ProgramBuilderComponent {
     this.draft.update((draft) => setProgramDraftDuration(draft, duration));
     if (this.selectedWeek() > duration) this.selectedWeek.set(duration);
   }
-  protected slotWorkoutId(dayNumber: number): string {
-    return (
-      this.draft().slots.find(
-        (slot) => slot.week_number === this.selectedWeek() && slot.day_number === dayNumber,
-      )?.workout_id ?? ''
+  protected slotValue(dayNumber: number): string {
+    const slot = this.draft().slots.find(
+      (item) => item.week_number === this.selectedWeek() && item.day_number === dayNumber,
     );
+    if (!slot) return '';
+    if (slot.kind === 'TASK' && slot.task_template_id) return `task:${slot.task_template_id}`;
+    return slot.workout_id ? `workout:${slot.workout_id}` : '';
   }
-  protected changeSlot(dayNumber: number, workoutId: string): void {
-    this.draft.update((draft) =>
-      setProgramDraftSlot(draft, this.selectedWeek(), dayNumber, workoutId || null),
-    );
+  protected changeSlot(dayNumber: number, value: string): void {
+    const [kind, id] = value.split(':', 2);
+    this.draft.update((draft) => {
+      if (kind === 'task') return setProgramDraftTask(draft, this.selectedWeek(), dayNumber, id || null);
+      return setProgramDraftSlot(draft, this.selectedWeek(), dayNumber, id || null);
+    });
   }
   protected canIssueCurrentProgram(): boolean {
     return this.draft().slots.length > 0;
@@ -523,11 +535,13 @@ export class ProgramBuilderComponent {
       programs: this.api.list(),
       relationships: this.api.listActiveRelationships(),
       workouts: this.http.get<WorkoutResponse[]>(apiUrl(this.config, '/workouts')),
+      taskTemplates: this.tasksApi.listTemplates(),
     }).subscribe({
-      next: ({ programs, relationships, workouts }) => {
+      next: ({ programs, relationships, workouts, taskTemplates }) => {
         this.programs.set(programs);
         this.relationships.set(relationships.map(({ id, client_id }) => ({ id, client_id })));
         this.workouts.set(workouts);
+        this.taskTemplates.set(taskTemplates);
       },
       error: (error) => this.showMessage(this.errorMessage(error), true),
       complete: () => this.loading.set(false),
