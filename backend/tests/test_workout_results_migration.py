@@ -7,6 +7,7 @@ from pathlib import Path
 import pytest
 from alembic import command
 from alembic.config import Config
+from alembic.script import ScriptDirectory
 from sqlalchemy import inspect, text
 from sqlalchemy.ext.asyncio import create_async_engine
 
@@ -66,6 +67,8 @@ def test_results_0009_upgrade_downgrade_upgrade_roundtrip(
 ) -> None:
     database_url = _test_database_url()
     config = _alembic_config()
+    head_revision = ScriptDirectory.from_config(config).get_current_head()
+    assert isinstance(head_revision, str)
     monkeypatch.setattr(settings, "database_url", database_url)
 
     asyncio.run(_reset_public_schema(database_url))
@@ -89,7 +92,7 @@ def test_results_0009_upgrade_downgrade_upgrade_roundtrip(
         command.upgrade(config, "head")
         tables, revision, indexes = asyncio.run(_state(database_url))
         assert RESULTS_TABLE in tables
-        assert revision == "20260906_0010"
+        assert revision == head_revision
         assert indexes == []
     finally:
         asyncio.run(_reset_public_schema(database_url))

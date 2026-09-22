@@ -7,6 +7,7 @@ from pathlib import Path
 import pytest
 from alembic import command
 from alembic.config import Config
+from alembic.script import ScriptDirectory
 from sqlalchemy import inspect, text
 from sqlalchemy.ext.asyncio import create_async_engine
 
@@ -90,6 +91,8 @@ async def _database_state(
 def test_p0_alembic_upgrade_downgrade_upgrade_roundtrip(monkeypatch: pytest.MonkeyPatch) -> None:
     database_url = _test_database_url()
     config = _alembic_config()
+    head_revision = ScriptDirectory.from_config(config).get_current_head()
+    assert isinstance(head_revision, str)
     monkeypatch.setattr(settings, "database_url", database_url)
 
     asyncio.run(_reset_public_schema(database_url))
@@ -158,7 +161,7 @@ def test_p0_alembic_upgrade_downgrade_upgrade_roundtrip(monkeypatch: pytest.Monk
         assert tables >= RELATIONSHIP_TABLES | {ASSIGNMENT_TABLE, EXECUTION_TABLE}
         assert invitation_columns >= V2_INVITATION_COLUMNS
         assert HISTORY_INDEX in execution_indexes
-        assert revision == "20260906_0010"
+        assert revision == head_revision
 
         command.downgrade(config, "20260813_0004")
         tables, revision, invitation_columns, execution_indexes = asyncio.run(
@@ -179,6 +182,6 @@ def test_p0_alembic_upgrade_downgrade_upgrade_roundtrip(monkeypatch: pytest.Monk
         assert tables >= RELATIONSHIP_TABLES | {ASSIGNMENT_TABLE, EXECUTION_TABLE}
         assert invitation_columns >= V2_INVITATION_COLUMNS
         assert HISTORY_INDEX in execution_indexes
-        assert revision == "20260906_0010"
+        assert revision == head_revision
     finally:
         asyncio.run(_reset_public_schema(database_url))
