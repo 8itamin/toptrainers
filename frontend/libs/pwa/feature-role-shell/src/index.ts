@@ -14,6 +14,7 @@ export * from './lib/trainer-clients.component';
 export * from './lib/trainer-chats.component';
 export * from './lib/trainer-competitions.component';
 export * from './lib/trainer-showcase-placeholder.component';
+export * from './lib/trainer-sidebar.component';
 export * from './lib/trainer-home.component';
 export * from './lib/trainer-programs.component';
 export * from './lib/trainer-today.component';

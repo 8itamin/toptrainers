@@ -9,7 +9,6 @@ import {
   setProgramDraftDuration,
   setProgramDraftSlot,
   setProgramDraftTask,
-  TRAINER_PROGRAM_BUILDER_NAVIGATION,
 } from './program-builder-state';
 
 describe('program builder state', () => {
@@ -83,23 +82,4 @@ describe('program builder state', () => {
     expect(busy).toBe(false);
   });
 
-  it('keeps all five trainer destinations in Program Builder navigation', () => {
-    expect(TRAINER_PROGRAM_BUILDER_NAVIGATION.map((item) => item.path)).toEqual([
-      '/trainer',
-      '/trainer/clients',
-      '/trainer/programs',
-      '/trainer/chats',
-      '/trainer/competitions',
-    ]);
-  });
-
-  it('uses stable vector icon identifiers for every trainer destination', () => {
-    expect(TRAINER_PROGRAM_BUILDER_NAVIGATION.map((item) => item.icon)).toEqual([
-      'home',
-      'clients',
-      'programs',
-      'chats',
-      'competitions',
-    ]);
-  });
 });

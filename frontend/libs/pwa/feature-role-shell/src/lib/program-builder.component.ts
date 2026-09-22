@@ -18,8 +18,9 @@ import {
   setProgramDraftSlot,
   setProgramDraftTask,
   type ProgramDraft,
-  TRAINER_PROGRAM_BUILDER_NAVIGATION,
 } from './program-builder-state';
+import { TRAINER_NAVIGATION } from './trainer-navigation';
+import { TrainerSidebarComponent } from './trainer-sidebar.component';
 
 const DAY_LABELS = [
   'Понедельник',
@@ -34,7 +35,7 @@ const DAY_LABELS = [
 @Component({
   selector: 'tt-program-builder',
   standalone: true,
-  imports: [FormsModule, NgTemplateOutlet, RouterLink],
+  imports: [FormsModule, NgTemplateOutlet, RouterLink, TrainerSidebarComponent],
   template: `
     <ng-template #navIcon let-icon>
       @switch (icon) {
@@ -46,15 +47,7 @@ const DAY_LABELS = [
       }
     </ng-template>
     <main class="workspace">
-      <aside class="sidebar desktop-only">
-        <a class="sidebar-logo" routerLink="/trainer" aria-label="TopTrainers: Сегодня"><svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round"><polyline points="4 12 12 5 20 12" /><polyline points="4 19 12 12 20 19" /></svg></a>
-        <nav class="sidebar-nav" aria-label="Навигация тренера">
-          @for (item of navItems; track item.path) {
-            <a class="side-item" [class.is-active]="item.path === '/trainer/programs'" [routerLink]="item.path"><span class="side-icon"><ng-container *ngTemplateOutlet="navIcon; context: { $implicit: item.icon }" /></span><span>{{ item.label }}</span></a>
-          }
-        </nav>
-        <span class="sidebar-avatar" aria-hidden="true"></span>
-      </aside>
+      <tt-trainer-sidebar />
       <div class="screen">
       <header class="toolbar">
         <div>
@@ -184,7 +177,7 @@ const DAY_LABELS = [
       }
       </div>
       <nav class="mobile-nav mobile-only" aria-label="Навигация тренера">
-        @for (item of navItems; track item.path) {
+        @for (item of mobileNavItems; track item.path) {
           <a [class.is-active]="item.path === '/trainer/programs'" [routerLink]="item.path"><span><ng-container *ngTemplateOutlet="navIcon; context: { $implicit: item.icon }" /></span>{{ item.label }}</a>
         }
       </nav>
@@ -407,7 +400,9 @@ export class ProgramBuilderComponent {
   private readonly http = inject(HttpClient);
   private readonly config = inject<RuntimeConfig>(RUNTIME_CONFIG);
   protected readonly dayLabels = DAY_LABELS;
-  protected readonly navItems = TRAINER_PROGRAM_BUILDER_NAVIGATION;
+  protected readonly mobileNavItems = TRAINER_NAVIGATION
+    .filter((item) => item.id !== 'showcase')
+    .map((item) => (item.id === 'competitions' ? { ...item, label: 'Ещё' } : item));
   protected readonly programs = signal<ProgramResponse[]>([]);
   protected readonly workouts = signal<WorkoutResponse[]>([]);
   protected readonly taskTemplates = signal<TaskTemplateResponse[]>([]);
