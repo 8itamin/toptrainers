@@ -1184,6 +1184,819 @@
 
   </div>
 
+  <!-- ======================= ZONE: ПРОГРАММЫ ======================= -->
+  <div style="display:flex; flex-direction:column; gap:24px;">
+    <div style="display:flex; align-items:center; gap:14px;">
+      <span style="font-family:'JetBrains Mono',monospace; font-weight:700; font-size:13px; letter-spacing:.12em; color:#14181D;">РАЗДЕЛ «ПРОГРАММЫ» · ТРЕНЕР · 1440</span>
+      <span style="flex:1; height:1px; background:rgba(20,24,29,.14);"></span>
+    </div>
+    <p style="font-size:15px; line-height:1.5; color:#5b6472; margin:-8px 0 0; max-width:820px;">Четыре сущности, одна вложенность: <b style="color:#14181D; font-weight:600;">упражнение</b> → <b style="color:#14181D; font-weight:600;">тренировка</b> (упражнения с количеством) → <b style="color:#14181D; font-weight:600;">программа</b> (тренировки на расписании) + <b style="color:#14181D; font-weight:600;">задачи</b> как отдельный слой на том же расписании. Подраздел переключается табами в тулбаре.</p>
+
+    <!-- ============ P1 · БИБЛИОТЕКА УПРАЖНЕНИЙ ============ -->
+    <div style="display:flex; flex-direction:column; gap:14px;">
+      <div style="display:flex; align-items:center; gap:10px;">
+        <span style="font-family:'JetBrains Mono',monospace; font-weight:700; font-size:12px; color:#14181D; background:#C9F24B; padding:5px 10px; border-radius:999px;">P1</span>
+        <span style="font-weight:600; font-size:14px; color:#14181D;">Упражнения · библиотека (фильтры + сетка карточек)</span>
+      </div>
+
+      <div style="width:1440px; border-radius:18px; overflow:hidden; box-shadow:0 30px 90px rgba(20,24,29,.30); display:flex; background:#14181D;">
+        <!-- sidebar -->
+        <div style="width:88px; background:#0e1116; display:flex; flex-direction:column; align-items:center; padding:24px 0; gap:26px; border-right:1px solid rgba(245,247,250,.06);">
+          <div style="color:#C9F24B;"><svg width="30" height="30" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round"><polyline points="4 12 12 5 20 12"></polyline><polyline points="4 19 12 12 20 19"></polyline></svg></div>
+          <div style="display:flex; flex-direction:column; gap:22px; align-items:center; margin-top:8px;">
+            <div style="display:flex; flex-direction:column; align-items:center; gap:5px; color:#8A94A6;"><svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 12l9-9 9 9M5 10v10h14V10"></path></svg><span style="font-size:9px;">Сегодня</span></div>
+            <div style="display:flex; flex-direction:column; align-items:center; gap:5px; color:#8A94A6;"><svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="9" cy="8" r="4"></circle><path d="M2 21c0-3.5 3-5 7-5M16 3.5a4 4 0 0 1 0 7.5M15 21c.5-3 3-5 7-5"></path></svg><span style="font-size:9px;">Клиенты</span></div>
+            <div style="display:flex; flex-direction:column; align-items:center; gap:5px; color:#C9F24B;"><div style="width:44px; height:44px; border-radius:12px; background:rgba(201,242,75,.12); display:flex; align-items:center; justify-content:center;"><svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="4" width="18" height="16" rx="2"></rect><path d="M3 9h18M8 4v16"></path></svg></div><span style="font-size:9px; font-weight:600;">Программы</span></div>
+            <div style="display:flex; flex-direction:column; align-items:center; gap:5px; color:#8A94A6;"><svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 11.5a8.4 8.4 0 0 1-9 8 8.4 8.4 0 0 1-4-1L3 20l1.5-4a8.4 8.4 0 0 1-1-4 8.4 8.4 0 0 1 8.5-8 8.4 8.4 0 0 1 9 7.5z"></path></svg><span style="font-size:9px;">Чаты</span></div>
+            <div style="display:flex; flex-direction:column; align-items:center; gap:5px; color:#8A94A6;"><svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="8" r="5"></circle><path d="M8.5 12.5 7 21l5-3 5 3-1.5-8.5"></path></svg><span style="font-size:9px;">Соревн.</span></div>
+          </div>
+          <div style="margin-top:auto; width:40px; height:40px; border-radius:999px; background:repeating-linear-gradient(135deg,#2a323d,#2a323d 6px,#242b34 6px,#242b34 12px);"></div>
+        </div>
+
+        <div style="flex:1; display:flex; flex-direction:column; min-width:0;">
+          <!-- toolbar + subnav -->
+          <div style="padding:20px 28px 0; border-bottom:1px solid rgba(245,247,250,.06);">
+            <div style="display:flex; align-items:center; justify-content:space-between;">
+              <div style="display:flex; align-items:baseline; gap:12px;">
+                <span style="font-family:'Unbounded',sans-serif; font-weight:600; font-size:22px; color:#F5F7FA; letter-spacing:-.02em;">Программы</span>
+                <span style="font-family:'JetBrains Mono',monospace; font-size:11px; color:#8A94A6; letter-spacing:.08em;">БИБЛИОТЕКА · 214 УПРАЖНЕНИЙ</span>
+              </div>
+              <div style="display:flex; align-items:center; gap:10px;">
+                <div style="display:flex; align-items:center; gap:9px; height:40px; padding:0 14px; width:260px; background:#1C222B; border:1px solid rgba(245,247,250,.08); border-radius:10px;">
+                  <svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="#5b6472" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="11" cy="11" r="7"></circle><path d="m20 20-4.5-4.5"></path></svg>
+                  <span style="font-size:13px; color:#5b6472;">Поиск по названию · /</span>
+                </div>
+                <a href="#" style="display:flex; align-items:center; gap:7px; font-size:14px; font-weight:700; color:#14181D; background:#C9F24B; padding:11px 16px; border-radius:10px;">
+                  <svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round"><path d="M12 5v14M5 12h14"></path></svg>Упражнение
+                </a>
+              </div>
+            </div>
+            <div style="display:flex; gap:26px; margin-top:18px;">
+              <span style="font-weight:600; font-size:14px; color:#F5F7FA; padding-bottom:12px; border-bottom:2px solid #C9F24B;">Упражнения <span style="font-family:'JetBrains Mono',monospace; font-size:11px; color:#8A94A6;">214</span></span>
+              <span style="font-weight:500; font-size:14px; color:#8A94A6; padding-bottom:12px; border-bottom:2px solid transparent;">Тренировки <span style="font-family:'JetBrains Mono',monospace; font-size:11px; color:#5b6472;">38</span></span>
+              <span style="font-weight:500; font-size:14px; color:#8A94A6; padding-bottom:12px; border-bottom:2px solid transparent;">Программы <span style="font-family:'JetBrains Mono',monospace; font-size:11px; color:#5b6472;">9</span></span>
+              <span style="font-weight:500; font-size:14px; color:#8A94A6; padding-bottom:12px; border-bottom:2px solid transparent;">Задачи <span style="font-family:'JetBrains Mono',monospace; font-size:11px; color:#5b6472;">12</span></span>
+            </div>
+          </div>
+
+          <div style="display:flex; min-height:640px;">
+            <!-- filters -->
+            <div style="width:248px; border-right:1px solid rgba(245,247,250,.06); padding:22px 20px; display:flex; flex-direction:column; gap:22px;">
+              <div>
+                <div style="font-family:'JetBrains Mono',monospace; font-size:10px; letter-spacing:.1em; color:#8A94A6; margin-bottom:10px;">НАПРАВЛЕНИЕ</div>
+                <div style="display:flex; flex-wrap:wrap; gap:7px;">
+                  <span style="font-size:12px; font-weight:700; color:#14181D; background:#C9F24B; padding:7px 11px; border-radius:8px;">Сила</span>
+                  <span style="font-size:12px; font-weight:500; color:#F5F7FA; background:#1C222B; border:1px solid rgba(245,247,250,.08); padding:7px 11px; border-radius:8px;">Скорость</span>
+                  <span style="font-size:12px; font-weight:500; color:#F5F7FA; background:#1C222B; border:1px solid rgba(245,247,250,.08); padding:7px 11px; border-radius:8px;">Выносливость</span>
+                  <span style="font-size:12px; font-weight:500; color:#F5F7FA; background:#1C222B; border:1px solid rgba(245,247,250,.08); padding:7px 11px; border-radius:8px;">Мобильность</span>
+                  <span style="font-size:12px; font-weight:500; color:#F5F7FA; background:#1C222B; border:1px solid rgba(245,247,250,.08); padding:7px 11px; border-radius:8px;">Техника</span>
+                </div>
+              </div>
+              <div>
+                <div style="font-family:'JetBrains Mono',monospace; font-size:10px; letter-spacing:.1em; color:#8A94A6; margin-bottom:10px;">ГРУППА МЫШЦ</div>
+                <div style="display:flex; flex-direction:column; gap:2px;">
+                  <div style="display:flex; align-items:center; justify-content:space-between; padding:9px 10px; border-radius:9px; background:#1C222B;"><span style="display:flex; align-items:center; gap:9px; font-size:13px; font-weight:600; color:#F5F7FA;"><span style="width:15px; height:15px; border-radius:4px; background:#C9F24B; display:flex; align-items:center; justify-content:center;"><svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="#14181D" stroke-width="3.4" stroke-linecap="round" stroke-linejoin="round"><path d="M5 13l4 4 10-10"></path></svg></span>Ноги</span><span style="font-family:'JetBrains Mono',monospace; font-size:11px; color:#8A94A6;">42</span></div>
+                  <div style="display:flex; align-items:center; justify-content:space-between; padding:9px 10px; border-radius:9px;"><span style="display:flex; align-items:center; gap:9px; font-size:13px; color:#8A94A6;"><span style="width:15px; height:15px; border-radius:4px; border:1.5px solid rgba(245,247,250,.18);"></span>Грудь</span><span style="font-family:'JetBrains Mono',monospace; font-size:11px; color:#5b6472;">28</span></div>
+                  <div style="display:flex; align-items:center; justify-content:space-between; padding:9px 10px; border-radius:9px;"><span style="display:flex; align-items:center; gap:9px; font-size:13px; color:#8A94A6;"><span style="width:15px; height:15px; border-radius:4px; border:1.5px solid rgba(245,247,250,.18);"></span>Спина</span><span style="font-family:'JetBrains Mono',monospace; font-size:11px; color:#5b6472;">34</span></div>
+                  <div style="display:flex; align-items:center; justify-content:space-between; padding:9px 10px; border-radius:9px;"><span style="display:flex; align-items:center; gap:9px; font-size:13px; color:#8A94A6;"><span style="width:15px; height:15px; border-radius:4px; border:1.5px solid rgba(245,247,250,.18);"></span>Плечи</span><span style="font-family:'JetBrains Mono',monospace; font-size:11px; color:#5b6472;">21</span></div>
+                  <div style="display:flex; align-items:center; justify-content:space-between; padding:9px 10px; border-radius:9px;"><span style="display:flex; align-items:center; gap:9px; font-size:13px; color:#8A94A6;"><span style="width:15px; height:15px; border-radius:4px; border:1.5px solid rgba(245,247,250,.18);"></span>Руки</span><span style="font-family:'JetBrains Mono',monospace; font-size:11px; color:#5b6472;">30</span></div>
+                  <div style="display:flex; align-items:center; justify-content:space-between; padding:9px 10px; border-radius:9px;"><span style="display:flex; align-items:center; gap:9px; font-size:13px; color:#8A94A6;"><span style="width:15px; height:15px; border-radius:4px; border:1.5px solid rgba(245,247,250,.18);"></span>Кор</span><span style="font-family:'JetBrains Mono',monospace; font-size:11px; color:#5b6472;">26</span></div>
+                  <div style="display:flex; align-items:center; justify-content:space-between; padding:9px 10px; border-radius:9px;"><span style="display:flex; align-items:center; gap:9px; font-size:13px; color:#8A94A6;"><span style="width:15px; height:15px; border-radius:4px; border:1.5px solid rgba(245,247,250,.18);"></span>Всё тело</span><span style="font-family:'JetBrains Mono',monospace; font-size:11px; color:#5b6472;">33</span></div>
+                </div>
+              </div>
+              <div>
+                <div style="font-family:'JetBrains Mono',monospace; font-size:10px; letter-spacing:.1em; color:#8A94A6; margin-bottom:10px;">КАТЕГОРИЯ · ЧТО СЧИТАЕМ</div>
+                <div style="display:flex; flex-direction:column; gap:7px;">
+                  <div style="display:flex; align-items:center; gap:9px; padding:10px 12px; background:#1C222B; border:1px solid rgba(245,247,250,.08); border-radius:9px;"><span style="font-family:'JetBrains Mono',monospace; font-size:10px; color:#C9F24B; background:rgba(201,242,75,.12); padding:3px 6px; border-radius:5px;">КГ×ПОВТ</span><span style="font-size:12px; color:#F5F7FA;">Сила</span></div>
+                  <div style="display:flex; align-items:center; gap:9px; padding:10px 12px; border-radius:9px;"><span style="font-family:'JetBrains Mono',monospace; font-size:10px; color:#8A94A6; background:#1C222B; padding:3px 6px; border-radius:5px;">ПОВТ</span><span style="font-size:12px; color:#8A94A6;">Вес тела</span></div>
+                  <div style="display:flex; align-items:center; gap:9px; padding:10px 12px; border-radius:9px;"><span style="font-family:'JetBrains Mono',monospace; font-size:10px; color:#8A94A6; background:#1C222B; padding:3px 6px; border-radius:5px;">ВРЕМЯ</span><span style="font-size:12px; color:#8A94A6;">Статика / кардио</span></div>
+                  <div style="display:flex; align-items:center; gap:9px; padding:10px 12px; border-radius:9px;"><span style="font-family:'JetBrains Mono',monospace; font-size:10px; color:#8A94A6; background:#1C222B; padding:3px 6px; border-radius:5px;">МЕТРЫ</span><span style="font-size:12px; color:#8A94A6;">Дистанция</span></div>
+                </div>
+              </div>
+              <span style="font-family:'JetBrains Mono',monospace; font-size:11px; color:#5b6472;">Сброс фильтров</span>
+            </div>
+
+            <!-- grid -->
+            <div style="flex:1; padding:22px 28px; min-width:0;">
+              <div style="display:flex; align-items:center; justify-content:space-between; margin-bottom:16px;">
+                <span style="font-family:'JetBrains Mono',monospace; font-size:11px; color:#8A94A6; letter-spacing:.08em;">СИЛА · НОГИ · 42 НАЙДЕНО</span>
+                <span style="font-family:'JetBrains Mono',monospace; font-size:11px; color:#8A94A6;">сортировка: по популярности ▾</span>
+              </div>
+              <div style="display:grid; grid-template-columns:repeat(4, minmax(0,1fr)); gap:14px;">
+                <div style="background:#1C222B; border:1px solid #C9F24B; border-radius:16px; overflow:hidden;">
+                  <div style="height:118px; background:repeating-linear-gradient(135deg,#1C222B,#1C222B 12px,#20272f 12px,#20272f 24px); display:flex; align-items:center; justify-content:center; position:relative;">
+                    <span style="width:38px; height:38px; border-radius:999px; background:rgba(201,242,75,.9); display:flex; align-items:center; justify-content:center;"><svg width="16" height="16" viewBox="0 0 24 24" fill="#14181D" stroke="none"><path d="M8 5v14l11-7z"></path></svg></span>
+                    <span style="position:absolute; right:9px; bottom:9px; font-family:'JetBrains Mono',monospace; font-size:10px; color:#F5F7FA; background:rgba(14,17,22,.75); padding:3px 6px; border-radius:5px;">0:42</span>
+                  </div>
+                  <div style="padding:13px 14px 15px;">
+                    <div style="font-weight:600; font-size:14px; color:#F5F7FA; line-height:1.3;">Присед со штангой</div>
+                    <div style="display:flex; flex-wrap:wrap; gap:5px; margin-top:10px;">
+                      <span style="font-family:'JetBrains Mono',monospace; font-size:9px; letter-spacing:.06em; color:#C9F24B; background:rgba(201,242,75,.12); padding:4px 7px; border-radius:6px;">СИЛА</span>
+                      <span style="font-family:'JetBrains Mono',monospace; font-size:9px; letter-spacing:.06em; color:#8A94A6; background:#14181D; padding:4px 7px; border-radius:6px;">НОГИ</span>
+                      <span style="font-family:'JetBrains Mono',monospace; font-size:9px; letter-spacing:.06em; color:#8A94A6; background:#14181D; padding:4px 7px; border-radius:6px;">КГ×ПОВТ</span>
+                    </div>
+                  </div>
+                </div>
+                <div style="background:#1C222B; border:1px solid rgba(245,247,250,.06); border-radius:16px; overflow:hidden;">
+                  <div style="height:118px; background:repeating-linear-gradient(135deg,#1C222B,#1C222B 12px,#20272f 12px,#20272f 24px); display:flex; align-items:center; justify-content:center; position:relative;">
+                    <span style="font-family:'JetBrains Mono',monospace; font-size:10px; color:#8A94A6;">[ видео ]</span>
+                    <span style="position:absolute; right:9px; bottom:9px; font-family:'JetBrains Mono',monospace; font-size:10px; color:#F5F7FA; background:rgba(14,17,22,.75); padding:3px 6px; border-radius:5px;">0:31</span>
+                  </div>
+                  <div style="padding:13px 14px 15px;">
+                    <div style="font-weight:600; font-size:14px; color:#F5F7FA; line-height:1.3;">Жим ногами</div>
+                    <div style="display:flex; flex-wrap:wrap; gap:5px; margin-top:10px;">
+                      <span style="font-family:'JetBrains Mono',monospace; font-size:9px; letter-spacing:.06em; color:#C9F24B; background:rgba(201,242,75,.12); padding:4px 7px; border-radius:6px;">СИЛА</span>
+                      <span style="font-family:'JetBrains Mono',monospace; font-size:9px; letter-spacing:.06em; color:#8A94A6; background:#14181D; padding:4px 7px; border-radius:6px;">НОГИ</span>
+                      <span style="font-family:'JetBrains Mono',monospace; font-size:9px; letter-spacing:.06em; color:#8A94A6; background:#14181D; padding:4px 7px; border-radius:6px;">КГ×ПОВТ</span>
+                    </div>
+                  </div>
+                </div>
+                <div style="background:#1C222B; border:1px solid rgba(245,247,250,.06); border-radius:16px; overflow:hidden;">
+                  <div style="height:118px; background:repeating-linear-gradient(135deg,#1C222B,#1C222B 12px,#20272f 12px,#20272f 24px); display:flex; align-items:center; justify-content:center; position:relative;">
+                    <span style="font-family:'JetBrains Mono',monospace; font-size:10px; color:#8A94A6;">[ видео ]</span>
+                    <span style="position:absolute; right:9px; bottom:9px; font-family:'JetBrains Mono',monospace; font-size:10px; color:#F5F7FA; background:rgba(14,17,22,.75); padding:3px 6px; border-radius:5px;">0:28</span>
+                  </div>
+                  <div style="padding:13px 14px 15px;">
+                    <div style="font-weight:600; font-size:14px; color:#F5F7FA; line-height:1.3;">Выпады с гантелями</div>
+                    <div style="display:flex; flex-wrap:wrap; gap:5px; margin-top:10px;">
+                      <span style="font-family:'JetBrains Mono',monospace; font-size:9px; letter-spacing:.06em; color:#C9F24B; background:rgba(201,242,75,.12); padding:4px 7px; border-radius:6px;">СИЛА</span>
+                      <span style="font-family:'JetBrains Mono',monospace; font-size:9px; letter-spacing:.06em; color:#8A94A6; background:#14181D; padding:4px 7px; border-radius:6px;">НОГИ</span>
+                      <span style="font-family:'JetBrains Mono',monospace; font-size:9px; letter-spacing:.06em; color:#8A94A6; background:#14181D; padding:4px 7px; border-radius:6px;">КГ×ПОВТ</span>
+                    </div>
+                  </div>
+                </div>
+                <div style="background:#1C222B; border:1px solid rgba(245,247,250,.06); border-radius:16px; overflow:hidden;">
+                  <div style="height:118px; background:repeating-linear-gradient(135deg,#1C222B,#1C222B 12px,#20272f 12px,#20272f 24px); display:flex; align-items:center; justify-content:center; position:relative;">
+                    <span style="font-family:'JetBrains Mono',monospace; font-size:10px; color:#8A94A6;">[ видео ]</span>
+                    <span style="position:absolute; left:9px; top:9px; font-family:'JetBrains Mono',monospace; font-size:9px; color:#E8833A; background:rgba(232,131,58,.16); padding:3px 6px; border-radius:5px;">БЕЗ ВИДЕО</span>
+                  </div>
+                  <div style="padding:13px 14px 15px;">
+                    <div style="font-weight:600; font-size:14px; color:#F5F7FA; line-height:1.3;">Болгарский присед</div>
+                    <div style="display:flex; flex-wrap:wrap; gap:5px; margin-top:10px;">
+                      <span style="font-family:'JetBrains Mono',monospace; font-size:9px; letter-spacing:.06em; color:#C9F24B; background:rgba(201,242,75,.12); padding:4px 7px; border-radius:6px;">СИЛА</span>
+                      <span style="font-family:'JetBrains Mono',monospace; font-size:9px; letter-spacing:.06em; color:#8A94A6; background:#14181D; padding:4px 7px; border-radius:6px;">НОГИ</span>
+                      <span style="font-family:'JetBrains Mono',monospace; font-size:9px; letter-spacing:.06em; color:#8A94A6; background:#14181D; padding:4px 7px; border-radius:6px;">ПОВТ</span>
+                    </div>
+                  </div>
+                </div>
+                <div style="background:#1C222B; border:1px solid rgba(245,247,250,.06); border-radius:16px; overflow:hidden;">
+                  <div style="height:118px; background:repeating-linear-gradient(135deg,#1C222B,#1C222B 12px,#20272f 12px,#20272f 24px); display:flex; align-items:center; justify-content:center; position:relative;">
+                    <span style="font-family:'JetBrains Mono',monospace; font-size:10px; color:#8A94A6;">[ видео ]</span>
+                    <span style="position:absolute; right:9px; bottom:9px; font-family:'JetBrains Mono',monospace; font-size:10px; color:#F5F7FA; background:rgba(14,17,22,.75); padding:3px 6px; border-radius:5px;">0:19</span>
+                  </div>
+                  <div style="padding:13px 14px 15px;">
+                    <div style="font-weight:600; font-size:14px; color:#F5F7FA; line-height:1.3;">Планка на локтях</div>
+                    <div style="display:flex; flex-wrap:wrap; gap:5px; margin-top:10px;">
+                      <span style="font-family:'JetBrains Mono',monospace; font-size:9px; letter-spacing:.06em; color:#2F5CFF; background:rgba(47,92,255,.16); padding:4px 7px; border-radius:6px;">ВЫНОСЛ.</span>
+                      <span style="font-family:'JetBrains Mono',monospace; font-size:9px; letter-spacing:.06em; color:#8A94A6; background:#14181D; padding:4px 7px; border-radius:6px;">КОР</span>
+                      <span style="font-family:'JetBrains Mono',monospace; font-size:9px; letter-spacing:.06em; color:#8A94A6; background:#14181D; padding:4px 7px; border-radius:6px;">ВРЕМЯ</span>
+                    </div>
+                  </div>
+                </div>
+                <div style="background:#1C222B; border:1px solid rgba(245,247,250,.06); border-radius:16px; overflow:hidden;">
+                  <div style="height:118px; background:repeating-linear-gradient(135deg,#1C222B,#1C222B 12px,#20272f 12px,#20272f 24px); display:flex; align-items:center; justify-content:center; position:relative;">
+                    <span style="font-family:'JetBrains Mono',monospace; font-size:10px; color:#8A94A6;">[ видео ]</span>
+                    <span style="position:absolute; right:9px; bottom:9px; font-family:'JetBrains Mono',monospace; font-size:10px; color:#F5F7FA; background:rgba(14,17,22,.75); padding:3px 6px; border-radius:5px;">0:24</span>
+                  </div>
+                  <div style="padding:13px 14px 15px;">
+                    <div style="font-weight:600; font-size:14px; color:#F5F7FA; line-height:1.3;">Спринт 30 м</div>
+                    <div style="display:flex; flex-wrap:wrap; gap:5px; margin-top:10px;">
+                      <span style="font-family:'JetBrains Mono',monospace; font-size:9px; letter-spacing:.06em; color:#E8833A; background:rgba(232,131,58,.16); padding:4px 7px; border-radius:6px;">СКОРОСТЬ</span>
+                      <span style="font-family:'JetBrains Mono',monospace; font-size:9px; letter-spacing:.06em; color:#8A94A6; background:#14181D; padding:4px 7px; border-radius:6px;">НОГИ</span>
+                      <span style="font-family:'JetBrains Mono',monospace; font-size:9px; letter-spacing:.06em; color:#8A94A6; background:#14181D; padding:4px 7px; border-radius:6px;">МЕТРЫ</span>
+                    </div>
+                  </div>
+                </div>
+                <div style="background:#1C222B; border:1px solid rgba(245,247,250,.06); border-radius:16px; overflow:hidden;">
+                  <div style="height:118px; background:repeating-linear-gradient(135deg,#1C222B,#1C222B 12px,#20272f 12px,#20272f 24px); display:flex; align-items:center; justify-content:center; position:relative;">
+                    <span style="font-family:'JetBrains Mono',monospace; font-size:10px; color:#8A94A6;">[ видео ]</span>
+                    <span style="position:absolute; right:9px; bottom:9px; font-family:'JetBrains Mono',monospace; font-size:10px; color:#F5F7FA; background:rgba(14,17,22,.75); padding:3px 6px; border-radius:5px;">0:36</span>
+                  </div>
+                  <div style="padding:13px 14px 15px;">
+                    <div style="font-weight:600; font-size:14px; color:#F5F7FA; line-height:1.3;">Подтягивания</div>
+                    <div style="display:flex; flex-wrap:wrap; gap:5px; margin-top:10px;">
+                      <span style="font-family:'JetBrains Mono',monospace; font-size:9px; letter-spacing:.06em; color:#C9F24B; background:rgba(201,242,75,.12); padding:4px 7px; border-radius:6px;">СИЛА</span>
+                      <span style="font-family:'JetBrains Mono',monospace; font-size:9px; letter-spacing:.06em; color:#8A94A6; background:#14181D; padding:4px 7px; border-radius:6px;">СПИНА</span>
+                      <span style="font-family:'JetBrains Mono',monospace; font-size:9px; letter-spacing:.06em; color:#8A94A6; background:#14181D; padding:4px 7px; border-radius:6px;">ПОВТ</span>
+                    </div>
+                  </div>
+                </div>
+                <a href="#" style="display:flex; flex-direction:column; align-items:center; justify-content:center; gap:8px; border:1.5px dashed rgba(245,247,250,.18); border-radius:16px; color:#8A94A6; min-height:196px;">
+                  <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 5v14M5 12h14"></path></svg>
+                  <span style="font-size:13px; font-weight:600;">Новое упражнение</span>
+                  <span style="font-family:'JetBrains Mono',monospace; font-size:10px; color:#5b6472;">ИЛИ ПЕРЕТАЩИТЕ ВИДЕО</span>
+                </a>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- ============ P2 · КАРТОЧКА УПРАЖНЕНИЯ (РЕДАКТОР) ============ -->
+    <div style="display:flex; flex-direction:column; gap:14px;">
+      <div style="display:flex; align-items:center; gap:10px;">
+        <span style="font-family:'JetBrains Mono',monospace; font-weight:700; font-size:12px; color:#14181D; background:#C9F24B; padding:5px 10px; border-radius:999px;">P2</span>
+        <span style="font-weight:600; font-size:14px; color:#14181D;">Упражнение · карточка-редактор (модал 980)</span>
+      </div>
+
+      <div style="width:980px; border-radius:20px; overflow:hidden; background:#14181D; border:1px solid rgba(245,247,250,.08); box-shadow:0 30px 90px rgba(20,24,29,.34);">
+        <div style="display:flex; align-items:center; justify-content:space-between; padding:18px 24px; border-bottom:1px solid rgba(245,247,250,.06);">
+          <div style="display:flex; align-items:center; gap:12px;">
+            <span style="font-family:'JetBrains Mono',monospace; font-size:10px; letter-spacing:.12em; color:#8A94A6;">УПРАЖНЕНИЕ</span>
+            <span style="font-family:'Unbounded',sans-serif; font-weight:600; font-size:18px; color:#F5F7FA;">Присед со штангой</span>
+            <span style="font-family:'JetBrains Mono',monospace; font-size:10px; color:#8A94A6;">в 7 тренировках</span>
+          </div>
+          <div style="display:flex; align-items:center; gap:10px;">
+            <span style="font-size:13px; color:#8A94A6;">Дублировать</span>
+            <a href="#" style="font-size:14px; font-weight:700; color:#14181D; background:#C9F24B; padding:10px 18px; border-radius:9px;">Сохранить</a>
+            <span style="color:#8A94A6; font-size:16px;">✕</span>
+          </div>
+        </div>
+
+        <div style="display:flex;">
+          <!-- video -->
+          <div style="width:400px; padding:24px; border-right:1px solid rgba(245,247,250,.06); display:flex; flex-direction:column; gap:14px;">
+            <div style="font-family:'JetBrains Mono',monospace; font-size:10px; letter-spacing:.1em; color:#8A94A6;">ВИДЕО ТЕХНИКИ</div>
+            <div style="border-radius:14px; overflow:hidden; border:1px solid rgba(245,247,250,.08); position:relative;">
+              <div style="height:300px; background:repeating-linear-gradient(135deg,#1C222B,#1C222B 14px,#20272f 14px,#20272f 28px); display:flex; align-items:center; justify-content:center;">
+                <span style="width:54px; height:54px; border-radius:999px; background:#C9F24B; display:flex; align-items:center; justify-content:center;"><svg width="22" height="22" viewBox="0 0 24 24" fill="#14181D" stroke="none"><path d="M8 5v14l11-7z"></path></svg></span>
+              </div>
+              <div style="position:absolute; left:0; right:0; bottom:0; padding:12px 14px; background:linear-gradient(to top, rgba(14,17,22,.9), transparent); display:flex; align-items:center; gap:10px;">
+                <span style="flex:1; height:4px; border-radius:999px; background:rgba(245,247,250,.2); overflow:hidden;"><span style="display:block; width:38%; height:100%; background:#C9F24B;"></span></span>
+                <span style="font-family:'JetBrains Mono',monospace; font-size:10px; color:#F5F7FA;">0:16 / 0:42</span>
+              </div>
+            </div>
+            <div style="display:flex; gap:8px;">
+              <a href="#" style="flex:1; text-align:center; font-size:12px; font-weight:600; color:#F5F7FA; background:#1C222B; border:1px solid rgba(245,247,250,.12); padding:11px; border-radius:9px;">Заменить файл</a>
+              <a href="#" style="flex:1; text-align:center; font-size:12px; font-weight:600; color:#F5F7FA; background:#1C222B; border:1px solid rgba(245,247,250,.12); padding:11px; border-radius:9px;">Ссылка YouTube</a>
+            </div>
+            <div style="display:flex; align-items:flex-start; gap:9px; padding:12px 13px; background:rgba(47,92,255,.1); border-radius:11px;">
+              <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#2F5CFF" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" style="flex:none; margin-top:1px;"><circle cx="12" cy="12" r="9"></circle><path d="M12 8h.01M11 12h1v5h1"></path></svg>
+              <span style="font-size:12px; line-height:1.45; color:#8A94A6;">Клиент видит это видео в плеере перед первым подходом. Оптимум — 20–40 с, вертикаль 9:16.</span>
+            </div>
+          </div>
+
+          <!-- fields -->
+          <div style="flex:1; padding:24px 26px 26px; display:flex; flex-direction:column; gap:20px;">
+            <div>
+              <div style="font-family:'JetBrains Mono',monospace; font-size:10px; letter-spacing:.1em; color:#8A94A6; margin-bottom:8px;">НАЗВАНИЕ</div>
+              <div style="background:#1C222B; border:1px solid rgba(245,247,250,.1); border-radius:11px; padding:13px 15px; font-size:15px; font-weight:600; color:#F5F7FA;">Присед со штангой</div>
+            </div>
+
+            <div>
+              <div style="font-family:'JetBrains Mono',monospace; font-size:10px; letter-spacing:.1em; color:#8A94A6; margin-bottom:8px;">НАПРАВЛЕНИЕ · ОДНО</div>
+              <div style="display:flex; gap:6px; background:#1C222B; border:1px solid rgba(245,247,250,.06); border-radius:12px; padding:5px;">
+                <span style="flex:1; text-align:center; padding:10px 0; border-radius:9px; background:#C9F24B; color:#14181D; font-weight:700; font-size:13px;">Сила</span>
+                <span style="flex:1; text-align:center; padding:10px 0; border-radius:9px; color:#8A94A6; font-weight:500; font-size:13px;">Скорость</span>
+                <span style="flex:1; text-align:center; padding:10px 0; border-radius:9px; color:#8A94A6; font-weight:500; font-size:13px;">Выносл.</span>
+                <span style="flex:1; text-align:center; padding:10px 0; border-radius:9px; color:#8A94A6; font-weight:500; font-size:13px;">Мобильн.</span>
+                <span style="flex:1; text-align:center; padding:10px 0; border-radius:9px; color:#8A94A6; font-weight:500; font-size:13px;">Техника</span>
+              </div>
+            </div>
+
+            <div>
+              <div style="display:flex; align-items:center; justify-content:space-between; margin-bottom:8px;">
+                <span style="font-family:'JetBrains Mono',monospace; font-size:10px; letter-spacing:.1em; color:#8A94A6;">ГРУППА МЫШЦ · МОЖНО НЕСКОЛЬКО</span>
+                <span style="font-family:'JetBrains Mono',monospace; font-size:10px; color:#5b6472;">ПЕРВАЯ = ОСНОВНАЯ</span>
+              </div>
+              <div style="display:flex; flex-wrap:wrap; gap:7px;">
+                <span style="display:inline-flex; align-items:center; gap:7px; font-size:13px; font-weight:700; color:#14181D; background:#C9F24B; padding:8px 12px; border-radius:8px;">Ноги <span style="color:rgba(20,24,29,.45);">✕</span></span>
+                <span style="display:inline-flex; align-items:center; gap:7px; font-size:13px; font-weight:600; color:#F5F7FA; background:#2A323D; padding:8px 12px; border-radius:8px;">Кор <span style="color:#8A94A6;">✕</span></span>
+                <span style="display:inline-flex; align-items:center; gap:7px; font-size:13px; font-weight:600; color:#F5F7FA; background:#2A323D; padding:8px 12px; border-radius:8px;">Спина <span style="color:#8A94A6;">✕</span></span>
+                <span style="display:inline-flex; align-items:center; gap:6px; font-size:13px; color:#8A94A6; border:1.5px dashed rgba(245,247,250,.18); padding:7px 12px; border-radius:8px;">＋ Добавить</span>
+              </div>
+            </div>
+
+            <div>
+              <div style="font-family:'JetBrains Mono',monospace; font-size:10px; letter-spacing:.1em; color:#8A94A6; margin-bottom:8px;">КАТЕГОРИЯ · КАК СЧИТАЕТСЯ ПОДХОД</div>
+              <div style="display:grid; grid-template-columns:repeat(2, minmax(0,1fr)); gap:8px;">
+                <div style="display:flex; align-items:center; gap:11px; padding:13px 14px; background:#1C222B; border:1px solid #C9F24B; border-radius:11px;">
+                  <span style="width:17px; height:17px; border-radius:999px; border:2px solid #C9F24B; display:flex; align-items:center; justify-content:center; flex:none;"><span style="width:8px; height:8px; border-radius:999px; background:#C9F24B;"></span></span>
+                  <span style="flex:1;"><span style="display:block; font-size:13px; font-weight:600; color:#F5F7FA;">Сила</span><span style="display:block; font-family:'JetBrains Mono',monospace; font-size:10px; color:#8A94A6; margin-top:3px;">ВЕС, КГ × ПОВТОРЕНИЯ</span></span>
+                </div>
+                <div style="display:flex; align-items:center; gap:11px; padding:13px 14px; background:#1C222B; border:1px solid rgba(245,247,250,.08); border-radius:11px;">
+                  <span style="width:17px; height:17px; border-radius:999px; border:2px solid rgba(245,247,250,.2); flex:none;"></span>
+                  <span style="flex:1;"><span style="display:block; font-size:13px; font-weight:600; color:#F5F7FA;">Вес тела</span><span style="display:block; font-family:'JetBrains Mono',monospace; font-size:10px; color:#8A94A6; margin-top:3px;">ПОВТОРЕНИЯ</span></span>
+                </div>
+                <div style="display:flex; align-items:center; gap:11px; padding:13px 14px; background:#1C222B; border:1px solid rgba(245,247,250,.08); border-radius:11px;">
+                  <span style="width:17px; height:17px; border-radius:999px; border:2px solid rgba(245,247,250,.2); flex:none;"></span>
+                  <span style="flex:1;"><span style="display:block; font-size:13px; font-weight:600; color:#F5F7FA;">Статика / кардио</span><span style="display:block; font-family:'JetBrains Mono',monospace; font-size:10px; color:#8A94A6; margin-top:3px;">ВРЕМЯ, СЕК</span></span>
+                </div>
+                <div style="display:flex; align-items:center; gap:11px; padding:13px 14px; background:#1C222B; border:1px solid rgba(245,247,250,.08); border-radius:11px;">
+                  <span style="width:17px; height:17px; border-radius:999px; border:2px solid rgba(245,247,250,.2); flex:none;"></span>
+                  <span style="flex:1;"><span style="display:block; font-size:13px; font-weight:600; color:#F5F7FA;">Дистанция</span><span style="display:block; font-family:'JetBrains Mono',monospace; font-size:10px; color:#8A94A6; margin-top:3px;">МЕТРЫ · ВРЕМЯ</span></span>
+                </div>
+              </div>
+            </div>
+
+            <div>
+              <div style="display:flex; align-items:center; justify-content:space-between; margin-bottom:8px;">
+                <span style="font-family:'JetBrains Mono',monospace; font-size:10px; letter-spacing:.1em; color:#8A94A6;">ОПИСАНИЕ · ВИДИТ КЛИЕНТ</span>
+                <span style="font-family:'JetBrains Mono',monospace; font-size:10px; color:#5b6472;">184 / 600</span>
+              </div>
+              <div style="background:#1C222B; border:1px solid rgba(245,247,250,.1); border-radius:11px; padding:14px 15px; font-size:14px; line-height:1.5; color:#F5F7FA;">Стопы на ширине плеч, носки чуть врозь. Спина нейтральная, взгляд вперёд. Опускайся до параллели бедра с полом, колени по линии стоп. Вверх — через пятку, без рывка в пояснице.</div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- ============ P3 · КОНСТРУКТОР ТРЕНИРОВКИ ============ -->
+    <div style="display:flex; flex-direction:column; gap:14px;">
+      <div style="display:flex; align-items:center; gap:10px;">
+        <span style="font-family:'JetBrains Mono',monospace; font-weight:700; font-size:12px; color:#14181D; background:#C9F24B; padding:5px 10px; border-radius:999px;">P3</span>
+        <span style="font-weight:600; font-size:14px; color:#14181D;">Тренировка · название, описание, упражнения с количеством</span>
+      </div>
+
+      <div style="width:1440px; border-radius:18px; overflow:hidden; box-shadow:0 30px 90px rgba(20,24,29,.30); background:#14181D;">
+        <div style="display:flex; align-items:center; justify-content:space-between; padding:18px 28px; border-bottom:1px solid rgba(245,247,250,.06);">
+          <div style="display:flex; align-items:center; gap:14px;">
+            <span style="color:#8A94A6; display:flex; align-items:center; gap:8px; font-size:14px;"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M15 18l-6-6 6-6"></path></svg>Тренировки</span>
+            <span style="font-family:'Unbounded',sans-serif; font-weight:600; font-size:18px; color:#F5F7FA;">Ноги + кор</span>
+            <span style="font-family:'JetBrains Mono',monospace; font-size:10px; color:#8A94A6; background:#1C222B; padding:4px 8px; border-radius:999px;">6 УПР · ~55 МИН</span>
+          </div>
+          <div style="display:flex; align-items:center; gap:10px;">
+            <span style="font-family:'JetBrains Mono',monospace; font-size:11px; color:#8A94A6;">⌘S сохранить · D дубль</span>
+            <a href="#" style="font-size:14px; font-weight:600; color:#F5F7FA; border:1px solid rgba(245,247,250,.16); padding:9px 16px; border-radius:9px;">Предпросмотр клиента</a>
+            <a href="#" style="font-size:14px; font-weight:700; color:#14181D; background:#C9F24B; padding:10px 18px; border-radius:9px;">Сохранить</a>
+          </div>
+        </div>
+
+        <div style="display:flex; min-height:620px;">
+          <!-- picker -->
+          <div style="width:320px; border-right:1px solid rgba(245,247,250,.06); padding:20px 18px; display:flex; flex-direction:column; gap:12px;">
+            <div style="font-family:'JetBrains Mono',monospace; font-size:10px; letter-spacing:.1em; color:#8A94A6;">БИБЛИОТЕКА · ПЕРЕТАЩИТЕ В СПИСОК</div>
+            <div style="display:flex; align-items:center; gap:9px; height:40px; padding:0 13px; background:#1C222B; border:1px solid rgba(245,247,250,.08); border-radius:10px;">
+              <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#5b6472" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="11" cy="11" r="7"></circle><path d="m20 20-4.5-4.5"></path></svg>
+              <span style="font-size:13px; color:#5b6472;">Поиск упражнения</span>
+            </div>
+            <div style="display:flex; gap:6px;">
+              <span style="font-size:11px; font-weight:700; color:#14181D; background:#C9F24B; padding:6px 10px; border-radius:7px;">Ноги</span>
+              <span style="font-size:11px; color:#8A94A6; background:#1C222B; padding:6px 10px; border-radius:7px;">Кор</span>
+              <span style="font-size:11px; color:#8A94A6; background:#1C222B; padding:6px 10px; border-radius:7px;">Сила</span>
+            </div>
+            <div style="display:flex; flex-direction:column; gap:8px; margin-top:4px;">
+              <div style="display:flex; align-items:center; gap:11px; padding:10px; background:#1C222B; border-radius:11px;">
+                <span style="width:52px; height:38px; border-radius:7px; background:repeating-linear-gradient(135deg,#242b34,#242b34 8px,#20272f 8px,#20272f 16px); flex:none;"></span>
+                <span style="flex:1; min-width:0;"><span style="display:block; font-size:13px; font-weight:600; color:#F5F7FA;">Румынская тяга</span><span style="display:block; font-family:'JetBrains Mono',monospace; font-size:9px; color:#8A94A6; margin-top:3px;">СИЛА · НОГИ · КГ×ПОВТ</span></span>
+                <span style="color:#C9F24B; font-size:16px;">＋</span>
+              </div>
+              <div style="display:flex; align-items:center; gap:11px; padding:10px; background:#1C222B; border-radius:11px;">
+                <span style="width:52px; height:38px; border-radius:7px; background:repeating-linear-gradient(135deg,#242b34,#242b34 8px,#20272f 8px,#20272f 16px); flex:none;"></span>
+                <span style="flex:1; min-width:0;"><span style="display:block; font-size:13px; font-weight:600; color:#F5F7FA;">Разгибание ног</span><span style="display:block; font-family:'JetBrains Mono',monospace; font-size:9px; color:#8A94A6; margin-top:3px;">СИЛА · НОГИ · КГ×ПОВТ</span></span>
+                <span style="color:#C9F24B; font-size:16px;">＋</span>
+              </div>
+              <div style="display:flex; align-items:center; gap:11px; padding:10px; background:#1C222B; border-radius:11px;">
+                <span style="width:52px; height:38px; border-radius:7px; background:repeating-linear-gradient(135deg,#242b34,#242b34 8px,#20272f 8px,#20272f 16px); flex:none;"></span>
+                <span style="flex:1; min-width:0;"><span style="display:block; font-size:13px; font-weight:600; color:#F5F7FA;">Подъём на носки</span><span style="display:block; font-family:'JetBrains Mono',monospace; font-size:9px; color:#8A94A6; margin-top:3px;">СИЛА · НОГИ · ПОВТ</span></span>
+                <span style="color:#C9F24B; font-size:16px;">＋</span>
+              </div>
+              <div style="display:flex; align-items:center; gap:11px; padding:10px; background:#1C222B; border-radius:11px;">
+                <span style="width:52px; height:38px; border-radius:7px; background:repeating-linear-gradient(135deg,#242b34,#242b34 8px,#20272f 8px,#20272f 16px); flex:none;"></span>
+                <span style="flex:1; min-width:0;"><span style="display:block; font-size:13px; font-weight:600; color:#F5F7FA;">Боковая планка</span><span style="display:block; font-family:'JetBrains Mono',monospace; font-size:9px; color:#8A94A6; margin-top:3px;">ВЫНОСЛ. · КОР · ВРЕМЯ</span></span>
+                <span style="color:#C9F24B; font-size:16px;">＋</span>
+              </div>
+              <div style="display:flex; align-items:center; gap:11px; padding:10px; background:#1C222B; border-radius:11px;">
+                <span style="width:52px; height:38px; border-radius:7px; background:repeating-linear-gradient(135deg,#242b34,#242b34 8px,#20272f 8px,#20272f 16px); flex:none;"></span>
+                <span style="flex:1; min-width:0;"><span style="display:block; font-size:13px; font-weight:600; color:#F5F7FA;">Ягодичный мост</span><span style="display:block; font-family:'JetBrains Mono',monospace; font-size:9px; color:#8A94A6; margin-top:3px;">СИЛА · НОГИ · КГ×ПОВТ</span></span>
+                <span style="color:#C9F24B; font-size:16px;">＋</span>
+              </div>
+            </div>
+          </div>
+
+          <!-- workout -->
+          <div style="flex:1; padding:24px 28px; min-width:0;">
+            <div style="display:flex; flex-direction:column; gap:12px;">
+              <div>
+                <div style="font-family:'JetBrains Mono',monospace; font-size:10px; letter-spacing:.1em; color:#8A94A6; margin-bottom:7px;">НАЗВАНИЕ ТРЕНИРОВКИ</div>
+                <div style="background:#1C222B; border:1px solid rgba(245,247,250,.1); border-radius:11px; padding:13px 15px; font-family:'Unbounded',sans-serif; font-weight:600; font-size:20px; color:#F5F7FA; letter-spacing:-.02em;">Ноги + кор</div>
+              </div>
+              <div>
+                <div style="font-family:'JetBrains Mono',monospace; font-size:10px; letter-spacing:.1em; color:#8A94A6; margin-bottom:7px;">ОПИСАНИЕ</div>
+                <div style="background:#1C222B; border:1px solid rgba(245,247,250,.1); border-radius:11px; padding:13px 15px; font-size:14px; line-height:1.5; color:#F5F7FA;">База на квадрицепс и заднюю поверхность + кор в конце. Блок A — тяжёлый, отдых полный. Блок B — объёмный, темп держим.</div>
+              </div>
+            </div>
+
+            <div style="display:flex; align-items:center; justify-content:space-between; margin:24px 0 12px;">
+              <span style="font-family:'JetBrains Mono',monospace; font-size:10px; letter-spacing:.1em; color:#8A94A6;">УПРАЖНЕНИЯ · 6</span>
+              <span style="font-family:'JetBrains Mono',monospace; font-size:11px; color:#8A94A6;">объём: 18 подходов · ~55 мин</span>
+            </div>
+
+            <div style="display:flex; flex-direction:column; gap:10px;">
+              <div style="font-family:'JetBrains Mono',monospace; font-size:10px; letter-spacing:.1em; color:#C9F24B;">БЛОК A · СИЛА</div>
+              <div style="background:#1C222B; border-radius:14px; padding:15px 17px; border:1px solid #2F5CFF;">
+                <div style="display:flex; align-items:center; gap:12px;">
+                  <span style="color:#5b6472;">⠿</span>
+                  <span style="width:26px; height:26px; border-radius:7px; background:#2F5CFF; color:#fff; font-family:'JetBrains Mono',monospace; font-weight:700; font-size:12px; display:flex; align-items:center; justify-content:center; flex:none;">A1</span>
+                  <span style="width:48px; height:34px; border-radius:7px; background:repeating-linear-gradient(135deg,#242b34,#242b34 8px,#20272f 8px,#20272f 16px); flex:none;"></span>
+                  <span style="flex:1; min-width:0;"><span style="display:block; font-weight:600; font-size:15px; color:#F5F7FA;">Присед со штангой</span><span style="display:block; font-family:'JetBrains Mono',monospace; font-size:9px; color:#8A94A6; margin-top:2px;">КАТЕГОРИЯ: КГ × ПОВТОРЕНИЯ</span></span>
+                  <span style="color:#5b6472; font-size:14px;">✕</span>
+                </div>
+                <div style="display:flex; align-items:flex-end; gap:10px; margin-top:13px;">
+                  <div style="flex:1;"><div style="font-family:'JetBrains Mono',monospace; font-size:9px; letter-spacing:.08em; color:#8A94A6; margin-bottom:5px;">ПОДХОДЫ</div><div style="display:flex; align-items:center; justify-content:space-between; background:#14181D; border-radius:9px; padding:9px 12px;"><span style="color:#5b6472;">−</span><span style="font-family:'Unbounded',sans-serif; font-weight:600; font-size:16px; color:#F5F7FA;">4</span><span style="color:#C9F24B;">+</span></div></div>
+                  <span style="font-family:'JetBrains Mono',monospace; color:#5b6472; padding-bottom:11px;">×</span>
+                  <div style="flex:1;"><div style="font-family:'JetBrains Mono',monospace; font-size:9px; letter-spacing:.08em; color:#8A94A6; margin-bottom:5px;">ПОВТОРЫ</div><div style="display:flex; align-items:center; justify-content:space-between; background:#14181D; border-radius:9px; padding:9px 12px;"><span style="color:#5b6472;">−</span><span style="font-family:'Unbounded',sans-serif; font-weight:600; font-size:16px; color:#F5F7FA;">8</span><span style="color:#C9F24B;">+</span></div></div>
+                  <div style="flex:1;"><div style="font-family:'JetBrains Mono',monospace; font-size:9px; letter-spacing:.08em; color:#8A94A6; margin-bottom:5px;">ВЕС, КГ</div><div style="display:flex; align-items:center; justify-content:space-between; background:#14181D; border-radius:9px; padding:9px 12px;"><span style="color:#5b6472;">−</span><span style="font-family:'Unbounded',sans-serif; font-weight:600; font-size:16px; color:#C9F24B;">80</span><span style="color:#C9F24B;">+</span></div></div>
+                  <div style="flex:1;"><div style="font-family:'JetBrains Mono',monospace; font-size:9px; letter-spacing:.08em; color:#8A94A6; margin-bottom:5px;">ОТДЫХ</div><div style="display:flex; align-items:center; justify-content:space-between; background:#14181D; border-radius:9px; padding:9px 12px;"><span style="color:#5b6472;">−</span><span style="font-family:'Unbounded',sans-serif; font-weight:600; font-size:16px; color:#F5F7FA;">90</span><span style="color:#C9F24B;">+</span></div></div>
+                  <span style="font-size:12px; color:#8A94A6; padding-bottom:11px; white-space:nowrap;">Заметка тренеру</span>
+                </div>
+              </div>
+              <div style="background:#1C222B; border-radius:14px; padding:15px 17px;">
+                <div style="display:flex; align-items:center; gap:12px;">
+                  <span style="color:#5b6472;">⠿</span>
+                  <span style="width:26px; height:26px; border-radius:7px; background:#2a323d; color:#F5F7FA; font-family:'JetBrains Mono',monospace; font-weight:700; font-size:12px; display:flex; align-items:center; justify-content:center; flex:none;">A2</span>
+                  <span style="width:48px; height:34px; border-radius:7px; background:repeating-linear-gradient(135deg,#242b34,#242b34 8px,#20272f 8px,#20272f 16px); flex:none;"></span>
+                  <span style="flex:1; min-width:0;"><span style="display:block; font-weight:600; font-size:15px; color:#F5F7FA;">Румынская тяга</span><span style="display:block; font-family:'JetBrains Mono',monospace; font-size:9px; color:#8A94A6; margin-top:2px;">КАТЕГОРИЯ: КГ × ПОВТОРЕНИЯ</span></span>
+                  <span style="color:#5b6472; font-size:14px;">✕</span>
+                </div>
+                <div style="display:flex; gap:8px; margin-top:12px; font-family:'JetBrains Mono',monospace; font-size:12px;">
+                  <span style="background:#14181D; color:#F5F7FA; padding:7px 12px; border-radius:8px;">3 × 10</span>
+                  <span style="background:#14181D; color:#C9F24B; padding:7px 12px; border-radius:8px;">@ 70 кг</span>
+                  <span style="background:#14181D; color:#8A94A6; padding:7px 12px; border-radius:8px;">отдых 75 с</span>
+                </div>
+              </div>
+              <div style="font-family:'JetBrains Mono',monospace; font-size:10px; letter-spacing:.1em; color:#C9F24B; margin-top:8px;">БЛОК B · ОБЪЁМ · СУПЕРСЕТ</div>
+              <div style="background:#1C222B; border-radius:14px; padding:15px 17px; border-left:3px solid #C9F24B;">
+                <div style="display:flex; align-items:center; gap:12px;">
+                  <span style="color:#5b6472;">⠿</span>
+                  <span style="width:26px; height:26px; border-radius:7px; background:#2a323d; color:#F5F7FA; font-family:'JetBrains Mono',monospace; font-weight:700; font-size:12px; display:flex; align-items:center; justify-content:center; flex:none;">B1</span>
+                  <span style="width:48px; height:34px; border-radius:7px; background:repeating-linear-gradient(135deg,#242b34,#242b34 8px,#20272f 8px,#20272f 16px); flex:none;"></span>
+                  <span style="flex:1; min-width:0;"><span style="display:block; font-weight:600; font-size:15px; color:#F5F7FA;">Выпады с гантелями</span></span>
+                  <span style="color:#5b6472; font-size:14px;">✕</span>
+                </div>
+                <div style="display:flex; gap:8px; margin-top:12px; font-family:'JetBrains Mono',monospace; font-size:12px;">
+                  <span style="background:#14181D; color:#F5F7FA; padding:7px 12px; border-radius:8px;">3 × 10 / нога</span>
+                  <span style="background:#14181D; color:#C9F24B; padding:7px 12px; border-radius:8px;">@ 16 кг</span>
+                  <span style="background:#14181D; color:#8A94A6; padding:7px 12px; border-radius:8px;">без отдыха</span>
+                </div>
+              </div>
+              <div style="background:#1C222B; border-radius:14px; padding:15px 17px; border-left:3px solid #C9F24B;">
+                <div style="display:flex; align-items:center; gap:12px;">
+                  <span style="color:#5b6472;">⠿</span>
+                  <span style="width:26px; height:26px; border-radius:7px; background:#2a323d; color:#F5F7FA; font-family:'JetBrains Mono',monospace; font-weight:700; font-size:12px; display:flex; align-items:center; justify-content:center; flex:none;">B2</span>
+                  <span style="width:48px; height:34px; border-radius:7px; background:repeating-linear-gradient(135deg,#242b34,#242b34 8px,#20272f 8px,#20272f 16px); flex:none;"></span>
+                  <span style="flex:1; min-width:0;"><span style="display:block; font-weight:600; font-size:15px; color:#F5F7FA;">Планка на локтях</span><span style="display:block; font-family:'JetBrains Mono',monospace; font-size:9px; color:#8A94A6; margin-top:2px;">КАТЕГОРИЯ: ВРЕМЯ, СЕК</span></span>
+                  <span style="color:#5b6472; font-size:14px;">✕</span>
+                </div>
+                <div style="display:flex; gap:8px; margin-top:12px; font-family:'JetBrains Mono',monospace; font-size:12px;">
+                  <span style="background:#14181D; color:#F5F7FA; padding:7px 12px; border-radius:8px;">3 × 45 с</span>
+                  <span style="background:#14181D; color:#8A94A6; padding:7px 12px; border-radius:8px;">отдых 60 с</span>
+                </div>
+              </div>
+              <div style="display:flex; gap:10px; margin-top:4px;">
+                <a href="#" style="flex:1; text-align:center; padding:12px; border:1.5px dashed rgba(245,247,250,.18); border-radius:12px; color:#8A94A6; font-size:13px; font-weight:600;">＋ Упражнение</a>
+                <a href="#" style="flex:1; text-align:center; padding:12px; border:1.5px dashed rgba(245,247,250,.18); border-radius:12px; color:#8A94A6; font-size:13px; font-weight:600;">＋ Суперсет</a>
+                <a href="#" style="flex:1; text-align:center; padding:12px; border:1.5px dashed rgba(245,247,250,.18); border-radius:12px; color:#8A94A6; font-size:13px; font-weight:600;">＋ Задача в конец</a>
+              </div>
+            </div>
+          </div>
+
+          <!-- summary -->
+          <div style="width:300px; border-left:1px solid rgba(245,247,250,.06); padding:24px 22px; display:flex; flex-direction:column; gap:18px;">
+            <div style="font-family:'JetBrains Mono',monospace; font-size:10px; letter-spacing:.1em; color:#F5F7FA; font-weight:700;">СВОДКА ТРЕНИРОВКИ</div>
+            <div style="display:flex; gap:8px;">
+              <div style="flex:1; background:#1C222B; border-radius:12px; padding:13px;"><div style="font-family:'Unbounded',sans-serif; font-weight:600; font-size:22px; color:#C9F24B;">18</div><div style="font-family:'JetBrains Mono',monospace; font-size:9px; letter-spacing:.08em; color:#8A94A6; margin-top:4px;">ПОДХОДОВ</div></div>
+              <div style="flex:1; background:#1C222B; border-radius:12px; padding:13px;"><div style="font-family:'Unbounded',sans-serif; font-weight:600; font-size:22px; color:#F5F7FA;">55</div><div style="font-family:'JetBrains Mono',monospace; font-size:9px; letter-spacing:.08em; color:#8A94A6; margin-top:4px;">МИНУТ</div></div>
+            </div>
+            <div>
+              <div style="font-family:'JetBrains Mono',monospace; font-size:10px; letter-spacing:.1em; color:#8A94A6; margin-bottom:10px;">НАГРУЗКА ПО ГРУППАМ</div>
+              <div style="display:flex; flex-direction:column; gap:9px;">
+                <div><div style="display:flex; justify-content:space-between; font-size:12px; color:#F5F7FA; margin-bottom:5px;">Ноги <span style="font-family:'JetBrains Mono',monospace; color:#8A94A6;">11</span></div><div style="height:6px; border-radius:999px; background:rgba(245,247,250,.08);"><div style="width:78%; height:100%; border-radius:999px; background:#C9F24B;"></div></div></div>
+                <div><div style="display:flex; justify-content:space-between; font-size:12px; color:#F5F7FA; margin-bottom:5px;">Кор <span style="font-family:'JetBrains Mono',monospace; color:#8A94A6;">5</span></div><div style="height:6px; border-radius:999px; background:rgba(245,247,250,.08);"><div style="width:36%; height:100%; border-radius:999px; background:#2F5CFF;"></div></div></div>
+                <div><div style="display:flex; justify-content:space-between; font-size:12px; color:#F5F7FA; margin-bottom:5px;">Спина <span style="font-family:'JetBrains Mono',monospace; color:#8A94A6;">2</span></div><div style="height:6px; border-radius:999px; background:rgba(245,247,250,.08);"><div style="width:14%; height:100%; border-radius:999px; background:#8A94A6;"></div></div></div>
+              </div>
+            </div>
+            <div>
+              <div style="font-family:'JetBrains Mono',monospace; font-size:10px; letter-spacing:.1em; color:#8A94A6; margin-bottom:10px;">ИСПОЛЬЗУЕТСЯ В ПРОГРАММАХ</div>
+              <div style="display:flex; flex-direction:column; gap:7px;">
+                <div style="display:flex; align-items:center; justify-content:space-between; background:#1C222B; border-radius:10px; padding:11px 12px;"><span style="font-size:13px; color:#F5F7FA;">Гипертрофия · 8 нед</span><span style="font-family:'JetBrains Mono',monospace; font-size:10px; color:#8A94A6;">×3</span></div>
+                <div style="display:flex; align-items:center; justify-content:space-between; background:#1C222B; border-radius:10px; padding:11px 12px;"><span style="font-size:13px; color:#F5F7FA;">Старт с нуля · 4 нед</span><span style="font-family:'JetBrains Mono',monospace; font-size:10px; color:#8A94A6;">×1</span></div>
+              </div>
+            </div>
+            <div style="margin-top:auto; display:flex; align-items:flex-start; gap:9px; padding:12px 13px; background:rgba(232,131,58,.1); border-radius:11px;">
+              <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#E8833A" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" style="flex:none; margin-top:1px;"><path d="M12 9v4M12 17h.01"></path><path d="M10.3 3.9 1.8 18a2 2 0 0 0 1.7 3h17a2 2 0 0 0 1.7-3L13.7 3.9a2 2 0 0 0-3.4 0z"></path></svg>
+              <span style="font-size:12px; line-height:1.45; color:#8A94A6;">Правка тренировки обновит её во всех программах. Чтобы изменить точечно — «Дублировать».</span>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- ============ P4 · ПРОГРАММА НА РАСПИСАНИИ ============ -->
+    <div style="display:flex; flex-direction:column; gap:14px;">
+      <div style="display:flex; align-items:center; gap:10px;">
+        <span style="font-family:'JetBrains Mono',monospace; font-weight:700; font-size:12px; color:#14181D; background:#C9F24B; padding:5px 10px; border-radius:999px;">P4</span>
+        <span style="font-weight:600; font-size:14px; color:#14181D;">Программа · тренировки и задачи на расписании (нед. / мес.)</span>
+      </div>
+
+      <div style="width:1440px; border-radius:18px; overflow:hidden; box-shadow:0 30px 90px rgba(20,24,29,.30); background:#14181D;">
+        <div style="display:flex; align-items:center; justify-content:space-between; padding:18px 28px; border-bottom:1px solid rgba(245,247,250,.06);">
+          <div style="display:flex; align-items:center; gap:14px;">
+            <span style="color:#8A94A6; display:flex; align-items:center; gap:8px; font-size:14px;"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M15 18l-6-6 6-6"></path></svg>Программы</span>
+            <span style="font-family:'Unbounded',sans-serif; font-weight:600; font-size:18px; color:#F5F7FA;">Гипертрофия · 8 недель</span>
+            <span style="font-family:'JetBrains Mono',monospace; font-size:10px; color:#C9F24B; background:rgba(201,242,75,.12); padding:3px 8px; border-radius:999px;">НАЗНАЧЕНА 14</span>
+          </div>
+          <div style="display:flex; align-items:center; gap:10px;">
+            <div style="display:flex; gap:4px; background:#1C222B; border:1px solid rgba(245,247,250,.06); border-radius:10px; padding:4px;">
+              <span style="padding:7px 14px; border-radius:7px; font-size:13px; font-weight:500; color:#8A94A6;">Неделя</span>
+              <span style="padding:7px 14px; border-radius:7px; font-size:13px; font-weight:700; color:#14181D; background:#C9F24B;">Месяц</span>
+            </div>
+            <a href="#" style="font-size:14px; font-weight:600; color:#F5F7FA; border:1px solid rgba(245,247,250,.16); padding:9px 16px; border-radius:9px;">Назначить клиентам</a>
+            <a href="#" style="font-size:14px; font-weight:700; color:#14181D; background:#C9F24B; padding:10px 18px; border-radius:9px;">Опубликовать</a>
+          </div>
+        </div>
+
+        <div style="display:flex; min-height:640px;">
+          <!-- source lists -->
+          <div style="width:300px; border-right:1px solid rgba(245,247,250,.06); padding:20px 18px; display:flex; flex-direction:column; gap:20px;">
+            <div>
+              <div style="font-family:'JetBrains Mono',monospace; font-size:10px; letter-spacing:.1em; color:#8A94A6; margin-bottom:10px;">ТРЕНИРОВКИ · ТЯНИТЕ В СЕТКУ</div>
+              <div style="display:flex; flex-direction:column; gap:8px;">
+                <div style="background:#1C222B; border-radius:11px; padding:12px 13px; border-left:3px solid #C9F24B; display:flex; align-items:center; gap:10px;"><span style="color:#5b6472;">⠿</span><span style="flex:1;"><span style="display:block; font-size:13px; font-weight:600; color:#F5F7FA;">Ноги + кор</span><span style="display:block; font-family:'JetBrains Mono',monospace; font-size:9px; color:#8A94A6; margin-top:3px;">6 УПР · 55 МИН</span></span></div>
+                <div style="background:#1C222B; border-radius:11px; padding:12px 13px; border-left:3px solid #C9F24B; display:flex; align-items:center; gap:10px;"><span style="color:#5b6472;">⠿</span><span style="flex:1;"><span style="display:block; font-size:13px; font-weight:600; color:#F5F7FA;">Грудь + трицепс</span><span style="display:block; font-family:'JetBrains Mono',monospace; font-size:9px; color:#8A94A6; margin-top:3px;">5 УПР · 50 МИН</span></span></div>
+                <div style="background:#1C222B; border-radius:11px; padding:12px 13px; border-left:3px solid #C9F24B; display:flex; align-items:center; gap:10px;"><span style="color:#5b6472;">⠿</span><span style="flex:1;"><span style="display:block; font-size:13px; font-weight:600; color:#F5F7FA;">Спина + бицепс</span><span style="display:block; font-family:'JetBrains Mono',monospace; font-size:9px; color:#8A94A6; margin-top:3px;">6 УПР · 55 МИН</span></span></div>
+                <div style="background:#1C222B; border-radius:11px; padding:12px 13px; border-left:3px solid #2F5CFF; display:flex; align-items:center; gap:10px;"><span style="color:#5b6472;">⠿</span><span style="flex:1;"><span style="display:block; font-size:13px; font-weight:600; color:#F5F7FA;">Кардио + мобильность</span><span style="display:block; font-family:'JetBrains Mono',monospace; font-size:9px; color:#8A94A6; margin-top:3px;">4 УПР · 35 МИН</span></span></div>
+              </div>
+            </div>
+            <div>
+              <div style="font-family:'JetBrains Mono',monospace; font-size:10px; letter-spacing:.1em; color:#8A94A6; margin-bottom:10px;">ЗАДАЧИ</div>
+              <div style="display:flex; flex-direction:column; gap:8px;">
+                <div style="background:#1C222B; border-radius:11px; padding:11px 13px; display:flex; align-items:center; gap:10px;"><span style="color:#5b6472;">⠿</span><span style="width:20px; height:20px; border-radius:6px; background:rgba(231,181,74,.16); display:flex; align-items:center; justify-content:center; flex:none;"><svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="#E7B54A" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="M3 17l6-6 4 4 7-7"></path></svg></span><span style="flex:1; font-size:13px; color:#F5F7FA;">Взвеситься</span></div>
+                <div style="background:#1C222B; border-radius:11px; padding:11px 13px; display:flex; align-items:center; gap:10px;"><span style="color:#5b6472;">⠿</span><span style="width:20px; height:20px; border-radius:6px; background:rgba(47,92,255,.16); display:flex; align-items:center; justify-content:center; flex:none;"><svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="#2F5CFF" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="9"></circle><path d="M12 7v5l3 2"></path></svg></span><span style="flex:1; font-size:13px; color:#F5F7FA;">Фото-прогресс</span></div>
+                <div style="background:#1C222B; border-radius:11px; padding:11px 13px; display:flex; align-items:center; gap:10px;"><span style="color:#5b6472;">⠿</span><span style="width:20px; height:20px; border-radius:6px; background:rgba(201,242,75,.14); display:flex; align-items:center; justify-content:center; flex:none;"><svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="#C9F24B" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="M5 13l4 4 10-10"></path></svg></span><span style="flex:1; font-size:13px; color:#F5F7FA;">Замеры талии</span></div>
+              </div>
+            </div>
+            <div style="margin-top:auto; display:flex; align-items:flex-start; gap:9px; padding:12px 13px; background:#1C222B; border-radius:11px;">
+              <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#8A94A6" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" style="flex:none; margin-top:1px;"><path d="M4 7h16M4 12h10M4 17h7"></path></svg>
+              <span style="font-size:12px; line-height:1.45; color:#8A94A6;">Неделя 1 — шаблон. «Копировать на 4 недели» размножит сетку с шагом прогрессии.</span>
+            </div>
+          </div>
+
+          <!-- schedule grid -->
+          <div style="flex:1; padding:22px 26px; min-width:0;">
+            <div style="display:flex; align-items:center; justify-content:space-between; margin-bottom:14px;">
+              <span style="font-family:'JetBrains Mono',monospace; font-size:11px; letter-spacing:.08em; color:#F5F7FA; font-weight:700;">РАСПИСАНИЕ · МЕСЯЦ 1 · НЕДЕЛИ 1–4</span>
+              <div style="display:flex; align-items:center; gap:14px;">
+                <span style="display:flex; align-items:center; gap:6px; font-family:'JetBrains Mono',monospace; font-size:10px; color:#8A94A6;"><span style="width:9px; height:9px; border-radius:3px; background:#C9F24B;"></span>ТРЕНИРОВКА</span>
+                <span style="display:flex; align-items:center; gap:6px; font-family:'JetBrains Mono',monospace; font-size:10px; color:#8A94A6;"><span style="width:9px; height:9px; border-radius:3px; background:#2F5CFF;"></span>КАРДИО</span>
+                <span style="display:flex; align-items:center; gap:6px; font-family:'JetBrains Mono',monospace; font-size:10px; color:#8A94A6;"><span style="width:9px; height:9px; border-radius:3px; background:#E7B54A;"></span>ЗАДАЧА</span>
+              </div>
+            </div>
+
+            <div style="display:grid; grid-template-columns:52px repeat(7, minmax(0,1fr)); gap:8px;">
+              <span></span>
+              <span style="font-family:'JetBrains Mono',monospace; font-size:10px; letter-spacing:.1em; color:#8A94A6; text-align:center;">ПН</span>
+              <span style="font-family:'JetBrains Mono',monospace; font-size:10px; letter-spacing:.1em; color:#8A94A6; text-align:center;">ВТ</span>
+              <span style="font-family:'JetBrains Mono',monospace; font-size:10px; letter-spacing:.1em; color:#8A94A6; text-align:center;">СР</span>
+              <span style="font-family:'JetBrains Mono',monospace; font-size:10px; letter-spacing:.1em; color:#8A94A6; text-align:center;">ЧТ</span>
+              <span style="font-family:'JetBrains Mono',monospace; font-size:10px; letter-spacing:.1em; color:#8A94A6; text-align:center;">ПТ</span>
+              <span style="font-family:'JetBrains Mono',monospace; font-size:10px; letter-spacing:.1em; color:#8A94A6; text-align:center;">СБ</span>
+              <span style="font-family:'JetBrains Mono',monospace; font-size:10px; letter-spacing:.1em; color:#8A94A6; text-align:center;">ВС</span>
+
+              <span style="font-family:'JetBrains Mono',monospace; font-size:10px; color:#F5F7FA; display:flex; align-items:center; justify-content:center; background:#1C222B; border-radius:9px;">Н1</span>
+              <div style="min-height:104px; background:#1C222B; border-radius:11px; padding:7px; display:flex; flex-direction:column; gap:5px;">
+                <span style="font-size:11px; font-weight:700; color:#14181D; background:#C9F24B; padding:7px 8px; border-radius:7px; line-height:1.25;">Ноги + кор</span>
+                <span style="font-family:'JetBrains Mono',monospace; font-size:9px; color:#5b6472; padding-left:2px;">55 МИН</span>
+              </div>
+              <div style="min-height:104px; background:#1C222B; border-radius:11px; padding:7px; display:flex; flex-direction:column; gap:5px;">
+                <span style="font-size:11px; font-weight:600; color:#E7B54A; background:rgba(231,181,74,.14); padding:7px 8px; border-radius:7px; line-height:1.25;">Взвеситься</span>
+              </div>
+              <div style="min-height:104px; background:#1C222B; border-radius:11px; padding:7px; display:flex; flex-direction:column; gap:5px;">
+                <span style="font-size:11px; font-weight:700; color:#14181D; background:#C9F24B; padding:7px 8px; border-radius:7px; line-height:1.25;">Грудь + трицепс</span>
+                <span style="font-family:'JetBrains Mono',monospace; font-size:9px; color:#5b6472; padding-left:2px;">50 МИН</span>
+              </div>
+              <div style="min-height:104px; background:#1C222B; border-radius:11px; padding:7px;">
+                <span style="font-size:11px; font-weight:600; color:#fff; background:#2F5CFF; padding:7px 8px; border-radius:7px; line-height:1.25; display:block;">Кардио + мобильность</span>
+              </div>
+              <div style="min-height:104px; background:#1C222B; border-radius:11px; padding:7px; display:flex; flex-direction:column; gap:5px;">
+                <span style="font-size:11px; font-weight:700; color:#14181D; background:#C9F24B; padding:7px 8px; border-radius:7px; line-height:1.25;">Спина + бицепс</span>
+                <span style="font-family:'JetBrains Mono',monospace; font-size:9px; color:#5b6472; padding-left:2px;">55 МИН</span>
+              </div>
+              <div style="min-height:104px; border:1.5px dashed rgba(245,247,250,.14); border-radius:11px; display:flex; align-items:center; justify-content:center; color:#5b6472; font-size:16px;">＋</div>
+              <div style="min-height:104px; background:rgba(28,34,43,.5); border-radius:11px; display:flex; align-items:center; justify-content:center;"><span style="font-family:'JetBrains Mono',monospace; font-size:9px; color:#5b6472;">ОТДЫХ</span></div>
+
+              <span style="font-family:'JetBrains Mono',monospace; font-size:10px; color:#F5F7FA; display:flex; align-items:center; justify-content:center; background:#1C222B; border-radius:9px;">Н2</span>
+              <div style="min-height:104px; background:#1C222B; border-radius:11px; padding:7px; display:flex; flex-direction:column; gap:5px;">
+                <span style="font-size:11px; font-weight:700; color:#14181D; background:#C9F24B; padding:7px 8px; border-radius:7px; line-height:1.25;">Ноги + кор</span>
+                <span style="font-family:'JetBrains Mono',monospace; font-size:9px; color:#C9F24B; padding-left:2px;">+2,5 КГ</span>
+              </div>
+              <div style="min-height:104px; background:#1C222B; border-radius:11px; padding:7px;"><span style="font-size:11px; font-weight:600; color:#E7B54A; background:rgba(231,181,74,.14); padding:7px 8px; border-radius:7px; line-height:1.25; display:block;">Взвеситься</span></div>
+              <div style="min-height:104px; background:#1C222B; border-radius:11px; padding:7px;"><span style="font-size:11px; font-weight:700; color:#14181D; background:#C9F24B; padding:7px 8px; border-radius:7px; line-height:1.25; display:block;">Грудь + трицепс</span></div>
+              <div style="min-height:104px; background:#1C222B; border-radius:11px; padding:7px;"><span style="font-size:11px; font-weight:600; color:#fff; background:#2F5CFF; padding:7px 8px; border-radius:7px; line-height:1.25; display:block;">Кардио + мобильность</span></div>
+              <div style="min-height:104px; background:#1C222B; border-radius:11px; padding:7px; display:flex; flex-direction:column; gap:5px;">
+                <span style="font-size:11px; font-weight:700; color:#14181D; background:#C9F24B; padding:7px 8px; border-radius:7px; line-height:1.25;">Спина + бицепс</span>
+                <span style="font-size:11px; font-weight:600; color:#E7B54A; background:rgba(231,181,74,.14); padding:7px 8px; border-radius:7px; line-height:1.25;">Фото-прогресс</span>
+              </div>
+              <div style="min-height:104px; border:1.5px dashed rgba(245,247,250,.14); border-radius:11px; display:flex; align-items:center; justify-content:center; color:#5b6472; font-size:16px;">＋</div>
+              <div style="min-height:104px; background:rgba(28,34,43,.5); border-radius:11px; display:flex; align-items:center; justify-content:center;"><span style="font-family:'JetBrains Mono',monospace; font-size:9px; color:#5b6472;">ОТДЫХ</span></div>
+
+              <span style="font-family:'JetBrains Mono',monospace; font-size:10px; color:#8A94A6; display:flex; align-items:center; justify-content:center; background:#1C222B; border-radius:9px;">Н3</span>
+              <div style="min-height:104px; background:#1C222B; border-radius:11px; padding:7px; opacity:.72;"><span style="font-size:11px; font-weight:700; color:#14181D; background:#C9F24B; padding:7px 8px; border-radius:7px; line-height:1.25; display:block;">Ноги + кор</span></div>
+              <div style="min-height:104px; background:#1C222B; border-radius:11px; padding:7px; opacity:.72;"><span style="font-size:11px; font-weight:600; color:#E7B54A; background:rgba(231,181,74,.14); padding:7px 8px; border-radius:7px; line-height:1.25; display:block;">Взвеситься</span></div>
+              <div style="min-height:104px; background:#1C222B; border-radius:11px; padding:7px; opacity:.72;"><span style="font-size:11px; font-weight:700; color:#14181D; background:#C9F24B; padding:7px 8px; border-radius:7px; line-height:1.25; display:block;">Грудь + трицепс</span></div>
+              <div style="min-height:104px; background:#1C222B; border-radius:11px; padding:7px; opacity:.72;"><span style="font-size:11px; font-weight:600; color:#fff; background:#2F5CFF; padding:7px 8px; border-radius:7px; line-height:1.25; display:block;">Кардио</span></div>
+              <div style="min-height:104px; background:#1C222B; border-radius:11px; padding:7px; opacity:.72;"><span style="font-size:11px; font-weight:700; color:#14181D; background:#C9F24B; padding:7px 8px; border-radius:7px; line-height:1.25; display:block;">Спина + бицепс</span></div>
+              <div style="min-height:104px; border:1.5px dashed rgba(245,247,250,.14); border-radius:11px;"></div>
+              <div style="min-height:104px; background:rgba(28,34,43,.5); border-radius:11px; display:flex; align-items:center; justify-content:center;"><span style="font-family:'JetBrains Mono',monospace; font-size:9px; color:#5b6472;">ОТДЫХ</span></div>
+
+              <span style="font-family:'JetBrains Mono',monospace; font-size:10px; color:#8A94A6; display:flex; align-items:center; justify-content:center; background:#1C222B; border-radius:9px;">Н4</span>
+              <div style="min-height:104px; background:#1C222B; border-radius:11px; padding:7px; display:flex; flex-direction:column; gap:5px;">
+                <span style="font-size:11px; font-weight:600; color:#F5F7FA; background:#2A323D; padding:7px 8px; border-radius:7px; line-height:1.25;">Ноги · разгрузка</span>
+                <span style="font-family:'JetBrains Mono',monospace; font-size:9px; color:#8A94A6; padding-left:2px;">−30 % ОБЪЁМ</span>
+              </div>
+              <div style="min-height:104px; background:#1C222B; border-radius:11px; padding:7px;"><span style="font-size:11px; font-weight:600; color:#E7B54A; background:rgba(231,181,74,.14); padding:7px 8px; border-radius:7px; line-height:1.25; display:block;">Взвеситься</span></div>
+              <div style="min-height:104px; background:#1C222B; border-radius:11px; padding:7px;"><span style="font-size:11px; font-weight:600; color:#F5F7FA; background:#2A323D; padding:7px 8px; border-radius:7px; line-height:1.25; display:block;">Верх · разгрузка</span></div>
+              <div style="min-height:104px; background:rgba(28,34,43,.5); border-radius:11px; display:flex; align-items:center; justify-content:center;"><span style="font-family:'JetBrains Mono',monospace; font-size:9px; color:#5b6472;">ОТДЫХ</span></div>
+              <div style="min-height:104px; background:#1C222B; border-radius:11px; padding:7px; display:flex; flex-direction:column; gap:5px;">
+                <span style="font-size:11px; font-weight:600; color:#14181D; background:#E7B54A; padding:7px 8px; border-radius:7px; line-height:1.25;">Контроль-тест</span>
+                <span style="font-family:'JetBrains Mono',monospace; font-size:9px; color:#8A94A6; padding-left:2px;">1ПМ ПРИСЕД</span>
+              </div>
+              <div style="min-height:104px; border:1.5px dashed rgba(245,247,250,.14); border-radius:11px;"></div>
+              <div style="min-height:104px; background:rgba(28,34,43,.5); border-radius:11px; display:flex; align-items:center; justify-content:center;"><span style="font-family:'JetBrains Mono',monospace; font-size:9px; color:#5b6472;">ОТДЫХ</span></div>
+            </div>
+
+            <div style="display:flex; gap:10px; margin-top:14px;">
+              <a href="#" style="flex:1; text-align:center; padding:12px; border:1.5px dashed rgba(245,247,250,.18); border-radius:12px; color:#8A94A6; font-size:13px; font-weight:600;">＋ Неделя 5</a>
+              <a href="#" style="flex:1; text-align:center; padding:12px; border:1.5px dashed rgba(245,247,250,.18); border-radius:12px; color:#8A94A6; font-size:13px; font-weight:600;">Копировать месяц с прогрессией</a>
+            </div>
+          </div>
+
+          <!-- program inspector -->
+          <div style="width:300px; border-left:1px solid rgba(245,247,250,.06); padding:24px 22px; display:flex; flex-direction:column; gap:18px;">
+            <div style="font-family:'JetBrains Mono',monospace; font-size:10px; letter-spacing:.1em; color:#F5F7FA; font-weight:700;">ПРОГРАММА</div>
+            <div>
+              <div style="font-family:'JetBrains Mono',monospace; font-size:10px; letter-spacing:.1em; color:#8A94A6; margin-bottom:7px;">НАЗВАНИЕ</div>
+              <div style="background:#1C222B; border:1px solid rgba(245,247,250,.1); border-radius:10px; padding:12px 13px; font-size:14px; font-weight:600; color:#F5F7FA;">Гипертрофия · 8 недель</div>
+            </div>
+            <div style="display:flex; gap:8px;">
+              <div style="flex:1;"><div style="font-family:'JetBrains Mono',monospace; font-size:10px; letter-spacing:.1em; color:#8A94A6; margin-bottom:7px;">ДЛИНА</div><div style="background:#1C222B; border:1px solid rgba(245,247,250,.1); border-radius:10px; padding:12px 13px; font-size:14px; color:#F5F7FA; display:flex; justify-content:space-between;">8 нед <span style="color:#8A94A6;">▾</span></div></div>
+              <div style="flex:1;"><div style="font-family:'JetBrains Mono',monospace; font-size:10px; letter-spacing:.1em; color:#8A94A6; margin-bottom:7px;">ШАГ</div><div style="background:#1C222B; border:1px solid rgba(245,247,250,.1); border-radius:10px; padding:12px 13px; font-size:14px; color:#F5F7FA; display:flex; justify-content:space-between;">Неделя <span style="color:#8A94A6;">▾</span></div></div>
+            </div>
+            <div style="background:#1C222B; border-radius:12px; padding:14px;">
+              <div style="font-family:'JetBrains Mono',monospace; font-size:10px; letter-spacing:.1em; color:#8A94A6;">В ПРОГРАММЕ</div>
+              <div style="display:flex; gap:16px; margin-top:12px;">
+                <div><div style="font-family:'Unbounded',sans-serif; font-weight:600; font-size:22px; color:#C9F24B;">17</div><div style="font-family:'JetBrains Mono',monospace; font-size:9px; color:#8A94A6; margin-top:3px;">ТРЕНИРОВОК</div></div>
+                <div><div style="font-family:'Unbounded',sans-serif; font-weight:600; font-size:22px; color:#E7B54A;">9</div><div style="font-family:'JetBrains Mono',monospace; font-size:9px; color:#8A94A6; margin-top:3px;">ЗАДАЧ</div></div>
+              </div>
+            </div>
+            <div>
+              <div style="font-family:'JetBrains Mono',monospace; font-size:10px; letter-spacing:.1em; color:#8A94A6; margin-bottom:10px;">НАЗНАЧЕНА · 14 КЛИЕНТОВ</div>
+              <div style="display:flex; align-items:center; gap:-8px;">
+                <span style="width:34px; height:34px; border-radius:999px; background:repeating-linear-gradient(135deg,#2a323d,#2a323d 6px,#242b34 6px,#242b34 12px); border:2px solid #14181D;"></span>
+                <span style="width:34px; height:34px; border-radius:999px; background:repeating-linear-gradient(135deg,#2a323d,#2a323d 6px,#242b34 6px,#242b34 12px); border:2px solid #14181D; margin-left:-10px;"></span>
+                <span style="width:34px; height:34px; border-radius:999px; background:repeating-linear-gradient(135deg,#2a323d,#2a323d 6px,#242b34 6px,#242b34 12px); border:2px solid #14181D; margin-left:-10px;"></span>
+                <span style="width:34px; height:34px; border-radius:999px; background:#2A323D; border:2px solid #14181D; margin-left:-10px; display:flex; align-items:center; justify-content:center; font-family:'JetBrains Mono',monospace; font-size:10px; color:#F5F7FA;">+11</span>
+              </div>
+            </div>
+            <div style="margin-top:auto; display:flex; flex-direction:column; gap:8px;">
+              <a href="#" style="text-align:center; font-size:13px; font-weight:600; color:#F5F7FA; background:#1C222B; border:1px solid rgba(245,247,250,.12); padding:12px; border-radius:10px;">Дублировать программу</a>
+              <a href="#" style="text-align:center; font-size:13px; font-weight:600; color:#FF4D5E; border:1px solid rgba(255,77,94,.28); padding:12px; border-radius:10px;">Архивировать</a>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- ============ P5 · ЗАДАЧИ ============ -->
+    <div style="display:flex; flex-wrap:wrap; gap:44px; align-items:flex-start;">
+      <div style="display:flex; flex-direction:column; gap:14px;">
+        <div style="display:flex; align-items:center; gap:10px;">
+          <span style="font-family:'JetBrains Mono',monospace; font-weight:700; font-size:12px; color:#14181D; background:#C9F24B; padding:5px 10px; border-radius:999px;">P5</span>
+          <span style="font-weight:600; font-size:14px; color:#14181D;">Задачи · список + редактор (название, описание)</span>
+        </div>
+
+        <div style="width:980px; border-radius:18px; overflow:hidden; box-shadow:0 30px 90px rgba(20,24,29,.30); background:#14181D; display:flex;">
+          <!-- list -->
+          <div style="flex:1; border-right:1px solid rgba(245,247,250,.06); min-width:0;">
+            <div style="display:flex; align-items:center; justify-content:space-between; padding:20px 22px; border-bottom:1px solid rgba(245,247,250,.06);">
+              <span style="font-family:'Unbounded',sans-serif; font-weight:600; font-size:18px; color:#F5F7FA;">Задачи</span>
+              <a href="#" style="display:flex; align-items:center; gap:7px; font-size:13px; font-weight:700; color:#14181D; background:#C9F24B; padding:9px 14px; border-radius:9px;">＋ Задача</a>
+            </div>
+            <div style="padding:14px 18px 20px; display:flex; flex-direction:column; gap:8px;">
+              <div style="background:#1C222B; border:1px solid #C9F24B; border-radius:13px; padding:14px 15px; display:flex; gap:12px;">
+                <span style="width:30px; height:30px; border-radius:9px; background:rgba(231,181,74,.16); display:flex; align-items:center; justify-content:center; flex:none;"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#E7B54A" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 17l6-6 4 4 7-7"></path></svg></span>
+                <span style="flex:1; min-width:0;"><span style="display:block; font-weight:600; font-size:15px; color:#F5F7FA;">Взвеситься</span><span style="display:block; font-size:12px; line-height:1.45; color:#8A94A6; margin-top:4px;">Утром, натощак, до воды. Внеси вес в приложение — построим график.</span></span>
+                <span style="font-family:'JetBrains Mono',monospace; font-size:9px; color:#8A94A6; white-space:nowrap;">В 6 ПРОГР.</span>
+              </div>
+              <div style="background:#1C222B; border-radius:13px; padding:14px 15px; display:flex; gap:12px;">
+                <span style="width:30px; height:30px; border-radius:9px; background:rgba(47,92,255,.16); display:flex; align-items:center; justify-content:center; flex:none;"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#2F5CFF" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="6" width="18" height="14" rx="3"></rect><circle cx="12" cy="13" r="3.5"></circle></svg></span>
+                <span style="flex:1; min-width:0;"><span style="display:block; font-weight:600; font-size:15px; color:#F5F7FA;">Фото-прогресс</span><span style="display:block; font-size:12px; line-height:1.45; color:#8A94A6; margin-top:4px;">Три кадра: спереди, сбоку, сзади. Тот же свет и то же место.</span></span>
+                <span style="font-family:'JetBrains Mono',monospace; font-size:9px; color:#8A94A6; white-space:nowrap;">В 4 ПРОГР.</span>
+              </div>
+              <div style="background:#1C222B; border-radius:13px; padding:14px 15px; display:flex; gap:12px;">
+                <span style="width:30px; height:30px; border-radius:9px; background:rgba(201,242,75,.14); display:flex; align-items:center; justify-content:center; flex:none;"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#C9F24B" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M4 8h16M4 8v8M20 8v8M8 12h8"></path></svg></span>
+                <span style="flex:1; min-width:0;"><span style="display:block; font-weight:600; font-size:15px; color:#F5F7FA;">Замеры талии и бедра</span><span style="display:block; font-size:12px; line-height:1.45; color:#8A94A6; margin-top:4px;">Сантиметром по самой узкой точке, без втягивания живота.</span></span>
+                <span style="font-family:'JetBrains Mono',monospace; font-size:9px; color:#8A94A6; white-space:nowrap;">В 3 ПРОГР.</span>
+              </div>
+              <div style="background:#1C222B; border-radius:13px; padding:14px 15px; display:flex; gap:12px;">
+                <span style="width:30px; height:30px; border-radius:9px; background:rgba(245,247,250,.08); display:flex; align-items:center; justify-content:center; flex:none;"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#8A94A6" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 3v6M12 21a7 7 0 0 0 0-14"></path><circle cx="12" cy="14" r="7"></circle></svg></span>
+                <span style="flex:1; min-width:0;"><span style="display:block; font-weight:600; font-size:15px; color:#F5F7FA;">Дневник сна</span><span style="display:block; font-size:12px; line-height:1.45; color:#8A94A6; margin-top:4px;">Отметь часы сна и самочувствие по шкале 1–5.</span></span>
+                <span style="font-family:'JetBrains Mono',monospace; font-size:9px; color:#8A94A6; white-space:nowrap;">В 2 ПРОГР.</span>
+              </div>
+              <div style="background:#1C222B; border-radius:13px; padding:14px 15px; display:flex; gap:12px;">
+                <span style="width:30px; height:30px; border-radius:9px; background:rgba(245,247,250,.08); display:flex; align-items:center; justify-content:center; flex:none;"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#8A94A6" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M7 3h10l-1 6 3 3v9H5v-9l3-3z"></path></svg></span>
+                <span style="flex:1; min-width:0;"><span style="display:block; font-weight:600; font-size:15px; color:#F5F7FA;">Вода 2,5 л</span><span style="display:block; font-size:12px; line-height:1.45; color:#8A94A6; margin-top:4px;">Отмечай стаканы в течение дня — важно в дни тяжёлых тренировок.</span></span>
+                <span style="font-family:'JetBrains Mono',monospace; font-size:9px; color:#8A94A6; white-space:nowrap;">В 5 ПРОГР.</span>
+              </div>
+              <a href="#" style="display:flex; align-items:center; justify-content:center; gap:7px; padding:13px; border:1.5px dashed rgba(245,247,250,.18); border-radius:13px; color:#8A94A6; font-size:13px; font-weight:600;">＋ Новая задача</a>
+            </div>
+          </div>
+
+          <!-- editor -->
+          <div style="width:360px; padding:22px; display:flex; flex-direction:column; gap:18px;">
+            <div style="display:flex; align-items:center; justify-content:space-between;">
+              <span style="font-family:'JetBrains Mono',monospace; font-size:10px; letter-spacing:.1em; color:#F5F7FA; font-weight:700;">ЗАДАЧА</span>
+              <span style="color:#8A94A6;">✕</span>
+            </div>
+            <div>
+              <div style="font-family:'JetBrains Mono',monospace; font-size:10px; letter-spacing:.1em; color:#8A94A6; margin-bottom:7px;">НАЗВАНИЕ</div>
+              <div style="background:#1C222B; border:1px solid rgba(245,247,250,.1); border-radius:11px; padding:13px 14px; font-size:15px; font-weight:600; color:#F5F7FA;">Взвеситься</div>
+            </div>
+            <div>
+              <div style="display:flex; align-items:center; justify-content:space-between; margin-bottom:7px;">
+                <span style="font-family:'JetBrains Mono',monospace; font-size:10px; letter-spacing:.1em; color:#8A94A6;">ОПИСАНИЕ · ВИДИТ КЛИЕНТ</span>
+                <span style="font-family:'JetBrains Mono',monospace; font-size:10px; color:#5b6472;">88 / 300</span>
+              </div>
+              <div style="background:#1C222B; border:1px solid rgba(245,247,250,.1); border-radius:11px; padding:13px 14px; font-size:14px; line-height:1.5; color:#F5F7FA; min-height:112px;">Утром, натощак, до воды. Внеси вес в приложение — построим график и увидим тренд за неделю.</div>
+            </div>
+            <div style="display:flex; align-items:flex-start; gap:9px; padding:12px 13px; background:rgba(47,92,255,.1); border-radius:11px;">
+              <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#2F5CFF" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" style="flex:none; margin-top:1px;"><circle cx="12" cy="12" r="9"></circle><path d="M12 8h.01M11 12h1v5h1"></path></svg>
+              <span style="font-size:12px; line-height:1.45; color:#8A94A6;">Задача — сущность без упражнений. Дни и повторяемость задаются в расписании программы (P4).</span>
+            </div>
+            <a href="#" style="margin-top:auto; display:flex; align-items:center; justify-content:center; height:48px; background:#C9F24B; color:#14181D; font-weight:700; font-size:15px; border-radius:11px;">Сохранить задачу</a>
+          </div>
+        </div>
+      </div>
+
+      <!-- ============ P6 · КЛИЕНТ · ЗАДАЧИ (МОБАЙЛ) ============ -->
+      <div style="display:flex; flex-direction:column; gap:14px;">
+        <div style="display:flex; align-items:center; gap:10px;">
+          <span style="font-family:'JetBrains Mono',monospace; font-weight:700; font-size:12px; color:#F5F7FA; background:#14181D; padding:5px 10px; border-radius:999px;">P6</span>
+          <span style="font-weight:600; font-size:14px; color:#14181D;">Клиент · задачи недели · 390</span>
+        </div>
+
+        <div style="width:390px; border-radius:44px; padding:12px; background:#0e1116; box-shadow:0 30px 80px rgba(20,24,29,.32);">
+          <div style="border-radius:34px; overflow:hidden; background:#14181D;">
+            <div style="display:flex; justify-content:space-between; align-items:center; padding:14px 26px 8px; color:#F5F7FA; font-family:'JetBrains Mono',monospace; font-size:13px; font-weight:500;"><span>9:41</span><span style="letter-spacing:.15em;">● ● ● ▮</span></div>
+            <div style="padding:14px 22px 26px;">
+              <div style="display:flex; align-items:center; justify-content:space-between;">
+                <h2 style="font-family:'Unbounded',sans-serif; font-weight:700; font-size:26px; letter-spacing:-.025em; color:#F5F7FA; margin:0;">Задачи</h2>
+                <span style="font-family:'JetBrains Mono',monospace; font-size:11px; color:#8A94A6;">НЕДЕЛЯ 2</span>
+              </div>
+              <div style="display:flex; align-items:center; gap:10px; margin-top:14px;">
+                <span style="flex:1; height:8px; border-radius:999px; background:rgba(245,247,250,.09); overflow:hidden;"><span style="display:block; width:40%; height:100%; background:#C9F24B;"></span></span>
+                <span style="font-family:'JetBrains Mono',monospace; font-size:11px; color:#C9F24B;">2 / 5</span>
+              </div>
+
+              <div style="display:flex; flex-direction:column; gap:10px; margin-top:20px;">
+                <div style="background:#1C222B; border:1px solid #C9F24B; border-radius:16px; padding:16px;">
+                  <div style="display:flex; align-items:center; gap:11px;">
+                    <span style="width:32px; height:32px; border-radius:10px; background:rgba(231,181,74,.16); display:flex; align-items:center; justify-content:center; flex:none;"><svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="#E7B54A" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 17l6-6 4 4 7-7"></path></svg></span>
+                    <span style="flex:1;"><span style="display:block; font-weight:600; font-size:16px; color:#F5F7FA;">Взвеситься</span><span style="display:block; font-family:'JetBrains Mono',monospace; font-size:10px; color:#C9F24B; margin-top:3px;">СЕГОДНЯ · ДО ЗАВТРАКА</span></span>
+                  </div>
+                  <p style="font-size:13px; line-height:1.5; color:#8A94A6; margin:12px 0 0;">Утром, натощак, до воды. Внеси вес — построим график тренда.</p>
+                  <div style="display:flex; align-items:center; gap:10px; margin-top:14px;">
+                    <div style="flex:1; display:flex; align-items:center; gap:8px; height:50px; padding:0 14px; background:#14181D; border-radius:12px;">
+                      <span style="font-family:'Unbounded',sans-serif; font-weight:600; font-size:20px; color:#F5F7FA;">82,4</span>
+                      <span style="font-family:'JetBrains Mono',monospace; font-size:11px; color:#8A94A6;">КГ</span>
+                    </div>
+                    <a href="#" style="display:flex; align-items:center; justify-content:center; gap:7px; height:50px; padding:0 20px; background:#C9F24B; color:#14181D; font-weight:700; font-size:15px; border-radius:12px;">Отметить</a>
+                  </div>
+                </div>
+                <div style="background:#1C222B; border-radius:16px; padding:15px 16px; display:flex; align-items:center; gap:11px;">
+                  <span style="width:26px; height:26px; border-radius:999px; background:#C9F24B; display:flex; align-items:center; justify-content:center; flex:none;"><svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="#14181D" stroke-width="3.2" stroke-linecap="round" stroke-linejoin="round"><path d="M5 13l4 4 10-10"></path></svg></span>
+                  <span style="flex:1;"><span style="display:block; font-weight:600; font-size:15px; color:#8A94A6; text-decoration:line-through;">Фото-прогресс</span><span style="display:block; font-family:'JetBrains Mono',monospace; font-size:10px; color:#5b6472; margin-top:3px;">ВЫПОЛНЕНО · ПН</span></span>
+                </div>
+                <div style="background:#1C222B; border-radius:16px; padding:15px 16px; display:flex; align-items:center; gap:11px;">
+                  <span style="width:26px; height:26px; border-radius:999px; background:#C9F24B; display:flex; align-items:center; justify-content:center; flex:none;"><svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="#14181D" stroke-width="3.2" stroke-linecap="round" stroke-linejoin="round"><path d="M5 13l4 4 10-10"></path></svg></span>
+                  <span style="flex:1;"><span style="display:block; font-weight:600; font-size:15px; color:#8A94A6; text-decoration:line-through;">Вода 2,5 л</span><span style="display:block; font-family:'JetBrains Mono',monospace; font-size:10px; color:#5b6472; margin-top:3px;">ВЫПОЛНЕНО · ВТ</span></span>
+                </div>
+                <div style="background:#1C222B; border-radius:16px; padding:15px 16px; display:flex; align-items:center; gap:11px;">
+                  <span style="width:26px; height:26px; border-radius:999px; border:2px solid rgba(245,247,250,.18); flex:none;"></span>
+                  <span style="flex:1;"><span style="display:block; font-weight:600; font-size:15px; color:#F5F7FA;">Замеры талии и бедра</span><span style="display:block; font-size:12px; color:#8A94A6; margin-top:3px;">Сантиметром, без втягивания живота</span></span>
+                  <span style="font-family:'JetBrains Mono',monospace; font-size:10px; color:#8A94A6;">ЧТ</span>
+                </div>
+                <div style="background:#1C222B; border-radius:16px; padding:15px 16px; display:flex; align-items:center; gap:11px;">
+                  <span style="width:26px; height:26px; border-radius:999px; border:2px solid rgba(245,247,250,.18); flex:none;"></span>
+                  <span style="flex:1;"><span style="display:block; font-weight:600; font-size:15px; color:#F5F7FA;">Дневник сна</span><span style="display:block; font-size:12px; color:#8A94A6; margin-top:3px;">Часы сна + самочувствие 1–5</span></span>
+                  <span style="font-family:'JetBrains Mono',monospace; font-size:10px; color:#8A94A6;">ВС</span>
+                </div>
+              </div>
+            </div>
+            <div style="display:flex; justify-content:space-around; padding:12px 10px 18px; border-top:1px solid rgba(245,247,250,.06);">
+              <span style="display:flex; flex-direction:column; align-items:center; gap:4px; color:#8A94A6;"><svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 12l9-9 9 9M5 10v10h14V10"></path></svg><span style="font-size:9px;">Сегодня</span></span>
+              <span style="display:flex; flex-direction:column; align-items:center; gap:4px; color:#C9F24B;"><svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="4" width="18" height="17" rx="3"></rect><path d="M8 2v4M16 2v4M3 10h18"></path></svg><span style="font-size:9px; font-weight:600;">Календарь</span></span>
+              <span style="display:flex; flex-direction:column; align-items:center; gap:4px; color:#8A94A6;"><svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M4 19V9M10 19V5M16 19v-7M22 19H2"></path></svg><span style="font-size:9px;">Прогресс</span></span>
+              <span style="display:flex; flex-direction:column; align-items:center; gap:4px; color:#8A94A6;"><svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="8" r="5"></circle><path d="M8.5 12.5 7 21l5-3 5 3-1.5-8.5"></path></svg><span style="font-size:9px;">Соревн.</span></span>
+              <span style="display:flex; flex-direction:column; align-items:center; gap:4px; color:#8A94A6;"><svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="8" r="4"></circle><path d="M4 21c0-4 4-6 8-6s8 2 8 6"></path></svg><span style="font-size:9px;">Профиль</span></span>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
   <!-- ======================= ZONE: ВИТРИНА (ПУБЛИЧНЫЙ ПОДДОМЕН) ======================= -->
   <div style="display:flex; flex-direction:column; gap:24px;">
     <div style="display:flex; align-items:center; gap:14px;">
