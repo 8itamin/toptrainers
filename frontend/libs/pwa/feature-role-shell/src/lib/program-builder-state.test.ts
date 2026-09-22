@@ -8,6 +8,7 @@ import {
   releaseBusyOnFinalize,
   setProgramDraftDuration,
   setProgramDraftSlot,
+  setProgramDraftTask,
   TRAINER_PROGRAM_BUILDER_NAVIGATION,
 } from './program-builder-state';
 
@@ -37,6 +38,20 @@ describe('program builder state', () => {
     const cleared = setProgramDraftSlot(scheduled, 1, 1, null);
 
     expect(programDraftPayload(cleared).slots).toEqual([]);
+  });
+
+  it('serializes a standalone task as a typed schedule item', () => {
+    const scheduled = setProgramDraftTask(createProgramDraft(), 1, 2, 'task-template-a');
+
+    expect(programDraftPayload(scheduled).slots).toEqual([
+      {
+        week_number: 1,
+        day_number: 2,
+        position: 0,
+        kind: 'TASK',
+        task_template_id: 'task-template-a',
+      },
+    ]);
   });
 
   it('drops slots outside a shortened program duration', () => {

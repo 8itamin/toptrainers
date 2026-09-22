@@ -1,4 +1,5 @@
 from datetime import date, timedelta
+from typing import Literal, cast
 from uuid import uuid4
 
 from fastapi import HTTPException
@@ -24,6 +25,8 @@ from toptrainers_api.modules.programs.schemas import (
     ProgramResponse,
     ProgramSlotResponse,
 )
+from toptrainers_api.modules.tasks import service as tasks_service
+from toptrainers_api.modules.tasks.service import materialize_task_assignment
 from toptrainers_api.modules.workouts import service as workouts_service
 
 
@@ -39,7 +42,10 @@ def to_response(program: Program) -> ProgramResponse:
                 id=slot.id,
                 week_number=slot.week_number,
                 day_number=slot.day_number,
+                position=slot.position if slot.position is not None else 0,
+                kind=cast(Literal["WORKOUT", "TASK"], slot.kind or "WORKOUT"),
                 workout_id=slot.workout_id,
+                task_template_id=slot.task_template_id,
             )
             for slot in program.slots
         ],
@@ -62,7 +68,10 @@ def _program_snapshot_v1(program: Program) -> dict[str, object]:
                 "slot_id": slot.id,
                 "week_number": slot.week_number,
                 "day_number": slot.day_number,
+                "position": slot.position if slot.position is not None else 0,
+                "kind": slot.kind if slot.kind is not None else "WORKOUT",
                 "workout_id": slot.workout_id,
+                "task_template_id": slot.task_template_id,
             }
             for slot in program.slots
         ],
@@ -122,9 +131,30 @@ async def issue_program(
     )
     session.add(parent)
     for slot in program.slots:
+        scheduled_date = scheduled_date_for_slot(payload.start_date, slot)
+        if slot.kind == "TASK":
+            if slot.task_template_id is None:
+                raise RuntimeError("TASK schedule item has no task template")
+            task_template = await tasks_service.get_owned_task_template(
+                session, trainer_id, slot.task_template_id
+            )
+            if task_template is None:
+                raise RuntimeError("Program references a task template unavailable for snapshot")
+            session.add(
+                materialize_task_assignment(
+                    task_template,
+                    relationship_id=relationship.id,
+                    scheduled_date=scheduled_date,
+                    program_assignment_id=parent.id,
+                    program_slot_id=slot.id,
+                )
+            )
+            continue
+        if slot.workout_id is None:
+            raise RuntimeError("WORKOUT schedule item has no workout")
         await materialize_assignment(
             session, relationship, trainer_id, slot.workout_id,
-            f"program:{parent.id}:{slot.id}", scheduled_date_for_slot(payload.start_date, slot),
+            f"program:{parent.id}:{slot.id}", scheduled_date,
             program_assignment_id=parent.id, program_slot_id=slot.id,
         )
     await session.commit()
@@ -152,22 +182,34 @@ async def cancel_program_assignment(
         raise HTTPException(status_code=404, detail="Program assignment was not found")
     if parent.status == ProgramAssignmentStatus.ISSUED.value:
         await cancel_planned_for_program_assignment(session, parent.id)
+        await tasks_service.cancel_pending_for_program_assignment(session, parent.id)
         parent.status = ProgramAssignmentStatus.CANCELLED.value
         await session.commit()
         await session.refresh(parent)
     return parent
 
 
-async def _require_owned_workouts(
+async def _require_owned_schedule_items(
     session: AsyncSession,
     trainer_id: str,
     payload: ProgramCreate,
 ) -> None:
-    for workout_id in {slot.workout_id for slot in payload.slots}:
+    for workout_id in {slot.workout_id for slot in payload.slots if slot.workout_id}:
         if await workouts_service.get_owned_workout(session, trainer_id, workout_id) is None:
             raise HTTPException(
                 status_code=422,
                 detail="Every program slot workout must belong to the trainer",
+            )
+    for task_template_id in {
+        slot.task_template_id for slot in payload.slots if slot.task_template_id
+    }:
+        task_template = await tasks_service.get_owned_task_template(
+            session, trainer_id, task_template_id
+        )
+        if task_template is None:
+            raise HTTPException(
+                status_code=422,
+                detail="Every program task must belong to the trainer",
             )
 
 
@@ -177,7 +219,10 @@ def _slots(payload: ProgramCreate) -> list[ProgramSlot]:
             id=str(uuid4()),
             week_number=slot.week_number,
             day_number=slot.day_number,
+            position=slot.position,
+            kind=slot.kind,
             workout_id=slot.workout_id,
+            task_template_id=slot.task_template_id,
         )
         for slot in payload.slots
     ]
@@ -193,7 +238,7 @@ async def create_program(
     payload: ProgramCreate,
 ) -> Program:
     trainer_id = require_trainer(account)
-    await _require_owned_workouts(session, trainer_id, payload)
+    await _require_owned_schedule_items(session, trainer_id, payload)
     program = Program(
         id=str(uuid4()),
         trainer_id=trainer_id,
@@ -220,7 +265,7 @@ async def replace_program(
     program = await repository.lock_owned_program(session, trainer_id, program_id)
     if program is None:
         raise HTTPException(status_code=404, detail="Program was not found")
-    await _require_owned_workouts(session, trainer_id, payload)
+    await _require_owned_schedule_items(session, trainer_id, payload)
     program.title = payload.title
     program.description = payload.description
     program.duration_weeks = payload.duration_weeks

@@ -32,7 +32,7 @@ class Program(Base):
     slots: Mapped[list[ProgramSlot]] = relationship(
         back_populates="program",
         cascade="all, delete-orphan",
-        order_by="ProgramSlot.week_number, ProgramSlot.day_number",
+        order_by="ProgramSlot.week_number, ProgramSlot.day_number, ProgramSlot.position",
     )
 
 
@@ -46,7 +46,13 @@ class ProgramSlot(Base):
             "program_id",
             "week_number",
             "day_number",
-            name="uq_program_slots_program_week_day",
+            "position",
+            name="uq_program_slots_program_week_day_position",
+        ),
+        CheckConstraint(
+            "(kind = 'WORKOUT' AND workout_id IS NOT NULL AND task_template_id IS NULL) "
+            "OR (kind = 'TASK' AND task_template_id IS NOT NULL AND workout_id IS NULL)",
+            name="ck_program_slots_exact_target",
         ),
     )
 
@@ -58,9 +64,16 @@ class ProgramSlot(Base):
     )
     week_number: Mapped[int] = mapped_column(Integer, nullable=False)
     day_number: Mapped[int] = mapped_column(Integer, nullable=False)
-    workout_id: Mapped[str] = mapped_column(
+    position: Mapped[int] = mapped_column(Integer, nullable=False, default=0)
+    kind: Mapped[str] = mapped_column(String(16), nullable=False, default="WORKOUT")
+    workout_id: Mapped[str | None] = mapped_column(
         ForeignKey("workouts.id", ondelete="RESTRICT"),
-        nullable=False,
+        nullable=True,
+        index=True,
+    )
+    task_template_id: Mapped[str | None] = mapped_column(
+        String(36),
+        nullable=True,
         index=True,
     )
     program: Mapped[Program] = relationship(back_populates="slots")
