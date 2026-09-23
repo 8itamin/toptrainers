@@ -15,6 +15,17 @@ async def list_for_trainer(session: AsyncSession, trainer_id: str) -> Sequence[E
     return rows.all()
 
 
+async def get_for_trainer(
+    session: AsyncSession,
+    trainer_id: str,
+    exercise_id: str,
+) -> Exercise | None:
+    row = await session.scalar(
+        select(Exercise).where(Exercise.id == exercise_id, Exercise.trainer_id == trainer_id)
+    )
+    return row
+
+
 async def owned_ids(session: AsyncSession, trainer_id: str, exercise_ids: set[str]) -> set[str]:
     if not exercise_ids:
         return set()

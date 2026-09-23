@@ -4,7 +4,11 @@ from sqlalchemy.ext.asyncio import AsyncSession
 from toptrainers_api.core.auth import current_account
 from toptrainers_api.core.db import get_session
 from toptrainers_api.modules.exercises import service
-from toptrainers_api.modules.exercises.schemas import ExerciseCreate, ExerciseResponse
+from toptrainers_api.modules.exercises.schemas import (
+    ExerciseCreate,
+    ExercisePatch,
+    ExerciseResponse,
+)
 
 router = APIRouter(prefix="/exercises", tags=["exercises"])
 
@@ -25,4 +29,15 @@ async def create_exercise(
     session: AsyncSession = Depends(get_session),
 ) -> ExerciseResponse:
     exercise = await service.create_exercise(session, account, payload)
+    return ExerciseResponse.model_validate(exercise, from_attributes=True)
+
+
+@router.patch("/{exercise_id}", response_model=ExerciseResponse)
+async def update_exercise(
+    exercise_id: str,
+    payload: ExercisePatch,
+    account: dict[str, object] = Depends(current_account),
+    session: AsyncSession = Depends(get_session),
+) -> ExerciseResponse:
+    exercise = await service.update_exercise(session, account, exercise_id, payload)
     return ExerciseResponse.model_validate(exercise, from_attributes=True)

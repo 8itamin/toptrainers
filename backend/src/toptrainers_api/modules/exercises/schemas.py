@@ -1,16 +1,17 @@
-from typing import Literal
+from typing import Literal, Self
 from urllib.parse import urlparse
 
 from pydantic import BaseModel, Field, field_validator, model_validator
 
 ExerciseDirection = Literal["speed", "strength", "agility", "cardio"]
 VideoPlatform = Literal["rutube", "youtube", "vk"]
+MuscleGroup = Literal["Ноги", "Грудь", "Спина", "Плечи", "Руки", "Кор", "Всё тело"]
 
 
 class ExerciseCreate(BaseModel):
     title: str = Field(min_length=1, max_length=160)
     direction: ExerciseDirection
-    muscle_group: str = Field(min_length=1, max_length=64)
+    muscle_group: MuscleGroup
     instruction: str = Field(default="", max_length=4_000)
     reference_url: str | None = Field(default=None, max_length=2_048)
     video_platform: VideoPlatform | None = None
@@ -43,3 +44,26 @@ class ExerciseCreate(BaseModel):
 class ExerciseResponse(ExerciseCreate):
     id: str
     trainer_id: str
+    muscle_groups: list[MuscleGroup]
+    video_media_id: str | None = None
+
+
+class ExercisePatch(BaseModel):
+    title: str | None = Field(default=None, min_length=1, max_length=160)
+    instruction: str | None = Field(default=None, max_length=4_000)
+    muscle_groups: list[MuscleGroup] | None = Field(default=None, min_length=1, max_length=7)
+    video_media_id: str | None = Field(default=None, min_length=36, max_length=36)
+
+    @field_validator("muscle_groups")
+    @classmethod
+    def reject_duplicate_groups(cls, value: list[MuscleGroup] | None) -> list[MuscleGroup] | None:
+        if value is not None and len(value) != len(set(value)):
+            raise ValueError("Muscle groups must be unique")
+        return value
+
+    @model_validator(mode="after")
+    def reject_null_changed_fields(self) -> Self:
+        for field_name in ("title", "instruction", "muscle_groups"):
+            if field_name in self.model_fields_set and getattr(self, field_name) is None:
+                raise ValueError(f"{field_name} cannot be null")
+        return self

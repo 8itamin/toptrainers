@@ -1,7 +1,7 @@
 import pytest
 from pydantic import ValidationError
 
-from toptrainers_api.modules.exercises.schemas import ExerciseCreate
+from toptrainers_api.modules.exercises.schemas import ExerciseCreate, ExercisePatch
 from toptrainers_api.modules.workouts.schemas import WorkoutCreate
 
 
@@ -42,6 +42,19 @@ def test_exercise_requires_platform_together_with_video_url() -> None:
             muscle_group="Грудь",
             video_url="https://youtube.com/watch?v=example",
         )
+
+
+def test_patch_preserves_ordered_primary_group() -> None:
+    patch = ExercisePatch(muscle_groups=["Спина", "Руки"])
+
+    assert patch.muscle_groups == ["Спина", "Руки"]
+
+
+def test_patch_rejects_duplicate_or_unknown_groups() -> None:
+    with pytest.raises(ValidationError):
+        ExercisePatch(muscle_groups=["Спина", "Спина"])
+    with pytest.raises(ValidationError):
+        ExercisePatch(muscle_groups=["Шея"])
 
 
 def test_workout_requires_at_least_one_selected_exercise() -> None:
