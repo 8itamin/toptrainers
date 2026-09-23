@@ -44,6 +44,8 @@ def test_snapshot_v1_copies_user_visible_exercise_metadata() -> None:
         video_url="https://example.test/video",
         video_file_url=None,
         thumbnail_url="https://example.test/thumb",
+        muscle_groups=["Спина", "Руки"],
+        video_media_id="m" * 36,
     )
     item = WorkoutExercise(
         id="i" * 36,
@@ -67,6 +69,8 @@ def test_snapshot_v1_copies_user_visible_exercise_metadata() -> None:
     frozen = snapshot.model_dump(mode="json")
     assert frozen["blocks"][0]["exercises"][0]["title"] == "Squat"
     assert frozen["blocks"][0]["exercises"][0]["weight_kg"] == 50.5
+    assert frozen["blocks"][0]["exercises"][0]["muscle_groups"] == ["Спина", "Руки"]
+    assert frozen["blocks"][0]["exercises"][0]["video_media_id"] == "m" * 36
 
     workout.title = "Changed"
     exercise.title = "Changed"

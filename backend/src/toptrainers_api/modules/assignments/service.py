@@ -31,6 +31,8 @@ from toptrainers_api.modules.clients.models import (
 )
 from toptrainers_api.modules.exercises import service as exercises_service
 from toptrainers_api.modules.exercises.models import Exercise
+from toptrainers_api.modules.media import service as media_service
+from toptrainers_api.modules.media.storage import PrivateS3Storage
 from toptrainers_api.modules.workouts import service as workouts_service
 from toptrainers_api.modules.workouts.models import Workout
 
@@ -91,12 +93,14 @@ def build_workout_snapshot_v1(
                     title=exercise.title,
                     direction=exercise.direction,
                     muscle_group=exercise.muscle_group,
+                    muscle_groups=exercise.muscle_groups or [exercise.muscle_group],
                     instruction=exercise.instruction,
                     reference_url=exercise.reference_url,
                     video_platform=exercise.video_platform,
                     video_url=exercise.video_url,
                     video_file_url=exercise.video_file_url,
                     thumbnail_url=exercise.thumbnail_url,
+                    video_media_id=exercise.video_media_id,
                     weight_kg=float(item.weight_kg) if item.weight_kg is not None else None,
                     sets=item.sets,
                     reps=item.reps,
@@ -113,6 +117,44 @@ def build_workout_snapshot_v1(
         title=workout.title,
         description=workout.description,
         blocks=blocks,
+    )
+
+
+def snapshot_references_media(snapshot: WorkoutSnapshotV1, media_id: str) -> bool:
+    return any(
+        item.video_media_id == media_id
+        for block in snapshot.blocks
+        for item in block.exercises
+    )
+
+
+async def create_assignment_exercise_media_read_url(
+    session: AsyncSession,
+    account: dict[str, object],
+    assignment_id: str,
+    media_id: str,
+    storage: PrivateS3Storage,
+) -> str:
+    if account.get("role") != "client":
+        raise _not_found("ASSIGNMENT_NOT_FOUND", "Workout assignment was not found")
+    assignment = await repository.get_assignment(session, assignment_id)
+    if assignment is None:
+        raise _not_found("ASSIGNMENT_NOT_FOUND", "Workout assignment was not found")
+    relationship = await clients_service.get_relationship(session, assignment.relationship_id)
+    if (
+        relationship is None
+        or relationship.client_id != str(account["sub"])
+        or relationship.status != RelationshipStatus.ACTIVE.value
+    ):
+        raise _not_found("ASSIGNMENT_NOT_FOUND", "Workout assignment was not found")
+    snapshot = WorkoutSnapshotV1.model_validate(assignment.workout_snapshot)
+    if not snapshot_references_media(snapshot, media_id):
+        raise _not_found("EXERCISE_MEDIA_NOT_FOUND", "Exercise media was not found")
+    return await media_service.create_authorized_read_url(
+        session,
+        media_id,
+        storage,
+        purpose=media_service.EXERCISE_VIDEO_POLICY.purpose,
     )
 
 

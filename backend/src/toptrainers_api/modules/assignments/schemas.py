@@ -23,12 +23,14 @@ class WorkoutSnapshotExerciseV1(BaseModel):
     title: str
     direction: str
     muscle_group: str
+    muscle_groups: list[str] | None = None
     instruction: str
     reference_url: str | None = None
     video_platform: str | None = None
     video_url: str | None = None
     video_file_url: str | None = None
     thumbnail_url: str | None = None
+    video_media_id: str | None = None
     weight_kg: float | None = None
     sets: int
     reps: int

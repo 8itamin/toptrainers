@@ -18,6 +18,9 @@ from toptrainers_api.modules.assignments.schemas import (
     WorkoutExecutionSetResultResponse,
     WorkoutExecutionSetResultUpsertRequest,
 )
+from toptrainers_api.modules.media import service as media_service
+from toptrainers_api.modules.media.schemas import MediaReadUrlResponse
+from toptrainers_api.modules.media.storage import PrivateS3Storage
 
 router = APIRouter(prefix="/assignments", tags=["assignments"])
 
@@ -37,6 +40,10 @@ _READ_RESPONSES: dict[int | str, dict[str, Any]] = {
 _CLIENT_LIST_RESPONSES: dict[int | str, dict[str, Any]] = {
     403: {"model": BusinessErrorResponse},
 }
+
+
+def _storage() -> PrivateS3Storage:
+    return PrivateS3Storage()
 
 
 def _require_trainer(account: dict[str, object]) -> str:
@@ -124,6 +131,36 @@ async def get_workout_assignment(
     except BusinessRuleError as error:
         raise as_http_exception(error) from error
     return service.to_response(result)
+
+
+@router.post(
+    "/{assignment_id}/exercise-media/{media_id}/read-url",
+    operation_id="getAssignmentExerciseMediaReadUrl",
+    response_model=MediaReadUrlResponse,
+    responses={404: {"model": BusinessErrorResponse}},
+)
+async def create_assignment_exercise_media_read_url(
+    assignment_id: str,
+    media_id: str,
+    account: CurrentAccountDep,
+    session: SessionDep,
+) -> MediaReadUrlResponse:
+    client_id = _require_client(account)
+    try:
+        read_url = await service.create_assignment_exercise_media_read_url(
+            session,
+            {**account, "sub": client_id},
+            assignment_id,
+            media_id,
+            _storage(),
+        )
+    except BusinessRuleError as error:
+        raise as_http_exception(error) from error
+    return MediaReadUrlResponse(
+        media_id=media_id,
+        read_url=read_url,
+        expires_in_seconds=media_service.read_expires_in_seconds(),
+    )
 
 
 @router.post(
