@@ -6,6 +6,7 @@ from pydantic import BaseModel, Field, field_validator, model_validator
 ExerciseDirection = Literal["speed", "strength", "agility", "cardio"]
 VideoPlatform = Literal["rutube", "youtube", "vk"]
 MuscleGroup = Literal["Ноги", "Грудь", "Спина", "Плечи", "Руки", "Кор", "Всё тело"]
+ExerciseVideoContentType = Literal["video/mp4", "video/webm", "video/quicktime"]
 
 
 class ExerciseCreate(BaseModel):
@@ -67,3 +68,8 @@ class ExercisePatch(BaseModel):
             if field_name in self.model_fields_set and getattr(self, field_name) is None:
                 raise ValueError(f"{field_name} cannot be null")
         return self
+
+
+class ExerciseVideoUploadRequest(BaseModel):
+    content_type: ExerciseVideoContentType
+    content_length: int = Field(gt=0, le=200 * 1024 * 1024)

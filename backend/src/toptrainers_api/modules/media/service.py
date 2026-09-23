@@ -1,6 +1,8 @@
 from __future__ import annotations
 
+from dataclasses import dataclass
 from datetime import UTC, datetime
+from typing import Protocol
 from uuid import uuid4
 
 from fastapi import HTTPException
@@ -16,6 +18,24 @@ from toptrainers_api.modules.media.storage import (
 )
 
 
+class UploadPayload(Protocol):
+    @property
+    def content_type(self) -> str: ...
+
+    @property
+    def content_length(self) -> int: ...
+
+
+@dataclass(frozen=True)
+class UploadPolicy:
+    purpose: str
+    key_prefix: str
+
+
+TASK_PHOTO_POLICY = UploadPolicy(purpose="TASK_PHOTO", key_prefix="task-media")
+EXERCISE_VIDEO_POLICY = UploadPolicy(purpose="EXERCISE_VIDEO", key_prefix="exercise-video")
+
+
 def _not_found() -> HTTPException:
     return HTTPException(status_code=404, detail="Media object was not found")
 
@@ -23,15 +43,17 @@ def _not_found() -> HTTPException:
 async def create_upload(
     session: AsyncSession,
     owner_id: str,
-    payload: CreateUploadRequest,
+    payload: CreateUploadRequest | UploadPayload,
     storage: PrivateS3Storage,
+    policy: UploadPolicy = TASK_PHOTO_POLICY,
 ) -> tuple[MediaObject, str]:
     media = MediaObject(
         id=str(uuid4()),
         owner_id=owner_id,
-        object_key=f"task-media/{owner_id}/{uuid4()}",
+        object_key=f"{policy.key_prefix}/{owner_id}/{uuid4()}",
         content_type=payload.content_type,
         content_length=payload.content_length,
+        purpose=policy.purpose,
         status="PENDING",
     )
     upload_url = storage.create_upload_url(
@@ -47,9 +69,12 @@ async def confirm_upload(
     owner_id: str,
     media_id: str,
     storage: PrivateS3Storage,
+    purpose: str | None = None,
 ) -> MediaObject:
     media = await repository.get_for_owner(session, owner_id, media_id)
     if media is None:
+        raise _not_found()
+    if purpose is not None and media.purpose != purpose:
         raise _not_found()
     if media.status == "READY":
         return media
@@ -71,9 +96,10 @@ async def create_owner_read_url(
     owner_id: str,
     media_id: str,
     storage: PrivateS3Storage,
+    purpose: str | None = None,
 ) -> str:
     media = await repository.get_ready_for_owner(session, owner_id, media_id)
-    if media is None:
+    if media is None or (purpose is not None and media.purpose != purpose):
         raise _not_found()
     return storage.create_read_url(media.object_key)
 
@@ -82,10 +108,11 @@ async def create_authorized_read_url(
     session: AsyncSession,
     media_id: str,
     storage: PrivateS3Storage,
+    purpose: str | None = None,
 ) -> str:
     """Create a read URL after the owning domain has independently authorized access."""
     media = await repository.get_ready(session, media_id)
-    if media is None:
+    if media is None or (purpose is not None and media.purpose != purpose):
         raise _not_found()
     return storage.create_read_url(media.object_key)
 
@@ -94,9 +121,13 @@ async def get_ready_owned_media(
     session: AsyncSession,
     owner_id: str,
     media_id: str,
+    purpose: str | None = None,
 ) -> MediaObject | None:
     """Public contract used by task result submission validation."""
-    return await repository.get_ready_for_owner(session, owner_id, media_id)
+    media = await repository.get_ready_for_owner(session, owner_id, media_id)
+    if media is None or (purpose is not None and media.purpose != purpose):
+        return None
+    return media
 
 
 def upload_expires_in_seconds() -> int:

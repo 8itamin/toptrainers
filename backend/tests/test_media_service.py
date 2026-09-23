@@ -50,6 +50,7 @@ async def test_create_and_confirm_upload_keeps_object_private_until_verified(
 
     assert upload_url == "https://s3.example/upload"
     assert media.status == "PENDING"
+    assert media.purpose == "TASK_PHOTO"
     assert media.object_key.startswith(f"task-media/{owner_id}/")
     assert storage.created == (media.object_key, "image/webp", 123)
 

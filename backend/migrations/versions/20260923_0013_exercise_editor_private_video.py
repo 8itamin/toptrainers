@@ -16,6 +16,11 @@ depends_on = None
 
 def upgrade() -> None:
     op.add_column(
+        "media_objects",
+        sa.Column("purpose", sa.String(length=32), server_default="TASK_PHOTO", nullable=False),
+    )
+    op.create_index("ix_media_objects_purpose", "media_objects", ["purpose"])
+    op.add_column(
         "exercises",
         sa.Column(
             "muscle_groups",
@@ -45,3 +50,5 @@ def downgrade() -> None:
     op.drop_constraint("fk_exercises_video_media_id_media_objects", "exercises", type_="foreignkey")
     op.drop_column("exercises", "video_media_id")
     op.drop_column("exercises", "muscle_groups")
+    op.drop_index("ix_media_objects_purpose", table_name="media_objects")
+    op.drop_column("media_objects", "purpose")

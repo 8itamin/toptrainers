@@ -5,7 +5,14 @@ from sqlalchemy.ext.asyncio import AsyncSession
 
 from toptrainers_api.modules.exercises import repository
 from toptrainers_api.modules.exercises.models import Exercise
-from toptrainers_api.modules.exercises.schemas import ExerciseCreate, ExercisePatch
+from toptrainers_api.modules.exercises.schemas import (
+    ExerciseCreate,
+    ExercisePatch,
+    ExerciseVideoUploadRequest,
+)
+from toptrainers_api.modules.media import service as media_service
+from toptrainers_api.modules.media.models import MediaObject
+from toptrainers_api.modules.media.storage import PrivateS3Storage
 
 
 def require_trainer(account: dict[str, object]) -> str:
@@ -47,6 +54,15 @@ async def update_exercise(
         raise HTTPException(status_code=404, detail="Exercise not found")
 
     values = payload.model_dump(exclude_unset=True)
+    if "video_media_id" in values and values["video_media_id"] is not None:
+        media = await media_service.get_ready_owned_media(
+            session,
+            trainer_id,
+            values["video_media_id"],
+            purpose=media_service.EXERCISE_VIDEO_POLICY.purpose,
+        )
+        if media is None:
+            raise HTTPException(status_code=422, detail="Exercise video is not ready or not owned")
     for field_name in ("title", "instruction", "video_media_id"):
         if field_name in values:
             setattr(exercise, field_name, values[field_name])
@@ -59,6 +75,56 @@ async def update_exercise(
     await session.commit()
     await session.refresh(exercise)
     return exercise
+
+
+async def create_video_upload(
+    session: AsyncSession,
+    account: dict[str, object],
+    payload: ExerciseVideoUploadRequest,
+    storage: PrivateS3Storage,
+) -> tuple[MediaObject, str]:
+    return await media_service.create_upload(
+        session,
+        require_trainer(account),
+        payload,
+        storage,
+        policy=media_service.EXERCISE_VIDEO_POLICY,
+    )
+
+
+async def confirm_video_upload(
+    session: AsyncSession,
+    account: dict[str, object],
+    media_id: str,
+    storage: PrivateS3Storage,
+) -> MediaObject:
+    return await media_service.confirm_upload(
+        session,
+        require_trainer(account),
+        media_id,
+        storage,
+        purpose=media_service.EXERCISE_VIDEO_POLICY.purpose,
+    )
+
+
+async def create_exercise_video_read_url(
+    session: AsyncSession,
+    account: dict[str, object],
+    exercise_id: str,
+    storage: PrivateS3Storage,
+) -> tuple[str, str]:
+    trainer_id = require_trainer(account)
+    exercise = await repository.get_for_trainer(session, trainer_id, exercise_id)
+    if exercise is None or exercise.video_media_id is None:
+        raise HTTPException(status_code=404, detail="Exercise video was not found")
+    read_url = await media_service.create_owner_read_url(
+        session,
+        trainer_id,
+        exercise.video_media_id,
+        storage,
+        purpose=media_service.EXERCISE_VIDEO_POLICY.purpose,
+    )
+    return exercise.video_media_id, read_url
 
 
 async def get_owned_exercise_ids(
