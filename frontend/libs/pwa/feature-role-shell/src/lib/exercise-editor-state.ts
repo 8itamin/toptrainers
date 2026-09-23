@@ -22,6 +22,7 @@ export interface ExerciseEditorDraft {
 }
 
 export type VideoValidationResult = { kind: 'valid' } | { kind: 'error'; message: string };
+export type VideoUploadStatus = 'idle' | 'uploading' | 'uploaded' | 'failed';
 
 const MAX_VIDEO_BYTES = 200 * 1024 * 1024;
 const VIDEO_TYPES = new Set(['video/mp4', 'video/webm', 'video/quicktime']);
@@ -66,4 +67,8 @@ export function validateVideoFile(file: Pick<File, 'size' | 'type'>): VideoValid
     return { kind: 'error', message: 'Выберите непустой видеофайл.' };
   }
   return { kind: 'valid' };
+}
+
+export function canSaveExercise(videoUploadStatus: VideoUploadStatus): boolean {
+  return videoUploadStatus !== 'uploading';
 }

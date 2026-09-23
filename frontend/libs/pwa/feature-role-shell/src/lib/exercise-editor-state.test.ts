@@ -4,6 +4,7 @@ import {
   addMuscleGroup,
   emptyExerciseDraft,
   removeMuscleGroup,
+  canSaveExercise,
   validateVideoFile,
 } from './exercise-editor-state';
 
@@ -23,5 +24,12 @@ describe('exercise editor draft state', () => {
 
     expect(withSecondGroup.muscleGroups).toEqual(['Спина', 'Руки']);
     expect(removeMuscleGroup(withSecondGroup, 'Спина').muscleGroups).toEqual(['Руки']);
+  });
+
+  it('blocks saving while the selected video is uploading', () => {
+    expect(canSaveExercise('uploading')).toBe(false);
+    expect(canSaveExercise('idle')).toBe(true);
+    expect(canSaveExercise('uploaded')).toBe(true);
+    expect(canSaveExercise('failed')).toBe(true);
   });
 });

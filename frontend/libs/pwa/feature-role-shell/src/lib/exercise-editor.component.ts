@@ -1,4 +1,4 @@
-import { ChangeDetectionStrategy, Component, effect, inject, input, output, signal } from '@angular/core';
+import { ChangeDetectionStrategy, Component, computed, effect, inject, input, output, signal } from '@angular/core';
 import { RouterLink } from '@angular/router';
 import { firstValueFrom } from 'rxjs';
 
@@ -8,12 +8,14 @@ import type { ExerciseResponse } from '@toptrainers/shared/contracts';
 import type { ExerciseModalMode } from './exercise-modal-state';
 import {
   addMuscleGroup,
+  canSaveExercise,
   emptyExerciseDraft,
   EXERCISE_MUSCLE_GROUPS,
   removeMuscleGroup,
   type ExerciseDirection,
   type ExerciseEditorDraft,
   type ExerciseMuscleGroup,
+  type VideoUploadStatus,
   validateVideoFile,
 } from './exercise-editor-state';
 
@@ -51,7 +53,7 @@ const CATEGORIES: readonly CategoryOption[] = [
           </div>
           <div class="head-right">
             @if (mode() === 'edit') { <button type="button" class="ghost" (click)="duplicate()">Дублировать</button> }
-            <button type="button" class="save" [disabled]="saving()" (click)="save()">{{ saving() ? 'Сохраняем…' : 'Сохранить' }}</button>
+            <button type="button" class="save" [disabled]="saving() || isVideoUploading()" (click)="save()">{{ saving() ? 'Сохраняем…' : isVideoUploading() ? 'Загрузка видео…' : 'Сохранить' }}</button>
             @if (embedded()) {
               <button type="button" class="close" (click)="closeRequested.emit()" aria-label="Закрыть">✕</button>
             } @else {
@@ -74,8 +76,9 @@ const CATEGORIES: readonly CategoryOption[] = [
             </div>
             <div class="video-actions">
               <input #videoInput class="visually-hidden" type="file" accept="video/mp4,video/webm,video/quicktime" (change)="selectVideo($event)" />
-              <button type="button" class="outline" (click)="videoInput.click()">{{ draft().videoFile || draft().videoMediaId ? 'Заменить файл' : 'Загрузить файл' }}</button>
-              @if (uploadProgress() !== null) { <span class="upload-progress">Загрузка: {{ uploadProgress() }}%</span> }
+              <button type="button" class="outline" [class.outline--uploading]="isVideoUploading()" [style.--upload-progress]="(uploadProgress() ?? 0) + '%'" [disabled]="isVideoUploading()" (click)="startOrRetryVideo(videoInput)">
+                {{ isVideoUploading() ? 'Загрузка ' + uploadProgress() + '%' : videoUploadStatus() === 'failed' ? 'Повторить загрузку' : draft().videoMediaId ? 'Заменить файл' : 'Загрузить файл' }}
+              </button>
             </div>
             <div class="note">
               <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#2f5cff" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="9" /><path d="M12 8h.01M11 12h1v5h1" /></svg>
@@ -166,6 +169,8 @@ const CATEGORIES: readonly CategoryOption[] = [
     .play { width: 3.375rem; height: 3.375rem; border-radius: 999px; background: #c9f24b; display: flex; align-items: center; justify-content: center; }
     .video-actions { display: flex; gap: 0.5rem; }
     .outline { flex: 1; text-align: center; font: inherit; font-size: 0.75rem; font-weight: 600; color: #f5f7fa; background: #1c222b; border: 1px solid rgb(245 247 250 / 12%); padding: 0.6875rem; border-radius: 0.5625rem; cursor: pointer; }
+    .outline--uploading { color: #14181d; background: linear-gradient(to right, #c9f24b var(--upload-progress), #1c222b var(--upload-progress)); border-color: #c9f24b; cursor: wait; }
+    .outline:disabled { cursor: wait; }
     .visually-hidden { position: absolute; width: 1px; height: 1px; overflow: hidden; clip: rect(0 0 0 0); white-space: nowrap; }
     .upload-progress { align-self: center; font-family: 'JetBrains Mono', monospace; font-size: .625rem; color: #8a94a6; white-space: nowrap; }
     .note { display: flex; align-items: flex-start; gap: 0.5625rem; padding: 0.75rem 0.8125rem; background: rgb(47 92 255 / 10%); border-radius: 0.6875rem; }
@@ -225,6 +230,10 @@ export class ExerciseEditorComponent {
   protected readonly draft = signal<ExerciseEditorDraft>(emptyExerciseDraft());
   protected readonly previewUrl = signal<string | null>(null);
   protected readonly uploadProgress = signal<number | null>(null);
+  protected readonly videoUploadStatus = signal<VideoUploadStatus>('idle');
+  protected readonly isVideoUploading = computed(
+    () => !canSaveExercise(this.videoUploadStatus()),
+  );
   protected readonly saving = signal(false);
   protected readonly message = signal('');
 
@@ -234,6 +243,8 @@ export class ExerciseEditorComponent {
       if (!exercise) {
         this.draft.set(emptyExerciseDraft());
         this.previewUrl.set(null);
+        this.uploadProgress.set(null);
+        this.videoUploadStatus.set('idle');
         return;
       }
       this.draft.set({
@@ -246,6 +257,8 @@ export class ExerciseEditorComponent {
         videoFile: null,
       });
       this.previewUrl.set(null);
+      this.uploadProgress.set(null);
+      this.videoUploadStatus.set(exercise.video_media_id ? 'uploaded' : 'idle');
       if (exercise.video_media_id) {
         void this.loadPreview(exercise.id);
       }
@@ -285,12 +298,23 @@ export class ExerciseEditorComponent {
     if (!file) return;
     const validation = validateVideoFile(file);
     if (validation.kind === 'error') {
+      this.videoUploadStatus.set('failed');
       this.message.set(validation.message);
       return;
     }
     this.draft.update((current) => ({ ...current, videoFile: file }));
     this.previewUrl.set(URL.createObjectURL(file));
     this.message.set('');
+    void this.uploadVideo(file);
+  }
+
+  protected startOrRetryVideo(videoInput: HTMLInputElement): void {
+    const file = this.draft().videoFile;
+    if (this.videoUploadStatus() === 'failed' && file) {
+      void this.uploadVideo(file);
+      return;
+    }
+    videoInput.click();
   }
 
   protected duplicate(): void {
@@ -299,6 +323,7 @@ export class ExerciseEditorComponent {
 
   protected async save(): Promise<void> {
     const current = this.draft();
+    if (this.isVideoUploading()) return;
     if (!current.title.trim()) {
       this.message.set('Введите название упражнения.');
       return;
@@ -310,25 +335,13 @@ export class ExerciseEditorComponent {
 
     this.saving.set(true);
     this.message.set('');
-    this.uploadProgress.set(null);
     try {
-      let videoMediaId = current.videoMediaId;
-      if (current.videoFile) {
-        const upload = await firstValueFrom(this.exercisesApi.createVideoUpload({
-          content_type: current.videoFile.type as 'video/mp4' | 'video/webm' | 'video/quicktime',
-          content_length: current.videoFile.size,
-        }));
-        await uploadFileToPresignedUrl(current.videoFile, upload, (progress) => this.uploadProgress.set(progress));
-        const confirmed = await firstValueFrom(this.exercisesApi.confirmVideoUpload(upload.media_id));
-        videoMediaId = confirmed.media_id;
-      }
-
       const patch = {
         title: current.title.trim(),
         instruction: current.instruction.trim(),
         direction: current.direction,
         muscle_groups: current.muscleGroups,
-        video_media_id: videoMediaId,
+        video_media_id: current.videoMediaId,
       };
       let saved: ExerciseResponse;
       if (current.id) {
@@ -352,6 +365,7 @@ export class ExerciseEditorComponent {
         videoFile: null,
       });
       this.uploadProgress.set(null);
+      this.videoUploadStatus.set(saved.video_media_id ? 'uploaded' : 'idle');
       this.message.set('Упражнение сохранено.');
       this.saved.emit(saved);
     } catch {
@@ -367,6 +381,36 @@ export class ExerciseEditorComponent {
       this.previewUrl.set(preview.read_url);
     } catch {
       this.message.set('Видео пока недоступно для предпросмотра.');
+    }
+  }
+
+  private async uploadVideo(file: File): Promise<void> {
+    this.videoUploadStatus.set('uploading');
+    this.uploadProgress.set(0);
+    this.message.set('');
+    try {
+      const upload = await firstValueFrom(this.exercisesApi.createVideoUpload({
+        content_type: file.type as 'video/mp4' | 'video/webm' | 'video/quicktime',
+        content_length: file.size,
+      }));
+      try {
+        await uploadFileToPresignedUrl(file, upload, (progress) => this.uploadProgress.set(progress));
+      } catch {
+        throw new Error('Не удалось передать видео в хранилище.');
+      }
+      try {
+        const confirmed = await firstValueFrom(this.exercisesApi.confirmVideoUpload(upload.media_id));
+        this.draft.update((current) => ({ ...current, videoMediaId: confirmed.media_id }));
+      } catch {
+        throw new Error('Видео загружено, но не удалось подтвердить его сохранение.');
+      }
+      this.uploadProgress.set(100);
+      this.videoUploadStatus.set('uploaded');
+      this.message.set('Видео загружено. Теперь сохраните упражнение.');
+    } catch (error) {
+      this.uploadProgress.set(null);
+      this.videoUploadStatus.set('failed');
+      this.message.set(error instanceof Error ? error.message : 'Не удалось подготовить загрузку видео.');
     }
   }
 }

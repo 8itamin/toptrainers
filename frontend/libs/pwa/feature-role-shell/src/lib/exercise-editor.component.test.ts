@@ -6,13 +6,16 @@ import { TestBed } from '@angular/core/testing';
 import { provideRouter } from '@angular/router';
 import { BrowserTestingModule, platformBrowserTesting } from '@angular/platform-browser/testing';
 import { ExercisesApi } from '@toptrainers/shared/data-access';
-import { beforeAll, describe, expect, it } from 'vitest';
+import { NEVER } from 'rxjs';
+import { afterEach, beforeAll, describe, expect, it } from 'vitest';
 
 import { ExerciseEditorComponent } from './exercise-editor.component';
 
 beforeAll(() => {
   TestBed.initTestEnvironment(BrowserTestingModule, platformBrowserTesting());
 });
+
+afterEach(() => TestBed.resetTestingModule());
 
 describe('exercise editor layout', () => {
   it('places description under the name, keeps direction single-value, and explains category choices', () => {
@@ -38,5 +41,26 @@ describe('exercise editor layout', () => {
     expect(categoryCards).toHaveLength(4);
     expect(categoryCards[0]?.textContent).toContain('Сила');
     expect(categoryCards[0]?.textContent).toContain('ВЕС, КГ × ПОВТОРЕНИЯ');
+  });
+
+  it('starts upload on file selection and blocks saving while it is in progress', async () => {
+    TestBed.configureTestingModule({
+      providers: [
+        provideRouter([]),
+        { provide: ExercisesApi, useValue: { createVideoUpload: () => NEVER } },
+      ],
+    });
+    const fixture = TestBed.createComponent(ExerciseEditorComponent);
+    fixture.detectChanges();
+    const input = fixture.nativeElement.querySelector<HTMLInputElement>('input[type="file"]')!;
+    const file = new File(['video'], 'squat.mp4', { type: 'video/mp4' });
+    Object.defineProperty(input, 'files', { value: { item: () => file } });
+
+    input.dispatchEvent(new Event('change'));
+    await Promise.resolve();
+    fixture.detectChanges();
+
+    expect(fixture.nativeElement.querySelector<HTMLButtonElement>('.save')?.disabled).toBe(true);
+    expect(fixture.nativeElement.querySelector<HTMLElement>('.video-actions')?.textContent).toContain('Загрузка 0%');
   });
 });
