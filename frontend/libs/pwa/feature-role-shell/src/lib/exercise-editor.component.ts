@@ -7,7 +7,7 @@ type Direction = 'strength' | 'speed' | 'endurance' | 'mobility' | 'technique';
 type Category = 'load' | 'bodyweight' | 'time' | 'distance';
 
 interface DirectionOption { key: Direction; label: string; }
-interface CategoryOption { key: Category; title: string; }
+interface CategoryOption { key: Category; title: string; hint: string; }
 
 const DIRECTIONS: readonly DirectionOption[] = [
   { key: 'strength', label: 'Сила' },
@@ -18,10 +18,10 @@ const DIRECTIONS: readonly DirectionOption[] = [
 ];
 
 const CATEGORIES: readonly CategoryOption[] = [
-  { key: 'load', title: 'Сила' },
-  { key: 'bodyweight', title: 'Вес тела' },
-  { key: 'time', title: 'Статика / кардио' },
-  { key: 'distance', title: 'Дистанция' },
+  { key: 'load', title: 'Сила', hint: 'ВЕС, КГ × ПОВТОРЕНИЯ' },
+  { key: 'bodyweight', title: 'Вес тела', hint: 'ПОВТОРЕНИЯ' },
+  { key: 'time', title: 'Статика / кардио', hint: 'ВРЕМЯ, СЕК' },
+  { key: 'distance', title: 'Дистанция', hint: 'МЕТРЫ · ВРЕМЯ' },
 ];
 
 @Component({
@@ -90,14 +90,18 @@ const CATEGORIES: readonly CategoryOption[] = [
                   }
                 </select>
               </label>
-              <label class="field">
-                <span class="label">КАТЕГОРИЯ</span>
-                <select [value]="category()" (change)="selectCategory($event)">
-                  @for (item of categories; track item.key) {
-                    <option [value]="item.key">{{ item.title }}</option>
-                  }
-                </select>
-              </label>
+            </div>
+
+            <div class="field">
+              <div class="label">КАТЕГОРИЯ · КАК СЧИТАЕТСЯ ПОДХОД</div>
+              <div class="count-grid">
+                @for (item of categories; track item.key) {
+                  <button type="button" class="count" [class.is-active]="item.key === category()" (click)="category.set(item.key)">
+                    <span class="radio"><span class="radio-dot"></span></span>
+                    <span class="count-text"><span class="count-title">{{ item.title }}</span><span class="count-hint">{{ item.hint }}</span></span>
+                  </button>
+                }
+              </div>
             </div>
 
             <div class="field">
@@ -156,7 +160,7 @@ const CATEGORIES: readonly CategoryOption[] = [
     .value { background: #1c222b; border: 1px solid rgb(245 247 250 / 10%); border-radius: 0.6875rem; padding: 0.8125rem 0.9375rem; color: #f5f7fa; }
     .value--name { font-size: 0.9375rem; font-weight: 600; }
     .value--desc { font-size: 0.875rem; line-height: 1.5; }
-    .field-pair { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 0.75rem; }
+    .field-pair { display: grid; grid-template-columns: minmax(0, 1fr); gap: 0.75rem; }
     .field-pair .label { display: block; margin-bottom: 0.5rem; }
     select { width: 100%; appearance: none; background: #1c222b url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='14' height='14' viewBox='0 0 24 24' fill='none' stroke='%238a94a6' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='m6 9 6 6 6-6'/%3E%3C/svg%3E") no-repeat right 0.875rem center; border: 1px solid rgb(245 247 250 / 10%); border-radius: 0.6875rem; padding: 0.8125rem 2.5rem 0.8125rem 0.9375rem; color: #f5f7fa; font: inherit; font-size: 0.875rem; cursor: pointer; }
     select:focus { outline: 2px solid rgb(201 242 75 / 55%); outline-offset: 2px; }
@@ -166,11 +170,21 @@ const CATEGORIES: readonly CategoryOption[] = [
     .chip-x { border: 0; background: none; color: #8a94a6; font: inherit; cursor: pointer; padding: 0; }
     .chip--primary .chip-x { color: rgb(20 24 29 / 45%); }
     .chip-add { display: inline-flex; align-items: center; gap: 0.375rem; font: inherit; font-size: 0.8125rem; color: #8a94a6; border: 1.5px dashed rgb(245 247 250 / 18%); background: transparent; padding: 0.4375rem 0.75rem; border-radius: 0.5rem; cursor: pointer; }
+    .count-grid { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 0.5rem; }
+    .count { display: flex; align-items: center; gap: 0.6875rem; padding: 0.8125rem 0.875rem; background: #1c222b; border: 1px solid rgb(245 247 250 / 8%); border-radius: 0.6875rem; text-align: left; font: inherit; cursor: pointer; color: inherit; }
+    .count.is-active { border-color: #c9f24b; }
+    .radio { width: 1.0625rem; height: 1.0625rem; border-radius: 999px; border: 2px solid rgb(245 247 250 / 20%); display: flex; align-items: center; justify-content: center; flex: none; }
+    .count.is-active .radio { border-color: #c9f24b; }
+    .radio-dot { width: 0.5rem; height: 0.5rem; border-radius: 999px; background: transparent; }
+    .count.is-active .radio-dot { background: #c9f24b; }
+    .count-text { display: flex; flex-direction: column; gap: 0.1875rem; }
+    .count-title { font-size: 0.8125rem; font-weight: 600; color: #f5f7fa; }
+    .count-hint { font-family: 'JetBrains Mono', monospace; font-size: 0.625rem; color: #8a94a6; }
     .message { margin: 0; padding: 0 1.625rem 1rem; font-size: 0.75rem; color: #8a94a6; }
     @media (max-width: 860px) {
       .body { flex-direction: column; }
       .video-col { width: auto; border-right: 0; border-bottom: 1px solid rgb(245 247 250 / 6%); }
-      .field-pair { grid-template-columns: 1fr; }
+      .count-grid { grid-template-columns: 1fr; }
       .backdrop--embedded .modal { min-height: 100dvh; border: 0; border-radius: 0; }
     }
   `,
@@ -194,10 +208,6 @@ export class ExerciseEditorComponent {
 
   protected selectDirection(event: Event): void {
     this.direction.set((event.target as HTMLSelectElement).value as Direction);
-  }
-
-  protected selectCategory(event: Event): void {
-    this.category.set((event.target as HTMLSelectElement).value as Category);
   }
 
   protected addMuscle(): void {

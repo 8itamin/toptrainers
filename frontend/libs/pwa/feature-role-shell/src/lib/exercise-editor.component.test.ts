@@ -14,7 +14,7 @@ beforeAll(() => {
 });
 
 describe('exercise editor layout', () => {
-  it('places description under the name and exposes single-value direction and category fields', () => {
+  it('places description under the name, keeps direction single-value, and explains category choices', () => {
     TestBed.configureTestingModule({ providers: [provideRouter([])] });
     const fixture = TestBed.createComponent(ExerciseEditorComponent);
 
@@ -25,8 +25,12 @@ describe('exercise editor layout', () => {
     expect(fields[1]?.textContent).toContain('ОПИСАНИЕ');
 
     const selects = fixture.nativeElement.querySelectorAll<HTMLSelectElement>('.field-pair select');
-    expect(selects).toHaveLength(2);
+    expect(selects).toHaveLength(1);
     expect(selects[0]?.value).toBe('strength');
-    expect(selects[1]?.value).toBe('load');
+
+    const categoryCards = fixture.nativeElement.querySelectorAll<HTMLElement>('.count-grid .count');
+    expect(categoryCards).toHaveLength(4);
+    expect(categoryCards[0]?.textContent).toContain('Сила');
+    expect(categoryCards[0]?.textContent).toContain('ВЕС, КГ × ПОВТОРЕНИЯ');
   });
 });
