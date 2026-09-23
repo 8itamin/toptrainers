@@ -1,20 +1,32 @@
-import { ChangeDetectionStrategy, Component, input, output, signal } from '@angular/core';
+import { ChangeDetectionStrategy, Component, effect, inject, input, output, signal } from '@angular/core';
 import { RouterLink } from '@angular/router';
+import { firstValueFrom } from 'rxjs';
+
+import { ExercisesApi, uploadFileToPresignedUrl } from '@toptrainers/shared/data-access';
+import type { ExerciseResponse } from '@toptrainers/shared/contracts';
 
 import type { ExerciseModalMode } from './exercise-modal-state';
+import {
+  addMuscleGroup,
+  emptyExerciseDraft,
+  EXERCISE_MUSCLE_GROUPS,
+  removeMuscleGroup,
+  type ExerciseDirection,
+  type ExerciseEditorDraft,
+  type ExerciseMuscleGroup,
+  validateVideoFile,
+} from './exercise-editor-state';
 
-type Direction = 'strength' | 'speed' | 'endurance' | 'mobility' | 'technique';
 type Category = 'load' | 'bodyweight' | 'time' | 'distance';
 
-interface DirectionOption { key: Direction; label: string; }
+interface DirectionOption { key: ExerciseDirection; label: string; }
 interface CategoryOption { key: Category; title: string; hint: string; }
 
 const DIRECTIONS: readonly DirectionOption[] = [
   { key: 'strength', label: 'Сила' },
   { key: 'speed', label: 'Скорость' },
-  { key: 'endurance', label: 'Выносл.' },
-  { key: 'mobility', label: 'Мобильн.' },
-  { key: 'technique', label: 'Техника' },
+  { key: 'agility', label: 'Ловкость' },
+  { key: 'cardio', label: 'Кардио' },
 ];
 
 const CATEGORIES: readonly CategoryOption[] = [
@@ -34,12 +46,12 @@ const CATEGORIES: readonly CategoryOption[] = [
         <header class="modal-head">
           <div class="head-left">
             <span class="kicker">{{ mode() === 'create' ? 'НОВОЕ УПРАЖНЕНИЕ' : 'УПРАЖНЕНИЕ' }}</span>
-            <span class="name">{{ mode() === 'create' ? 'Новое упражнение' : 'Присед со штангой' }}</span>
+            <span class="name">{{ draft().title || 'Новое упражнение' }}</span>
             @if (mode() === 'edit') { <span class="usage">в 7 тренировках</span> }
           </div>
           <div class="head-right">
             @if (mode() === 'edit') { <button type="button" class="ghost" (click)="duplicate()">Дублировать</button> }
-            <button type="button" class="save" (click)="save()">Сохранить</button>
+            <button type="button" class="save" [disabled]="saving()" (click)="save()">{{ saving() ? 'Сохраняем…' : 'Сохранить' }}</button>
             @if (embedded()) {
               <button type="button" class="close" (click)="closeRequested.emit()" aria-label="Закрыть">✕</button>
             } @else {
@@ -52,14 +64,18 @@ const CATEGORIES: readonly CategoryOption[] = [
           <div class="video-col">
             <div class="label">ВИДЕО ТЕХНИКИ</div>
             <div class="video">
-              <div class="video-placeholder">
+              @if (previewUrl()) {
+                <video class="video-preview" controls [src]="previewUrl()"></video>
+              } @else {
+                <div class="video-placeholder">
                 <span class="play"><svg width="22" height="22" viewBox="0 0 24 24" fill="#14181d" stroke="none"><path d="M8 5v14l11-7z" /></svg></span>
-              </div>
-              <div class="video-bar"><span class="track"><i></i></span><span class="time">0:16 / 0:42</span></div>
+                </div>
+              }
             </div>
             <div class="video-actions">
-              <button type="button" class="outline" (click)="replaceVideo()">Заменить файл</button>
-              <button type="button" class="outline" (click)="replaceVideo()">Ссылка YouTube</button>
+              <input #videoInput class="visually-hidden" type="file" accept="video/mp4,video/webm,video/quicktime" (change)="selectVideo($event)" />
+              <button type="button" class="outline" (click)="videoInput.click()">{{ draft().videoFile || draft().videoMediaId ? 'Заменить файл' : 'Загрузить файл' }}</button>
+              @if (uploadProgress() !== null) { <span class="upload-progress">Загрузка: {{ uploadProgress() }}%</span> }
             </div>
             <div class="note">
               <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#2f5cff" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="9" /><path d="M12 8h.01M11 12h1v5h1" /></svg>
@@ -70,7 +86,7 @@ const CATEGORIES: readonly CategoryOption[] = [
           <div class="fields">
             <div class="field">
               <div class="label">НАЗВАНИЕ</div>
-              <div class="value value--name">Присед со штангой</div>
+              <input class="value value--name" [value]="draft().title" (input)="updateTitle($event)" maxlength="120" aria-label="Название упражнения" />
             </div>
 
             <div class="field">
@@ -78,13 +94,13 @@ const CATEGORIES: readonly CategoryOption[] = [
                 <span class="label">ОПИСАНИЕ · ВИДИТ КЛИЕНТ</span>
                 <span class="counter">184 / 600</span>
               </div>
-              <div class="value value--desc">Стопы на ширине плеч, носки чуть врозь. Спина нейтральная, взгляд вперёд. Опускайся до параллели бедра с полом, колени по линии стоп. Вверх — через пятку, без рывка в пояснице.</div>
+              <textarea class="value value--desc" [value]="draft().instruction" (input)="updateInstruction($event)" maxlength="600" aria-label="Описание упражнения"></textarea>
             </div>
 
             <div class="field-pair">
               <label class="field">
                 <span class="label">НАПРАВЛЕНИЕ</span>
-                <select [value]="direction()" (change)="selectDirection($event)">
+                <select [value]="draft().direction" (change)="selectDirection($event)">
                   @for (dir of directions; track dir.key) {
                     <option [value]="dir.key">{{ dir.label }}</option>
                   }
@@ -110,10 +126,13 @@ const CATEGORIES: readonly CategoryOption[] = [
                 <span class="hint">ПЕРВАЯ = ОСНОВНАЯ</span>
               </div>
               <div class="chips">
-                @for (m of muscles(); track m; let first = $first) {
+                @for (m of draft().muscleGroups; track m; let first = $first) {
                   <span class="chip" [class.chip--primary]="first">{{ m }} <button type="button" class="chip-x" (click)="removeMuscle(m)">✕</button></span>
                 }
-                <button type="button" class="chip-add" (click)="addMuscle()">＋ Добавить</button>
+                <select class="chip-add" (change)="addMuscleFromSelect($event)" aria-label="Добавить группу мышц">
+                  <option value="">＋ Добавить</option>
+                  @for (m of muscleGroups; track m) { <option [value]="m" [disabled]="draft().muscleGroups.includes(m)">{{ m }}</option> }
+                </select>
               </div>
             </div>
           </div>
@@ -135,6 +154,7 @@ const CATEGORIES: readonly CategoryOption[] = [
     .head-right { display: flex; align-items: center; gap: 0.625rem; }
     .ghost { border: 0; background: none; color: #8a94a6; font: inherit; font-size: 0.8125rem; cursor: pointer; }
     .save { border: 0; font: inherit; font-size: 0.875rem; font-weight: 700; color: #14181d; background: #c9f24b; padding: 0.625rem 1.125rem; border-radius: 0.5625rem; cursor: pointer; }
+    .save:disabled { cursor: wait; opacity: .65; }
     .close { border: 0; background: transparent; color: #8a94a6; text-decoration: none; font: inherit; font-size: 1rem; cursor: pointer; }
     .backdrop--embedded { min-height: 0; padding: 0; background: transparent; }
     .body { display: flex; }
@@ -142,13 +162,12 @@ const CATEGORIES: readonly CategoryOption[] = [
     .label { font-family: 'JetBrains Mono', monospace; font-size: 0.625rem; letter-spacing: 0.1em; color: #8a94a6; }
     .video { border-radius: 0.875rem; overflow: hidden; border: 1px solid rgb(245 247 250 / 8%); position: relative; }
     .video-placeholder { height: 18.75rem; background: repeating-linear-gradient(135deg, #1c222b, #1c222b 14px, #20272f 14px, #20272f 28px); display: flex; align-items: center; justify-content: center; }
+    .video-preview { display: block; width: 100%; height: 18.75rem; object-fit: contain; background: #0e1116; }
     .play { width: 3.375rem; height: 3.375rem; border-radius: 999px; background: #c9f24b; display: flex; align-items: center; justify-content: center; }
-    .video-bar { position: absolute; left: 0; right: 0; bottom: 0; padding: 0.75rem 0.875rem; background: linear-gradient(to top, rgb(14 17 22 / 90%), transparent); display: flex; align-items: center; gap: 0.625rem; }
-    .video-bar .track { flex: 1; height: 0.25rem; border-radius: 999px; background: rgb(245 247 250 / 20%); overflow: hidden; }
-    .video-bar .track i { display: block; width: 38%; height: 100%; background: #c9f24b; }
-    .video-bar .time { font-family: 'JetBrains Mono', monospace; font-size: 0.625rem; color: #f5f7fa; }
     .video-actions { display: flex; gap: 0.5rem; }
     .outline { flex: 1; text-align: center; font: inherit; font-size: 0.75rem; font-weight: 600; color: #f5f7fa; background: #1c222b; border: 1px solid rgb(245 247 250 / 12%); padding: 0.6875rem; border-radius: 0.5625rem; cursor: pointer; }
+    .visually-hidden { position: absolute; width: 1px; height: 1px; overflow: hidden; clip: rect(0 0 0 0); white-space: nowrap; }
+    .upload-progress { align-self: center; font-family: 'JetBrains Mono', monospace; font-size: .625rem; color: #8a94a6; white-space: nowrap; }
     .note { display: flex; align-items: flex-start; gap: 0.5625rem; padding: 0.75rem 0.8125rem; background: rgb(47 92 255 / 10%); border-radius: 0.6875rem; }
     .note svg { flex: none; margin-top: 0.0625rem; }
     .note span { font-size: 0.75rem; line-height: 1.45; color: #8a94a6; }
@@ -158,8 +177,8 @@ const CATEGORIES: readonly CategoryOption[] = [
     .label-row .label { margin: 0; }
     .hint, .counter { font-family: 'JetBrains Mono', monospace; font-size: 0.625rem; color: #5b6472; }
     .value { background: #1c222b; border: 1px solid rgb(245 247 250 / 10%); border-radius: 0.6875rem; padding: 0.8125rem 0.9375rem; color: #f5f7fa; }
-    .value--name { font-size: 0.9375rem; font-weight: 600; }
-    .value--desc { font-size: 0.875rem; line-height: 1.5; }
+    .value--name { font: inherit; font-size: 0.9375rem; font-weight: 600; width: 100%; }
+    .value--desc { font: inherit; font-size: 0.875rem; line-height: 1.5; width: 100%; min-height: 8.25rem; resize: vertical; }
     .field-pair { display: grid; grid-template-columns: minmax(0, 1fr); gap: 0.75rem; }
     .field-pair .label { display: block; margin-bottom: 0.5rem; }
     select { width: 100%; appearance: none; background: #1c222b url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='14' height='14' viewBox='0 0 24 24' fill='none' stroke='%238a94a6' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='m6 9 6 6 6-6'/%3E%3C/svg%3E") no-repeat right 0.875rem center; border: 1px solid rgb(245 247 250 / 10%); border-radius: 0.6875rem; padding: 0.8125rem 2.5rem 0.8125rem 0.9375rem; color: #f5f7fa; font: inherit; font-size: 0.875rem; cursor: pointer; }
@@ -169,7 +188,7 @@ const CATEGORIES: readonly CategoryOption[] = [
     .chip--primary { color: #14181d; background: #c9f24b; font-weight: 700; }
     .chip-x { border: 0; background: none; color: #8a94a6; font: inherit; cursor: pointer; padding: 0; }
     .chip--primary .chip-x { color: rgb(20 24 29 / 45%); }
-    .chip-add { display: inline-flex; align-items: center; gap: 0.375rem; font: inherit; font-size: 0.8125rem; color: #8a94a6; border: 1.5px dashed rgb(245 247 250 / 18%); background: transparent; padding: 0.4375rem 0.75rem; border-radius: 0.5rem; cursor: pointer; }
+    .chip-add { display: inline-flex; width: auto; align-items: center; gap: 0.375rem; font: inherit; font-size: 0.8125rem; color: #8a94a6; border: 1.5px dashed rgb(245 247 250 / 18%); background: #14181d; padding: 0.4375rem 2rem 0.4375rem 0.75rem; border-radius: 0.5rem; cursor: pointer; }
     .count-grid { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 0.5rem; }
     .count { display: flex; align-items: center; gap: 0.6875rem; padding: 0.8125rem 0.875rem; background: #1c222b; border: 1px solid rgb(245 247 250 / 8%); border-radius: 0.6875rem; text-align: left; font: inherit; cursor: pointer; color: inherit; }
     .count.is-active { border-color: #c9f24b; }
@@ -193,36 +212,161 @@ const CATEGORIES: readonly CategoryOption[] = [
 export class ExerciseEditorComponent {
   readonly mode = input<ExerciseModalMode>('edit');
   readonly embedded = input(false);
+  readonly exercise = input<ExerciseResponse | null>(null);
   readonly closeRequested = output<void>();
+  readonly saved = output<ExerciseResponse>();
+
+  private readonly exercisesApi = inject(ExercisesApi);
 
   protected readonly directions = DIRECTIONS;
   protected readonly categories = CATEGORIES;
-  protected readonly direction = signal<Direction>('strength');
+  protected readonly muscleGroups = EXERCISE_MUSCLE_GROUPS;
   protected readonly category = signal<Category>('load');
-  protected readonly muscles = signal<string[]>(['Ноги', 'Кор', 'Спина']);
+  protected readonly draft = signal<ExerciseEditorDraft>(emptyExerciseDraft());
+  protected readonly previewUrl = signal<string | null>(null);
+  protected readonly uploadProgress = signal<number | null>(null);
+  protected readonly saving = signal(false);
   protected readonly message = signal('');
 
-  protected removeMuscle(name: string): void {
-    this.muscles.update((items) => items.filter((m) => m !== name));
+  constructor() {
+    effect(() => {
+      const exercise = this.exercise();
+      if (!exercise) {
+        this.draft.set(emptyExerciseDraft());
+        this.previewUrl.set(null);
+        return;
+      }
+      this.draft.set({
+        id: exercise.id,
+        title: exercise.title,
+        instruction: exercise.instruction ?? '',
+        direction: exercise.direction,
+        muscleGroups: exercise.muscle_groups,
+        videoMediaId: exercise.video_media_id ?? null,
+        videoFile: null,
+      });
+      this.previewUrl.set(null);
+      if (exercise.video_media_id) {
+        void this.loadPreview(exercise.id);
+      }
+    });
+  }
+
+  protected updateTitle(event: Event): void {
+    this.draft.update((current) => ({ ...current, title: (event.target as HTMLInputElement).value }));
+  }
+
+  protected updateInstruction(event: Event): void {
+    this.draft.update((current) => ({ ...current, instruction: (event.target as HTMLTextAreaElement).value }));
+  }
+
+  protected removeMuscle(group: ExerciseMuscleGroup): void {
+    this.draft.update((current) => removeMuscleGroup(current, group));
   }
 
   protected selectDirection(event: Event): void {
-    this.direction.set((event.target as HTMLSelectElement).value as Direction);
+    this.draft.update((current) => ({
+      ...current,
+      direction: (event.target as HTMLSelectElement).value as ExerciseDirection,
+    }));
   }
 
-  protected addMuscle(): void {
-    this.message.set('Выбор групп мышц появится вместе с расширением модели упражнения.');
+  protected addMuscleFromSelect(event: Event): void {
+    const select = event.target as HTMLSelectElement;
+    const group = select.value as ExerciseMuscleGroup;
+    if (group) {
+      this.draft.update((current) => addMuscleGroup(current, group));
+    }
+    select.value = '';
   }
 
-  protected replaceVideo(): void {
-    this.message.set('Загрузка видео появится вместе с хранилищем медиа.');
+  protected selectVideo(event: Event): void {
+    const file = (event.target as HTMLInputElement).files?.item(0);
+    if (!file) return;
+    const validation = validateVideoFile(file);
+    if (validation.kind === 'error') {
+      this.message.set(validation.message);
+      return;
+    }
+    this.draft.update((current) => ({ ...current, videoFile: file }));
+    this.previewUrl.set(URL.createObjectURL(file));
+    this.message.set('');
   }
 
   protected duplicate(): void {
-    this.message.set('Дублирование появится вместе с сохранением упражнений.');
+    this.message.set('Дублирование пока не добавлено. Сохраните упражнение и создайте копию вручную.');
   }
 
-  protected save(): void {
-    this.message.set('Сохранение появится вместе с расширением модели упражнения на бэкенде.');
+  protected async save(): Promise<void> {
+    const current = this.draft();
+    if (!current.title.trim()) {
+      this.message.set('Введите название упражнения.');
+      return;
+    }
+    if (current.muscleGroups.length === 0) {
+      this.message.set('Выберите хотя бы одну группу мышц.');
+      return;
+    }
+
+    this.saving.set(true);
+    this.message.set('');
+    this.uploadProgress.set(null);
+    try {
+      let videoMediaId = current.videoMediaId;
+      if (current.videoFile) {
+        const upload = await firstValueFrom(this.exercisesApi.createVideoUpload({
+          content_type: current.videoFile.type as 'video/mp4' | 'video/webm' | 'video/quicktime',
+          content_length: current.videoFile.size,
+        }));
+        await uploadFileToPresignedUrl(current.videoFile, upload, (progress) => this.uploadProgress.set(progress));
+        const confirmed = await firstValueFrom(this.exercisesApi.confirmVideoUpload(upload.media_id));
+        videoMediaId = confirmed.media_id;
+      }
+
+      const patch = {
+        title: current.title.trim(),
+        instruction: current.instruction.trim(),
+        direction: current.direction,
+        muscle_groups: current.muscleGroups,
+        video_media_id: videoMediaId,
+      };
+      let saved: ExerciseResponse;
+      if (current.id) {
+        saved = await firstValueFrom(this.exercisesApi.update(current.id, patch));
+      } else {
+        saved = await firstValueFrom(this.exercisesApi.create({
+          title: patch.title,
+          instruction: patch.instruction,
+          direction: patch.direction,
+          muscle_group: current.muscleGroups[0]!,
+        }));
+        saved = await firstValueFrom(this.exercisesApi.update(saved.id, patch));
+      }
+      this.draft.set({
+        id: saved.id,
+        title: saved.title,
+        instruction: saved.instruction ?? '',
+        direction: saved.direction,
+        muscleGroups: saved.muscle_groups,
+        videoMediaId: saved.video_media_id ?? null,
+        videoFile: null,
+      });
+      this.uploadProgress.set(null);
+      this.message.set('Упражнение сохранено.');
+      this.saved.emit(saved);
+    } catch {
+      this.message.set('Не удалось сохранить упражнение. Проверьте подключение и повторите попытку.');
+    } finally {
+      this.saving.set(false);
+    }
+  }
+
+  private async loadPreview(exerciseId: string): Promise<void> {
+    try {
+      const preview = await firstValueFrom(this.exercisesApi.createVideoReadUrl(exerciseId));
+      this.previewUrl.set(preview.read_url);
+    } catch {
+      this.message.set('Видео пока недоступно для предпросмотра.');
+    }
   }
 }

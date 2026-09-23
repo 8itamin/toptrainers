@@ -5,6 +5,7 @@ import '@angular/compiler';
 import { TestBed } from '@angular/core/testing';
 import { provideRouter } from '@angular/router';
 import { BrowserTestingModule, platformBrowserTesting } from '@angular/platform-browser/testing';
+import { ExercisesApi } from '@toptrainers/shared/data-access';
 import { beforeAll, describe, expect, it } from 'vitest';
 
 import { ExerciseEditorComponent } from './exercise-editor.component';
@@ -15,7 +16,12 @@ beforeAll(() => {
 
 describe('exercise editor layout', () => {
   it('places description under the name, keeps direction single-value, and explains category choices', () => {
-    TestBed.configureTestingModule({ providers: [provideRouter([])] });
+    TestBed.configureTestingModule({
+      providers: [
+        provideRouter([]),
+        { provide: ExercisesApi, useValue: {} },
+      ],
+    });
     const fixture = TestBed.createComponent(ExerciseEditorComponent);
 
     fixture.detectChanges();

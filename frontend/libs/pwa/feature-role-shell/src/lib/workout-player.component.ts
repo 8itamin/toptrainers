@@ -90,6 +90,15 @@ import {
                   @if (exercise.instruction) {
                     <span class="instruction">{{ exercise.instruction }}</span>
                   }
+                  @if (exercise.video_media_id) {
+                    @if (exerciseVideoUrl(exercise.video_media_id); as videoUrl) {
+                      <video class="exercise-video" controls preload="metadata" [src]="videoUrl"></video>
+                    } @else {
+                      <span class="video-loading">Подготавливаем видео техники…</span>
+                    }
+                  } @else if (exercise.video_url) {
+                    <a class="legacy-video" [href]="exercise.video_url" target="_blank" rel="noopener noreferrer">Открыть видео техники</a>
+                  }
                 </span>
               </article>
             }
@@ -148,6 +157,9 @@ import {
     .chips i { border-radius: .375rem; padding: .1875rem .5rem; background: #14181d; color: #f5f7fa; font-style: normal; }
     .chips .chip--lime { color: #c9f24b; }
     .instruction { display: block; margin-top: .5rem; color: #8a94a6; font-size: .75rem; line-height: 1.45; }
+    .exercise-video { display: block; width: 100%; max-height: 15rem; margin-top: .625rem; border-radius: .625rem; background: #0e1116; }
+    .video-loading { display: block; margin-top: .625rem; color: #8a94a6; font: .625rem 'JetBrains Mono', monospace; }
+    .legacy-video { display: inline-block; margin-top: .625rem; color: #c9f24b; font-size: .75rem; }
     .action-bar { position: fixed; right: 0; bottom: calc(3.75rem + env(safe-area-inset-bottom)); left: 0; padding: .875rem 1.25rem; border-top: 1px solid rgb(245 247 250 / 6%); background: #14181d; }
     .cta { width: 100%; height: 3.5rem; border: 0; border-radius: .8125rem; background: #c9f24b; color: #14181d; font-size: 1rem; font-weight: 700; cursor: pointer; }
     .cta:disabled { opacity: .55; cursor: default; }
@@ -167,6 +179,7 @@ export class WorkoutPlayerComponent {
   protected readonly loading = signal(true);
   protected readonly mutating = signal(false);
   protected readonly errorMessage = signal('');
+  protected readonly exerciseVideoUrls = signal<Readonly<Record<string, string>>>({});
   protected readonly lifecycleAction = computed(() => {
     const item = this.plan();
     if (!item) return 'none';
@@ -195,7 +208,9 @@ export class WorkoutPlayerComponent {
 
     this.assignmentsApi.get(assignmentId).subscribe({
       next: (assignment) => {
-        this.plan.set(toWorkoutExecutionPlan(assignment));
+        const plan = toWorkoutExecutionPlan(assignment);
+        this.plan.set(plan);
+        this.loadExerciseVideos(plan);
         this.loadExecution(assignmentId);
       },
       error: (error: unknown) => {
@@ -211,6 +226,10 @@ export class WorkoutPlayerComponent {
 
   protected exerciseCount(plan: WorkoutExecutionPlan): number {
     return plan.blocks.reduce((total, block) => total + block.exercises.length, 0);
+  }
+
+  protected exerciseVideoUrl(mediaId: string): string | null {
+    return this.exerciseVideoUrls()[mediaId] ?? null;
   }
 
   protected startExecution(): void {
@@ -238,6 +257,23 @@ export class WorkoutPlayerComponent {
       },
       complete: () => this.loading.set(false),
     });
+  }
+
+  private loadExerciseVideos(plan: WorkoutExecutionPlan): void {
+    const mediaIds = new Set(
+      plan.blocks.flatMap((block) =>
+        block.exercises
+          .map((exercise) => exercise.video_media_id)
+          .filter((mediaId): mediaId is string => Boolean(mediaId)),
+      ),
+    );
+    for (const mediaId of mediaIds) {
+      this.assignmentsApi.createExerciseMediaReadUrl(plan.assignmentId, mediaId).subscribe({
+        next: ({ read_url }) => {
+          this.exerciseVideoUrls.update((current) => ({ ...current, [mediaId]: read_url }));
+        },
+      });
+    }
   }
 
   private runMutation(request: import('rxjs').Observable<WorkoutExecutionResponse>): void {

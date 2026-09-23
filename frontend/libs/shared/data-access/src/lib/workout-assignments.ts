@@ -6,6 +6,7 @@ import { RUNTIME_CONFIG, type RuntimeConfig } from '@toptrainers/shared/config';
 import {
   WORKOUT_ASSIGNMENT_OPERATIONS,
   type CreateWorkoutAssignmentRequest,
+  type MediaReadUrlResponse,
   type RescheduleWorkoutAssignmentRequest,
   type WorkoutAssignmentResponse,
 } from '@toptrainers/shared/contracts';
@@ -22,6 +23,7 @@ export type WorkoutAssignmentMutationOutcome =
 export function workoutAssignmentOperationPath(
   operation: WorkoutAssignmentOperation,
   assignmentId?: string,
+  mediaId?: string,
 ): `/${string}` {
   const path = WORKOUT_ASSIGNMENT_OPERATIONS[operation].relativePath;
 
@@ -33,7 +35,14 @@ export function workoutAssignmentOperationPath(
     throw new Error(`Assignment id is required for ${operation}`);
   }
 
-  return path.replace('{assignment_id}', encodeURIComponent(assignmentId)) as `/${string}`;
+  const withAssignmentId = path.replace('{assignment_id}', encodeURIComponent(assignmentId));
+  if (operation !== 'createExerciseMediaReadUrl') {
+    return withAssignmentId as `/${string}`;
+  }
+  if (!mediaId) {
+    throw new Error('Media id is required for createExerciseMediaReadUrl');
+  }
+  return withAssignmentId.replace('{media_id}', encodeURIComponent(mediaId)) as `/${string}`;
 }
 
 export function workoutAssignmentListParams(scheduledDate: string): { scheduled_date: string } {
@@ -82,6 +91,16 @@ export class WorkoutAssignmentsApi {
   get(assignmentId: string): Observable<WorkoutAssignmentResponse> {
     return this.http.get<WorkoutAssignmentResponse>(
       apiUrl(this.config, workoutAssignmentOperationPath('get', assignmentId)),
+    );
+  }
+
+  createExerciseMediaReadUrl(
+    assignmentId: string,
+    mediaId: string,
+  ): Observable<MediaReadUrlResponse> {
+    return this.http.post<MediaReadUrlResponse>(
+      apiUrl(this.config, workoutAssignmentOperationPath('createExerciseMediaReadUrl', assignmentId, mediaId)),
+      null,
     );
   }
 

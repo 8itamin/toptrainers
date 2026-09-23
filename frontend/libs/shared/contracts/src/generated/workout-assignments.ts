@@ -15,6 +15,13 @@ export const WORKOUT_ASSIGNMENT_OPERATIONS = {
     "operationId": "getWorkoutAssignment",
     "successStatus": 200
   },
+  "createExerciseMediaReadUrl": {
+    "method": "POST",
+    "path": "/api/v1/assignments/{assignment_id}/exercise-media/{media_id}/read-url",
+    "relativePath": "/assignments/{assignment_id}/exercise-media/{media_id}/read-url",
+    "operationId": "getAssignmentExerciseMediaReadUrl",
+    "successStatus": 200
+  },
   "create": {
     "method": "POST",
     "path": "/api/v1/assignments",
@@ -87,12 +94,14 @@ export interface WorkoutSnapshotExerciseV1 {
   title: string;
   direction: string;
   muscle_group: string;
+  muscle_groups?: Array<string> | null;
   instruction: string;
   reference_url?: string | null;
   video_platform?: string | null;
   video_url?: string | null;
   video_file_url?: string | null;
   thumbnail_url?: string | null;
+  video_media_id?: string | null;
   weight_kg?: number | null;
   sets: number;
   reps: number;

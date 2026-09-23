@@ -40,6 +40,9 @@ describe('workout assignment data access', () => {
     expect(workoutAssignmentOperationPath('get', 'assignment/id')).toBe(
       '/assignments/assignment%2Fid',
     );
+    expect(
+      workoutAssignmentOperationPath('createExerciseMediaReadUrl', 'assignment/id', 'media/id'),
+    ).toBe('/assignments/assignment%2Fid/exercise-media/media%2Fid/read-url');
     expect(workoutAssignmentOperationPath('create')).toBe('/assignments');
     expect(workoutAssignmentOperationPath('reschedule', 'assignment/id')).toBe(
       '/assignments/assignment%2Fid/reschedule',

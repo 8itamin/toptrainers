@@ -1106,6 +1106,72 @@ export const openApiDocument = {
         }
       }
     },
+    "/api/v1/assignments/{assignment_id}/exercise-media/{media_id}/read-url": {
+      "post": {
+        "tags": [
+          "assignments"
+        ],
+        "summary": "Create Assignment Exercise Media Read Url",
+        "operationId": "getAssignmentExerciseMediaReadUrl",
+        "security": [
+          {
+            "HTTPBearer": []
+          }
+        ],
+        "parameters": [
+          {
+            "name": "assignment_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "title": "Assignment Id"
+            }
+          },
+          {
+            "name": "media_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "title": "Media Id"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/MediaReadUrlResponse"
+                }
+              }
+            }
+          },
+          "404": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/BusinessErrorResponse"
+                }
+              }
+            },
+            "description": "Not Found"
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
     "/api/v1/assignments/{assignment_id}/reschedule": {
       "post": {
         "tags": [
@@ -2525,6 +2591,203 @@ export const openApiDocument = {
         ]
       }
     },
+    "/api/v1/exercises/video-uploads": {
+      "post": {
+        "tags": [
+          "exercises"
+        ],
+        "summary": "Create Video Upload",
+        "operationId": "create_video_upload_api_v1_exercises_video_uploads_post",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/ExerciseVideoUploadRequest"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "201": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/CreateUploadResponse"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "HTTPBearer": []
+          }
+        ]
+      }
+    },
+    "/api/v1/exercises/video-uploads/{media_id}/confirm": {
+      "post": {
+        "tags": [
+          "exercises"
+        ],
+        "summary": "Confirm Video Upload",
+        "operationId": "confirm_video_upload_api_v1_exercises_video_uploads__media_id__confirm_post",
+        "security": [
+          {
+            "HTTPBearer": []
+          }
+        ],
+        "parameters": [
+          {
+            "name": "media_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "title": "Media Id"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ConfirmUploadResponse"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/exercises/{exercise_id}": {
+      "patch": {
+        "tags": [
+          "exercises"
+        ],
+        "summary": "Update Exercise",
+        "operationId": "update_exercise_api_v1_exercises__exercise_id__patch",
+        "security": [
+          {
+            "HTTPBearer": []
+          }
+        ],
+        "parameters": [
+          {
+            "name": "exercise_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "title": "Exercise Id"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/ExercisePatch"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ExerciseResponse"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/exercises/{exercise_id}/video/read-url": {
+      "post": {
+        "tags": [
+          "exercises"
+        ],
+        "summary": "Create Exercise Video Read Url",
+        "operationId": "create_exercise_video_read_url_api_v1_exercises__exercise_id__video_read_url_post",
+        "security": [
+          {
+            "HTTPBearer": []
+          }
+        ],
+        "parameters": [
+          {
+            "name": "exercise_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "title": "Exercise Id"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/MediaReadUrlResponse"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
     "/api/v1/workouts": {
       "get": {
         "tags": [
@@ -2825,8 +3088,15 @@ export const openApiDocument = {
           },
           "muscle_group": {
             "type": "string",
-            "maxLength": 64,
-            "minLength": 1,
+            "enum": [
+              "Ноги",
+              "Грудь",
+              "Спина",
+              "Плечи",
+              "Руки",
+              "Кор",
+              "Всё тело"
+            ],
             "title": "Muscle Group"
           },
           "instruction": {
@@ -2908,6 +3178,75 @@ export const openApiDocument = {
         ],
         "title": "ExerciseCreate"
       },
+      "ExercisePatch": {
+        "properties": {
+          "title": {
+            "anyOf": [
+              {
+                "type": "string",
+                "maxLength": 160,
+                "minLength": 1
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Title"
+          },
+          "instruction": {
+            "anyOf": [
+              {
+                "type": "string",
+                "maxLength": 4000
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Instruction"
+          },
+          "muscle_groups": {
+            "anyOf": [
+              {
+                "items": {
+                  "type": "string",
+                  "enum": [
+                    "Ноги",
+                    "Грудь",
+                    "Спина",
+                    "Плечи",
+                    "Руки",
+                    "Кор",
+                    "Всё тело"
+                  ]
+                },
+                "type": "array",
+                "maxItems": 7,
+                "minItems": 1
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Muscle Groups"
+          },
+          "video_media_id": {
+            "anyOf": [
+              {
+                "type": "string",
+                "maxLength": 36,
+                "minLength": 36
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Video Media Id"
+          }
+        },
+        "type": "object",
+        "title": "ExercisePatch"
+      },
       "ExerciseResponse": {
         "properties": {
           "title": {
@@ -2928,8 +3267,15 @@ export const openApiDocument = {
           },
           "muscle_group": {
             "type": "string",
-            "maxLength": 64,
-            "minLength": 1,
+            "enum": [
+              "Ноги",
+              "Грудь",
+              "Спина",
+              "Плечи",
+              "Руки",
+              "Кор",
+              "Всё тело"
+            ],
             "title": "Muscle Group"
           },
           "instruction": {
@@ -3009,6 +3355,33 @@ export const openApiDocument = {
           "trainer_id": {
             "type": "string",
             "title": "Trainer Id"
+          },
+          "muscle_groups": {
+            "items": {
+              "type": "string",
+              "enum": [
+                "Ноги",
+                "Грудь",
+                "Спина",
+                "Плечи",
+                "Руки",
+                "Кор",
+                "Всё тело"
+              ]
+            },
+            "type": "array",
+            "title": "Muscle Groups"
+          },
+          "video_media_id": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Video Media Id"
           }
         },
         "type": "object",
@@ -3017,9 +3390,35 @@ export const openApiDocument = {
           "direction",
           "muscle_group",
           "id",
-          "trainer_id"
+          "trainer_id",
+          "muscle_groups"
         ],
         "title": "ExerciseResponse"
+      },
+      "ExerciseVideoUploadRequest": {
+        "properties": {
+          "content_type": {
+            "type": "string",
+            "enum": [
+              "video/mp4",
+              "video/webm",
+              "video/quicktime"
+            ],
+            "title": "Content Type"
+          },
+          "content_length": {
+            "type": "integer",
+            "maximum": 209715200,
+            "exclusiveMinimum": 0,
+            "title": "Content Length"
+          }
+        },
+        "type": "object",
+        "required": [
+          "content_type",
+          "content_length"
+        ],
+        "title": "ExerciseVideoUploadRequest"
       },
       "HTTPValidationError": {
         "properties": {
@@ -4489,6 +4888,20 @@ export const openApiDocument = {
             "type": "string",
             "title": "Muscle Group"
           },
+          "muscle_groups": {
+            "anyOf": [
+              {
+                "items": {
+                  "type": "string"
+                },
+                "type": "array"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Muscle Groups"
+          },
           "instruction": {
             "type": "string",
             "title": "Instruction"
@@ -4547,6 +4960,17 @@ export const openApiDocument = {
               }
             ],
             "title": "Thumbnail Url"
+          },
+          "video_media_id": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Video Media Id"
           },
           "weight_kg": {
             "anyOf": [

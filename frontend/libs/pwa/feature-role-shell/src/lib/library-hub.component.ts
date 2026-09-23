@@ -1,5 +1,9 @@
-import { ChangeDetectionStrategy, Component, computed, HostListener, signal } from '@angular/core';
+import { ChangeDetectionStrategy, Component, computed, HostListener, inject, signal } from '@angular/core';
 import { RouterLink } from '@angular/router';
+import { firstValueFrom } from 'rxjs';
+
+import { ExercisesApi } from '@toptrainers/shared/data-access';
+import type { ExerciseResponse } from '@toptrainers/shared/contracts';
 
 import { ExerciseEditorComponent } from './exercise-editor.component';
 import {
@@ -12,19 +16,8 @@ import { TrainerTasksComponent } from './trainer-tasks.component';
 import { TrainerSidebarComponent } from './trainer-sidebar.component';
 
 type Tab = 'exercises' | 'workouts' | 'programs' | 'tasks';
-type Direction = 'all' | 'strength' | 'speed' | 'endurance' | 'mobility' | 'technique';
+type Direction = 'all' | 'strength' | 'speed' | 'agility' | 'cardio';
 type ExerciseDirection = Exclude<Direction, 'all'>;
-
-interface ExerciseCard {
-  id: string;
-  title: string;
-  duration: string | null;
-  direction: ExerciseDirection;
-  directionLabel: string;
-  directionTone: 'lime' | 'copper' | 'blue';
-  group: string;
-  count: string;
-}
 
 interface WorkoutRow { id: string; title: string; meta: string; tone: 'lime' | 'blue'; }
 interface ProgramRow { id: string; title: string; meta: string; assigned: number; }
@@ -33,24 +26,13 @@ const DIRECTIONS: readonly { key: Direction; label: string }[] = [
   { key: 'all', label: 'Все' },
   { key: 'strength', label: 'Сила' },
   { key: 'speed', label: 'Скорость' },
-  { key: 'endurance', label: 'Выносливость' },
-  { key: 'mobility', label: 'Мобильность' },
-  { key: 'technique', label: 'Техника' },
+  { key: 'agility', label: 'Ловкость' },
+  { key: 'cardio', label: 'Кардио' },
 ];
 
 const MUSCLES: readonly { name: string; count: number }[] = [
   { name: 'Ноги', count: 42 }, { name: 'Грудь', count: 28 }, { name: 'Спина', count: 34 },
   { name: 'Плечи', count: 21 }, { name: 'Руки', count: 30 }, { name: 'Кор', count: 26 }, { name: 'Всё тело', count: 33 },
-];
-
-const EXERCISES: readonly ExerciseCard[] = [
-  { id: 'squat', title: 'Присед со штангой', duration: '0:42', direction: 'strength', directionLabel: 'СИЛА', directionTone: 'lime', group: 'НОГИ', count: 'КГ×ПОВТ' },
-  { id: 'legpress', title: 'Жим ногами', duration: '0:31', direction: 'strength', directionLabel: 'СИЛА', directionTone: 'lime', group: 'НОГИ', count: 'КГ×ПОВТ' },
-  { id: 'lunges', title: 'Выпады с гантелями', duration: '0:28', direction: 'strength', directionLabel: 'СИЛА', directionTone: 'lime', group: 'НОГИ', count: 'КГ×ПОВТ' },
-  { id: 'bulgarian', title: 'Болгарский присед', duration: null, direction: 'strength', directionLabel: 'СИЛА', directionTone: 'lime', group: 'НОГИ', count: 'ПОВТ' },
-  { id: 'plank', title: 'Планка на локтях', duration: '0:19', direction: 'endurance', directionLabel: 'ВЫНОСЛ.', directionTone: 'blue', group: 'КОР', count: 'ВРЕМЯ' },
-  { id: 'sprint', title: 'Спринт 30 м', duration: '0:24', direction: 'speed', directionLabel: 'СКОРОСТЬ', directionTone: 'copper', group: 'НОГИ', count: 'МЕТРЫ' },
-  { id: 'pullups', title: 'Подтягивания', duration: '0:36', direction: 'strength', directionLabel: 'СИЛА', directionTone: 'lime', group: 'СПИНА', count: 'ПОВТ' },
 ];
 
 const WORKOUTS: readonly WorkoutRow[] = [
@@ -79,7 +61,7 @@ const PROGRAMS: readonly ProgramRow[] = [
           <div class="title-row">
             <div class="title-left">
               <span class="h1">Программы</span>
-              <span class="sub">БИБЛИОТЕКА · 214 УПРАЖНЕНИЙ</span>
+              <span class="sub">БИБЛИОТЕКА · {{ exercises().length }} УПРАЖНЕНИЙ</span>
             </div>
             <div class="tools">
               <label class="search"><svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="#5b6472" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="11" cy="11" r="7" /><path d="m20 20-4.5-4.5" /></svg><input type="search" placeholder="Поиск по названию · /" /></label>
@@ -87,7 +69,7 @@ const PROGRAMS: readonly ProgramRow[] = [
             </div>
           </div>
           <div class="tabs">
-            <button type="button" [class.is-active]="tab() === 'exercises'" (click)="tab.set('exercises')">Упражнения <b>214</b></button>
+            <button type="button" [class.is-active]="tab() === 'exercises'" (click)="tab.set('exercises')">Упражнения <b>{{ exercises().length }}</b></button>
             <button type="button" [class.is-active]="tab() === 'workouts'" (click)="tab.set('workouts')">Тренировки <b>38</b></button>
             <button type="button" [class.is-active]="tab() === 'programs'" (click)="tab.set('programs')">Программы <b>9</b></button>
             <button type="button" [class.is-active]="tab() === 'tasks'" (click)="tab.set('tasks')">Задачи <b>12</b></button>
@@ -129,17 +111,17 @@ const PROGRAMS: readonly ProgramRow[] = [
                 </div>
                 <div class="grid">
                   @for (ex of filteredExercises(); track ex.id) {
-                    <button type="button" class="card" (click)="openExerciseModal('edit')">
+                    <button type="button" class="card" (click)="openExerciseModal('edit', ex)">
                       <div class="card-media">
-                        @if (ex.duration) { <span class="card-play"><svg width="16" height="16" viewBox="0 0 24 24" fill="#14181d" stroke="none"><path d="M8 5v14l11-7z" /></svg></span><span class="card-dur">{{ ex.duration }}</span> }
+                        @if (ex.video_media_id) { <span class="card-play"><svg width="16" height="16" viewBox="0 0 24 24" fill="#14181d" stroke="none"><path d="M8 5v14l11-7z" /></svg></span><span class="card-dur">ВИДЕО</span> }
                         @else { <span class="card-novideo">БЕЗ ВИДЕО</span> }
                       </div>
                       <div class="card-body">
                         <div class="card-name">{{ ex.title }}</div>
                         <div class="card-tags">
-                          <span class="ctag" [attr.data-tone]="ex.directionTone">{{ ex.directionLabel }}</span>
-                          <span class="ctag ctag--muted">{{ ex.group }}</span>
-                          <span class="ctag ctag--muted">{{ ex.count }}</span>
+                          <span class="ctag" [attr.data-tone]="directionTone(ex.direction)">{{ directionLabel(ex.direction) }}</span>
+                          <span class="ctag ctag--muted">{{ ex.muscle_groups[0] || ex.muscle_group }}</span>
+                          <span class="ctag ctag--muted">КГ×ПОВТ</span>
                         </div>
                       </div>
                     </button>
@@ -186,7 +168,7 @@ const PROGRAMS: readonly ProgramRow[] = [
       @if (exerciseModal()) {
         <div class="exercise-overlay" (click)="closeExerciseModal()">
           <div class="exercise-dialog" role="dialog" aria-modal="true" [attr.aria-label]="exerciseModal()?.mode === 'create' ? 'Создание упражнения' : 'Редактирование упражнения'" (click)="$event.stopPropagation()">
-            <tt-exercise-editor [embedded]="true" [mode]="exerciseModal()!.mode" (closeRequested)="closeExerciseModal()" />
+            <tt-exercise-editor [embedded]="true" [mode]="exerciseModal()!.mode" [exercise]="selectedExercise()" (closeRequested)="closeExerciseModal()" (saved)="saveExercise($event)" />
           </div>
         </div>
       }
@@ -307,24 +289,27 @@ const PROGRAMS: readonly ProgramRow[] = [
   changeDetection: ChangeDetectionStrategy.OnPush,
 })
 export class LibraryHubComponent {
+  private readonly exercisesApi = inject(ExercisesApi);
+
   protected readonly directions = DIRECTIONS;
   protected readonly muscles = MUSCLES;
-  protected readonly exercises = EXERCISES;
+  protected readonly exercises = signal<readonly ExerciseResponse[]>([]);
   protected readonly workouts = WORKOUTS;
   protected readonly programs = PROGRAMS;
 
   protected readonly tab = signal<Tab>('exercises');
   protected readonly exerciseModal = signal<ExerciseModalState | null>(null);
+  protected readonly selectedExercise = signal<ExerciseResponse | null>(null);
   protected readonly direction = signal<Direction>('all');
   protected readonly selectedMuscles = signal<ReadonlySet<string>>(new Set());
   protected readonly filteredExercises = computed(() => {
     const direction = this.direction();
     const selectedMuscles = this.selectedMuscles();
 
-    return this.exercises.filter(
+    return this.exercises().filter(
       (exercise) =>
         (direction === 'all' || exercise.direction === direction) &&
-        (selectedMuscles.size === 0 || selectedMuscles.has(this.muscleNameFor(exercise.group))),
+        (selectedMuscles.size === 0 || exercise.muscle_groups.some((group) => selectedMuscles.has(group))),
     );
   });
   protected readonly exerciseFilterSummary = computed(() => {
@@ -351,12 +336,18 @@ export class LibraryHubComponent {
     this.selectedMuscles.set(new Set());
   }
 
-  protected openExerciseModal(mode: ExerciseModalMode): void {
+  constructor() {
+    void this.loadExercises();
+  }
+
+  protected openExerciseModal(mode: ExerciseModalMode, exercise: ExerciseResponse | null = null): void {
+    this.selectedExercise.set(mode === 'edit' ? exercise : null);
     this.exerciseModal.set(openExerciseModal(mode));
   }
 
   protected closeExerciseModal(): void {
     this.exerciseModal.set(closeExerciseModal());
+    this.selectedExercise.set(null);
   }
 
   @HostListener('document:keydown.escape')
@@ -366,7 +357,30 @@ export class LibraryHubComponent {
     }
   }
 
-  private muscleNameFor(group: string): string {
-    return group.charAt(0) + group.slice(1).toLocaleLowerCase('ru-RU');
+  protected saveExercise(exercise: ExerciseResponse): void {
+    this.exercises.update((current) => {
+      const existingIndex = current.findIndex((item) => item.id === exercise.id);
+      if (existingIndex < 0) return [exercise, ...current];
+      return current.map((item) => (item.id === exercise.id ? exercise : item));
+    });
+    this.closeExerciseModal();
+  }
+
+  protected directionLabel(direction: ExerciseDirection): string {
+    return this.directions.find((item) => item.key === direction)?.label.toLocaleUpperCase('ru-RU') ?? direction;
+  }
+
+  protected directionTone(direction: ExerciseDirection): 'lime' | 'copper' | 'blue' {
+    if (direction === 'speed') return 'copper';
+    if (direction === 'cardio') return 'blue';
+    return 'lime';
+  }
+
+  private async loadExercises(): Promise<void> {
+    try {
+      this.exercises.set(await firstValueFrom(this.exercisesApi.list()));
+    } catch {
+      this.exercises.set([]);
+    }
   }
 }
