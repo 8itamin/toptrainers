@@ -113,7 +113,7 @@ const PROGRAMS: readonly ProgramRow[] = [
                   @for (ex of filteredExercises(); track ex.id) {
                     <button type="button" class="card" (click)="openExerciseModal('edit', ex)">
                       <div class="card-media">
-                        @if (thumbnailUrl(ex); as thumbnail) { <img class="card-thumbnail" [src]="thumbnail" [alt]="ex.title" width="320" height="180" loading="lazy" decoding="async" /> }
+                        @if (thumbnailUrl(ex); as thumbnail) { <img class="card-thumbnail" [src]="thumbnail" [alt]="ex.title" width="320" height="180" loading="eager" decoding="async" /> }
                         @if (ex.video_media_id) { <span class="card-play"><svg width="16" height="16" viewBox="0 0 24 24" fill="#14181d" stroke="none"><path d="M8 5v14l11-7z" /></svg></span><span class="card-dur">ВИДЕО</span> }
                         @else { <span class="card-novideo">БЕЗ ВИДЕО</span> }
                       </div>
@@ -234,8 +234,8 @@ const PROGRAMS: readonly ProgramRow[] = [
     .card { width: 100%; padding: 0; text-align: left; font: inherit; background: #1c222b; border: 1px solid rgb(245 247 250 / 6%); border-radius: 1rem; overflow: hidden; text-decoration: none; color: inherit; cursor: pointer; }
     .card:first-child { border-color: #c9f24b; }
     .card-media { height: 7.375rem; background: repeating-linear-gradient(135deg, #1c222b, #1c222b 12px, #20272f 12px, #20272f 24px); display: flex; align-items: center; justify-content: center; position: relative; }
-    .card-thumbnail { width: 100%; height: 100%; object-fit: cover; }
-    .card-play { width: 2.375rem; height: 2.375rem; border-radius: 999px; background: rgb(201 242 75 / 90%); display: flex; align-items: center; justify-content: center; }
+    .card-thumbnail { display: block; width: 100%; height: 100%; object-fit: cover; }
+    .card-play { position: absolute; inset: 0; width: 2.375rem; height: 2.375rem; margin: auto; border-radius: 999px; background: rgb(201 242 75 / 90%); display: flex; align-items: center; justify-content: center; }
     .card-dur { position: absolute; right: 0.5625rem; bottom: 0.5625rem; font-family: 'JetBrains Mono', monospace; font-size: 0.625rem; color: #f5f7fa; background: rgb(14 17 22 / 75%); padding: 0.1875rem 0.375rem; border-radius: 0.3125rem; }
     .card-novideo { position: absolute; left: 0.5625rem; top: 0.5625rem; font-family: 'JetBrains Mono', monospace; font-size: 0.5625rem; color: #e8833a; background: rgb(232 131 58 / 16%); padding: 0.1875rem 0.375rem; border-radius: 0.3125rem; }
     .card-body { padding: 0.8125rem 0.875rem 0.9375rem; }

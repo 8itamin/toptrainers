@@ -18,4 +18,12 @@ describe('exercise library filters', () => {
     expect(source).toContain('>Фильтры</h2>');
     expect(source).not.toContain('КАТЕГОРИЯ · ЧТО СЧИТАЕМ');
   });
+
+  it('starts compressed cover requests immediately', () => {
+    expect(source).toContain('width="320" height="180" loading="eager" decoding="async"');
+  });
+
+  it('overlays the play control instead of shrinking it beside the cover', () => {
+    expect(source).toContain('.card-play { position: absolute;');
+  });
 });
