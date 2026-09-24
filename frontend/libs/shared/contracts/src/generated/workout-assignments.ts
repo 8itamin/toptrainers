@@ -102,6 +102,7 @@ export interface WorkoutSnapshotExerciseV1 {
   video_file_url?: string | null;
   thumbnail_url?: string | null;
   video_media_id?: string | null;
+  thumbnail_media_id?: string | null;
   weight_kg?: number | null;
   sets: number;
   reps: number;

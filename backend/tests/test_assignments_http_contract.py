@@ -202,6 +202,7 @@ async def test_assignment_openapi_has_explicit_operation_ids_and_typed_snapshot(
     assert "WorkoutSnapshotExerciseV1" in components
     assert "muscle_groups" in components["WorkoutSnapshotExerciseV1"]["properties"]
     assert "video_media_id" in components["WorkoutSnapshotExerciseV1"]["properties"]
+    assert "thumbnail_media_id" in components["WorkoutSnapshotExerciseV1"]["properties"]
     request = components["CreateWorkoutAssignmentRequest"]["properties"]
     assert set(request) == {"client_id", "workout_id", "scheduled_date", "request_id"}
     assert request["scheduled_date"]["format"] == "date"

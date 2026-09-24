@@ -30,6 +30,21 @@ export const EXERCISE_OPERATIONS = {
     "method": "POST",
     "path": "/api/v1/exercises/{exercise_id}/video/read-url",
     "relativePath": "/exercises/{exercise_id}/video/read-url"
+  },
+  "createThumbnailUpload": {
+    "method": "POST",
+    "path": "/api/v1/exercises/thumbnail-uploads",
+    "relativePath": "/exercises/thumbnail-uploads"
+  },
+  "confirmThumbnailUpload": {
+    "method": "POST",
+    "path": "/api/v1/exercises/thumbnail-uploads/{media_id}/confirm",
+    "relativePath": "/exercises/thumbnail-uploads/{media_id}/confirm"
+  },
+  "createThumbnailReadUrl": {
+    "method": "POST",
+    "path": "/api/v1/exercises/{exercise_id}/thumbnail/read-url",
+    "relativePath": "/exercises/{exercise_id}/thumbnail/read-url"
   }
 } as const;
 
@@ -52,6 +67,7 @@ export interface ExercisePatch {
   instruction?: string | null;
   muscle_groups?: Array<"Ноги" | "Грудь" | "Спина" | "Плечи" | "Руки" | "Кор" | "Всё тело"> | null;
   video_media_id?: string | null;
+  thumbnail_media_id?: string | null;
 }
 
 export interface ExerciseResponse {
@@ -68,6 +84,12 @@ export interface ExerciseResponse {
   trainer_id: string;
   muscle_groups: Array<"Ноги" | "Грудь" | "Спина" | "Плечи" | "Руки" | "Кор" | "Всё тело">;
   video_media_id?: string | null;
+  thumbnail_media_id?: string | null;
+}
+
+export interface ExerciseThumbnailUploadRequest {
+  content_type: "image/jpeg" | "image/png" | "image/webp";
+  content_length: number;
 }
 
 export interface ExerciseVideoUploadRequest {
@@ -85,4 +107,10 @@ export interface CreateUploadResponse {
 export interface ConfirmUploadResponse {
   media_id: string;
   status: string;
+}
+
+export interface ExerciseMediaReadUrlResponse {
+  media_id: string;
+  read_url: string;
+  expires_in_seconds: number;
 }

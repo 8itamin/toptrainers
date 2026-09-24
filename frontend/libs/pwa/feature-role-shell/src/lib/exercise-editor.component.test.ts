@@ -63,4 +63,18 @@ describe('exercise editor layout', () => {
     expect(fixture.nativeElement.querySelector<HTMLButtonElement>('.save')?.disabled).toBe(true);
     expect(fixture.nativeElement.querySelector<HTMLElement>('.video-actions')?.textContent).toContain('Загрузка 0%');
   });
+
+  it('offers a video frame or image file as a private cover', () => {
+    TestBed.configureTestingModule({
+      providers: [
+        provideRouter([]),
+        { provide: ExercisesApi, useValue: {} },
+      ],
+    });
+    const fixture = TestBed.createComponent(ExerciseEditorComponent);
+    fixture.detectChanges();
+
+    expect(fixture.nativeElement.textContent).toContain('Сделать кадр обложкой');
+    expect(fixture.nativeElement.textContent).toContain('Загрузить обложку');
+  });
 });

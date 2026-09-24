@@ -91,6 +91,12 @@ the Compose API continues to use the service names `postgres` and `redis`.
 
 `Tailscale Serve` делает доступным имя самого tailnet-хоста. Для реальных адресов `app.<домен>`, `api.<домен>` и `*.<домен>` потребуются отдельные DNS/TLS и утверждённый публичный ingress. До этого Tailnet разумно использовать для эксплуатации и health-check, а не выдавать его за готовую публичную публикацию.
 
+### Private S3 media CORS
+
+Загрузка и воспроизведение private exercise media идут напрямую между браузером и S3 по короткоживущим signed URL. Поэтому у bucket должен быть CORS-policy с **точным** production origin PWA (например, `https://app.toptrainers.ru`), методами `GET`, `HEAD`, `PUT`, разрешённым request-header `Content-Type` и expose-headers `ETag`, `Content-Length`, `Content-Type`. Это необходимо в том числе для безопасного захвата кадра из уже загруженного видео через canvas.
+
+CORS не делает объекты публичными: bucket и ACL остаются private, а доступ к чтению выдаётся только подписанным URL API. Не используйте wildcard origin в production и проверяйте preflight `OPTIONS` после настройки или замены bucket.
+
 ## CI/CD через GitHub webhook
 
 Проверки CI запускаются GitHub Actions на pull request и push в `main`: frontend проходит install/lint/typecheck/build, backend — ruff/mypy/pytest. Production-деплой отделён от GitHub Actions: GitHub отправляет push-webhook на `https://toptrainers.ru/deploy/github`, а сервер принимает только подписанный HMAC-SHA256 запрос для `refs/heads/main`.

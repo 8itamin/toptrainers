@@ -1,7 +1,7 @@
 import { ChangeDetectionStrategy, Component, computed, inject, signal } from '@angular/core';
 import { ActivatedRoute, RouterLink } from '@angular/router';
 
-import type { WorkoutExecutionResponse } from '@toptrainers/shared/contracts';
+import type { WorkoutExecutionResponse, WorkoutSnapshotExerciseV1 } from '@toptrainers/shared/contracts';
 import {
   isWorkoutExecutionNotFound,
   WorkoutAssignmentsApi,
@@ -74,8 +74,8 @@ import {
             <h2>{{ block.kind }}</h2>
             @for (exercise of block.exercises; track exercise.position) {
               <article class="exercise">
-                @if (exercise.thumbnail_url) {
-                  <img class="exercise-media" [src]="exercise.thumbnail_url" [alt]="exercise.title" />
+                @if (exerciseThumbnailUrl(exercise); as thumbnailUrl) {
+                  <img class="exercise-media" [src]="thumbnailUrl" [alt]="exercise.title" />
                 } @else {
                   <span class="exercise-media exercise-media--placeholder" aria-hidden="true">{{ exercise.position + 1 }}</span>
                 }
@@ -92,7 +92,7 @@ import {
                   }
                   @if (exercise.video_media_id) {
                     @if (exerciseVideoUrl(exercise.video_media_id); as videoUrl) {
-                      <video class="exercise-video" controls preload="metadata" [src]="videoUrl"></video>
+                      <video class="exercise-video" controls preload="metadata" [poster]="exerciseThumbnailUrl(exercise)" [src]="videoUrl"></video>
                     } @else {
                       <span class="video-loading">Подготавливаем видео техники…</span>
                     }
@@ -180,6 +180,7 @@ export class WorkoutPlayerComponent {
   protected readonly mutating = signal(false);
   protected readonly errorMessage = signal('');
   protected readonly exerciseVideoUrls = signal<Readonly<Record<string, string>>>({});
+  protected readonly exerciseThumbnailUrls = signal<Readonly<Record<string, string>>>({});
   protected readonly lifecycleAction = computed(() => {
     const item = this.plan();
     if (!item) return 'none';
@@ -210,7 +211,7 @@ export class WorkoutPlayerComponent {
       next: (assignment) => {
         const plan = toWorkoutExecutionPlan(assignment);
         this.plan.set(plan);
-        this.loadExerciseVideos(plan);
+        this.loadExerciseMedia(plan);
         this.loadExecution(assignmentId);
       },
       error: (error: unknown) => {
@@ -230,6 +231,10 @@ export class WorkoutPlayerComponent {
 
   protected exerciseVideoUrl(mediaId: string): string | null {
     return this.exerciseVideoUrls()[mediaId] ?? null;
+  }
+
+  protected exerciseThumbnailUrl(exercise: WorkoutSnapshotExerciseV1): string | null {
+    return this.exerciseThumbnailUrls()[exercise.thumbnail_media_id ?? ''] ?? exercise.thumbnail_url ?? null;
   }
 
   protected startExecution(): void {
@@ -259,18 +264,32 @@ export class WorkoutPlayerComponent {
     });
   }
 
-  private loadExerciseVideos(plan: WorkoutExecutionPlan): void {
-    const mediaIds = new Set(
+  private loadExerciseMedia(plan: WorkoutExecutionPlan): void {
+    const videoMediaIds = new Set(
       plan.blocks.flatMap((block) =>
         block.exercises
           .map((exercise) => exercise.video_media_id)
           .filter((mediaId): mediaId is string => Boolean(mediaId)),
       ),
     );
-    for (const mediaId of mediaIds) {
+    for (const mediaId of videoMediaIds) {
       this.assignmentsApi.createExerciseMediaReadUrl(plan.assignmentId, mediaId).subscribe({
         next: ({ read_url }) => {
           this.exerciseVideoUrls.update((current) => ({ ...current, [mediaId]: read_url }));
+        },
+      });
+    }
+    const thumbnailMediaIds = new Set(
+      plan.blocks.flatMap((block) =>
+        block.exercises
+          .map((exercise) => exercise.thumbnail_media_id)
+          .filter((mediaId): mediaId is string => Boolean(mediaId)),
+      ),
+    );
+    for (const mediaId of thumbnailMediaIds) {
+      this.assignmentsApi.createExerciseMediaReadUrl(plan.assignmentId, mediaId).subscribe({
+        next: ({ read_url }) => {
+          this.exerciseThumbnailUrls.update((current) => ({ ...current, [mediaId]: read_url }));
         },
       });
     }

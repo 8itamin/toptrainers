@@ -10,5 +10,11 @@ describe('exercise data access paths', () => {
     expect(exerciseOperationPath('confirmVideoUpload', 'media / 1')).toBe(
       '/exercises/video-uploads/media%20%2F%201/confirm',
     );
+    expect(exerciseOperationPath('confirmThumbnailUpload', 'media / 1')).toBe(
+      '/exercises/thumbnail-uploads/media%20%2F%201/confirm',
+    );
+    expect(exerciseOperationPath('createThumbnailReadUrl', 'exercise / 1')).toBe(
+      '/exercises/exercise%20%2F%201/thumbnail/read-url',
+    );
   });
 });

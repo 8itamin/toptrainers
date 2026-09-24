@@ -7,6 +7,7 @@ ExerciseDirection = Literal["speed", "strength", "agility", "cardio"]
 VideoPlatform = Literal["rutube", "youtube", "vk"]
 MuscleGroup = Literal["Ноги", "Грудь", "Спина", "Плечи", "Руки", "Кор", "Всё тело"]
 ExerciseVideoContentType = Literal["video/mp4", "video/webm", "video/quicktime"]
+ExerciseThumbnailContentType = Literal["image/jpeg", "image/png", "image/webp"]
 
 
 class ExerciseCreate(BaseModel):
@@ -47,6 +48,7 @@ class ExerciseResponse(ExerciseCreate):
     trainer_id: str
     muscle_groups: list[MuscleGroup]
     video_media_id: str | None = None
+    thumbnail_media_id: str | None = None
 
 
 class ExercisePatch(BaseModel):
@@ -54,6 +56,7 @@ class ExercisePatch(BaseModel):
     instruction: str | None = Field(default=None, max_length=4_000)
     muscle_groups: list[MuscleGroup] | None = Field(default=None, min_length=1, max_length=7)
     video_media_id: str | None = Field(default=None, min_length=36, max_length=36)
+    thumbnail_media_id: str | None = Field(default=None, min_length=36, max_length=36)
 
     @field_validator("muscle_groups")
     @classmethod
@@ -73,3 +76,8 @@ class ExercisePatch(BaseModel):
 class ExerciseVideoUploadRequest(BaseModel):
     content_type: ExerciseVideoContentType
     content_length: int = Field(gt=0, le=200 * 1024 * 1024)
+
+
+class ExerciseThumbnailUploadRequest(BaseModel):
+    content_type: ExerciseThumbnailContentType
+    content_length: int = Field(gt=0, le=5 * 1024 * 1024)

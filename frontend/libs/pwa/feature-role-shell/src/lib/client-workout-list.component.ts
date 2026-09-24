@@ -2,6 +2,7 @@ import { ChangeDetectionStrategy, Component, inject, signal } from '@angular/cor
 import { ActivatedRoute, RouterLink } from '@angular/router';
 
 import { WorkoutAssignmentsApi } from '@toptrainers/shared/data-access';
+import type { WorkoutSnapshotExerciseV1 } from '@toptrainers/shared/contracts';
 
 import {
   assignmentIdFromQueryParam,
@@ -50,8 +51,8 @@ import { playerQueryParams } from './workout-execution-view';
             <h2>{{ block.kind }}</h2>
             @for (exercise of block.exercises; track exercise.position) {
               <article class="exercise">
-                @if (exercise.thumbnail_url) {
-                  <img class="exercise-media" [src]="exercise.thumbnail_url" [alt]="exercise.title" />
+                @if (exerciseThumbnailUrl(exercise); as thumbnailUrl) {
+                  <img class="exercise-media" [src]="thumbnailUrl" [alt]="exercise.title" />
                 } @else {
                   <span class="exercise-media exercise-media--placeholder" aria-hidden="true">{{ exercise.position + 1 }}</span>
                 }
@@ -131,6 +132,7 @@ export class ClientWorkoutListComponent {
   protected readonly assignment = signal<ClientWorkoutAssignmentDetails | null>(null);
   protected readonly loading = signal(true);
   protected readonly errorMessage = signal('');
+  protected readonly thumbnailUrls = signal<Readonly<Record<string, string>>>({});
 
   constructor() {
     const assignmentId = assignmentIdFromQueryParam(
@@ -143,7 +145,11 @@ export class ClientWorkoutListComponent {
     }
 
     this.assignmentsApi.get(assignmentId).subscribe({
-      next: (assignment) => this.assignment.set(toClientAssignmentDetails(assignment)),
+      next: (assignment) => {
+        const details = toClientAssignmentDetails(assignment);
+        this.assignment.set(details);
+        this.loadExerciseThumbnails(details.id, details.blocks);
+      },
       error: (error: unknown) => {
         this.errorMessage.set(clientAssignmentReadErrorMessage(error));
         this.loading.set(false);
@@ -158,5 +164,29 @@ export class ClientWorkoutListComponent {
 
   protected playerParams(assignmentId: string): { assignment_id: string } {
     return playerQueryParams(assignmentId);
+  }
+
+  protected exerciseThumbnailUrl(exercise: WorkoutSnapshotExerciseV1): string | null {
+    return this.thumbnailUrls()[exercise.thumbnail_media_id ?? ''] ?? exercise.thumbnail_url ?? null;
+  }
+
+  private loadExerciseThumbnails(
+    assignmentId: string,
+    blocks: ReadonlyArray<{ exercises: ReadonlyArray<WorkoutSnapshotExerciseV1> }>,
+  ): void {
+    const mediaIds = new Set(
+      blocks.flatMap((block) =>
+        block.exercises
+          .map((exercise) => exercise.thumbnail_media_id)
+          .filter((mediaId): mediaId is string => Boolean(mediaId)),
+      ),
+    );
+    for (const mediaId of mediaIds) {
+      this.assignmentsApi.createExerciseMediaReadUrl(assignmentId, mediaId).subscribe({
+        next: ({ read_url }) => {
+          this.thumbnailUrls.update((current) => ({ ...current, [mediaId]: read_url }));
+        },
+      });
+    }
   }
 }

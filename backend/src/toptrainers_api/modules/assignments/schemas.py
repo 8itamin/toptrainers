@@ -31,6 +31,7 @@ class WorkoutSnapshotExerciseV1(BaseModel):
     video_file_url: str | None = None
     thumbnail_url: str | None = None
     video_media_id: str | None = None
+    thumbnail_media_id: str | None = None
     weight_kg: float | None = None
     sets: int
     reps: int

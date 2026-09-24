@@ -101,6 +101,7 @@ def build_workout_snapshot_v1(
                     video_file_url=exercise.video_file_url,
                     thumbnail_url=exercise.thumbnail_url,
                     video_media_id=exercise.video_media_id,
+                    thumbnail_media_id=exercise.thumbnail_media_id,
                     weight_kg=float(item.weight_kg) if item.weight_kg is not None else None,
                     sets=item.sets,
                     reps=item.reps,
@@ -122,10 +123,20 @@ def build_workout_snapshot_v1(
 
 def snapshot_references_media(snapshot: WorkoutSnapshotV1, media_id: str) -> bool:
     return any(
-        item.video_media_id == media_id
+        item.video_media_id == media_id or item.thumbnail_media_id == media_id
         for block in snapshot.blocks
         for item in block.exercises
     )
+
+
+def snapshot_media_purpose(snapshot: WorkoutSnapshotV1, media_id: str) -> str | None:
+    for block in snapshot.blocks:
+        for item in block.exercises:
+            if item.video_media_id == media_id:
+                return media_service.EXERCISE_VIDEO_POLICY.purpose
+            if item.thumbnail_media_id == media_id:
+                return media_service.EXERCISE_THUMBNAIL_POLICY.purpose
+    return None
 
 
 async def create_assignment_exercise_media_read_url(
@@ -148,13 +159,14 @@ async def create_assignment_exercise_media_read_url(
     ):
         raise _not_found("ASSIGNMENT_NOT_FOUND", "Workout assignment was not found")
     snapshot = WorkoutSnapshotV1.model_validate(assignment.workout_snapshot)
-    if not snapshot_references_media(snapshot, media_id):
+    purpose = snapshot_media_purpose(snapshot, media_id)
+    if purpose is None:
         raise _not_found("EXERCISE_MEDIA_NOT_FOUND", "Exercise media was not found")
     return await media_service.create_authorized_read_url(
         session,
         media_id,
         storage,
-        purpose=media_service.EXERCISE_VIDEO_POLICY.purpose,
+        purpose=purpose,
     )
 
 

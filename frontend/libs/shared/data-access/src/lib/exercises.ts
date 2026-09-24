@@ -10,8 +10,9 @@ import {
   type ExerciseCreate,
   type ExercisePatch,
   type ExerciseResponse,
+  type ExerciseThumbnailUploadRequest,
   type ExerciseVideoUploadRequest,
-  type MediaReadUrlResponse,
+  type ExerciseMediaReadUrlResponse,
 } from '@toptrainers/shared/contracts';
 
 import { apiUrl } from './api-url';
@@ -26,7 +27,9 @@ export function exerciseOperationPath(operation: ExerciseOperation, id?: string)
   if (!id) {
     throw new Error(`An ID is required for ${operation}`);
   }
-  const parameter = operation === 'confirmVideoUpload' ? '{media_id}' : '{exercise_id}';
+  const parameter = operation === 'confirmVideoUpload' || operation === 'confirmThumbnailUpload'
+    ? '{media_id}'
+    : '{exercise_id}';
   return path.replace(parameter, encodeURIComponent(id)) as `/${string}`;
 }
 
@@ -93,9 +96,30 @@ export class ExercisesApi {
     );
   }
 
-  createVideoReadUrl(exerciseId: string): Observable<MediaReadUrlResponse> {
-    return this.http.post<MediaReadUrlResponse>(
+  createThumbnailUpload(payload: ExerciseThumbnailUploadRequest): Observable<CreateUploadResponse> {
+    return this.http.post<CreateUploadResponse>(
+      apiUrl(this.config, exerciseOperationPath('createThumbnailUpload')),
+      payload,
+    );
+  }
+
+  confirmThumbnailUpload(mediaId: string): Observable<ConfirmUploadResponse> {
+    return this.http.post<ConfirmUploadResponse>(
+      apiUrl(this.config, exerciseOperationPath('confirmThumbnailUpload', mediaId)),
+      null,
+    );
+  }
+
+  createVideoReadUrl(exerciseId: string): Observable<ExerciseMediaReadUrlResponse> {
+    return this.http.post<ExerciseMediaReadUrlResponse>(
       apiUrl(this.config, exerciseOperationPath('createVideoReadUrl', exerciseId)),
+      null,
+    );
+  }
+
+  createThumbnailReadUrl(exerciseId: string): Observable<ExerciseMediaReadUrlResponse> {
+    return this.http.post<ExerciseMediaReadUrlResponse>(
+      apiUrl(this.config, exerciseOperationPath('createThumbnailReadUrl', exerciseId)),
       null,
     );
   }

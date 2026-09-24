@@ -46,6 +46,7 @@ def test_snapshot_v1_copies_user_visible_exercise_metadata() -> None:
         thumbnail_url="https://example.test/thumb",
         muscle_groups=["Спина", "Руки"],
         video_media_id="m" * 36,
+        thumbnail_media_id="n" * 36,
     )
     item = WorkoutExercise(
         id="i" * 36,
@@ -71,6 +72,7 @@ def test_snapshot_v1_copies_user_visible_exercise_metadata() -> None:
     assert frozen["blocks"][0]["exercises"][0]["weight_kg"] == 50.5
     assert frozen["blocks"][0]["exercises"][0]["muscle_groups"] == ["Спина", "Руки"]
     assert frozen["blocks"][0]["exercises"][0]["video_media_id"] == "m" * 36
+    assert frozen["blocks"][0]["exercises"][0]["thumbnail_media_id"] == "n" * 36
 
     workout.title = "Changed"
     exercise.title = "Changed"

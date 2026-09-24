@@ -131,3 +131,61 @@ async def test_active_client_reads_media_referenced_by_frozen_snapshot(
     )
 
     assert read_url == "https://s3.example/frozen-video"
+
+
+@pytest.mark.asyncio
+async def test_active_client_reads_thumbnail_referenced_by_frozen_snapshot(
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    media_id = "n" * 36
+    assignment = SimpleNamespace(
+        id="a" * 36,
+        relationship_id="r" * 36,
+        workout_snapshot={
+            "title": "Тренировка",
+            "description": "",
+            "blocks": [{"kind": "main", "position": 0, "exercises": [{
+                "source_exercise_id": "e" * 36,
+                "position": 0,
+                "title": "Жим",
+                "direction": "strength",
+                "muscle_group": "Грудь",
+                "instruction": "",
+                "sets": 3,
+                "reps": 10,
+                "thumbnail_media_id": media_id,
+            }]}],
+        },
+    )
+    relationship = SimpleNamespace(
+        id=assignment.relationship_id,
+        client_id="c" * 36,
+        status=RelationshipStatus.ACTIVE.value,
+    )
+    observed_purpose: str | None = None
+
+    async def get_assignment(*_args: object) -> object:
+        return assignment
+
+    async def get_relationship(*_args: object) -> object:
+        return relationship
+
+    async def create_read_url(*_args: object, **kwargs: object) -> str:
+        nonlocal observed_purpose
+        observed_purpose = str(kwargs["purpose"])
+        return "https://s3.example/frozen-thumbnail"
+
+    monkeypatch.setattr(service.repository, "get_assignment", get_assignment)
+    monkeypatch.setattr(service.clients_service, "get_relationship", get_relationship)
+    monkeypatch.setattr(service.media_service, "create_authorized_read_url", create_read_url)
+
+    read_url = await service.create_assignment_exercise_media_read_url(
+        object(),  # type: ignore[arg-type]
+        {"sub": relationship.client_id, "role": "client"},
+        assignment.id,
+        media_id,
+        FakeStorage(),  # type: ignore[arg-type]
+    )
+
+    assert read_url == "https://s3.example/frozen-thumbnail"
+    assert observed_purpose == "EXERCISE_THUMBNAIL"

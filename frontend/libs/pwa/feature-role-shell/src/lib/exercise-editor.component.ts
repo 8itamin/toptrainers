@@ -1,4 +1,4 @@
-import { ChangeDetectionStrategy, Component, computed, effect, inject, input, output, signal } from '@angular/core';
+import { ChangeDetectionStrategy, Component, computed, effect, inject, input, output, signal, viewChild } from '@angular/core';
 import { RouterLink } from '@angular/router';
 import { firstValueFrom } from 'rxjs';
 
@@ -9,12 +9,14 @@ import type { ExerciseModalMode } from './exercise-modal-state';
 import {
   addMuscleGroup,
   canSaveExercise,
+  canSaveExerciseWithThumbnail,
   emptyExerciseDraft,
   EXERCISE_MUSCLE_GROUPS,
   removeMuscleGroup,
   type ExerciseDirection,
   type ExerciseEditorDraft,
   type ExerciseMuscleGroup,
+  type ThumbnailUploadStatus,
   type VideoUploadStatus,
   validateVideoFile,
 } from './exercise-editor-state';
@@ -23,6 +25,64 @@ type Category = 'load' | 'bodyweight' | 'time' | 'distance';
 
 interface DirectionOption { key: ExerciseDirection; label: string; }
 interface CategoryOption { key: Category; title: string; hint: string; }
+
+const THUMBNAIL_TYPES = new Set(['image/jpeg', 'image/png', 'image/webp']);
+const MAX_THUMBNAIL_BYTES = 5 * 1024 * 1024;
+
+function validateThumbnailFile(file: Pick<File, 'size' | 'type'>): string | null {
+  if (!THUMBNAIL_TYPES.has(file.type)) return 'Поддерживаются JPEG, PNG и WebP.';
+  if (file.size <= 0) return 'Выберите непустой файл обложки.';
+  if (file.size > MAX_THUMBNAIL_BYTES) return 'Обложка должна быть не больше 5 МБ.';
+  return null;
+}
+
+function waitForVideoEvent(video: HTMLVideoElement, eventName: 'loadeddata' | 'seeked'): Promise<void> {
+  return new Promise((resolve, reject) => {
+    const cleanup = (): void => {
+      video.removeEventListener(eventName, onComplete);
+      video.removeEventListener('error', onError);
+    };
+    const onComplete = (): void => { cleanup(); resolve(); };
+    const onError = (): void => { cleanup(); reject(new Error('Не удалось получить кадр из видео.')); };
+    video.addEventListener(eventName, onComplete, { once: true });
+    video.addEventListener('error', onError, { once: true });
+  });
+}
+
+async function createThumbnailFromVideo(video: HTMLVideoElement): Promise<File> {
+  if (!video.videoWidth || !video.videoHeight) {
+    throw new Error('Видео ещё не готово для создания обложки.');
+  }
+  const scale = Math.min(1, 1280 / Math.max(video.videoWidth, video.videoHeight));
+  const canvas = document.createElement('canvas');
+  canvas.width = Math.round(video.videoWidth * scale);
+  canvas.height = Math.round(video.videoHeight * scale);
+  canvas.getContext('2d')?.drawImage(video, 0, 0, canvas.width, canvas.height);
+  const blob = await new Promise<Blob | null>((resolve) => canvas.toBlob(resolve, 'image/jpeg', 0.86));
+  if (!blob) throw new Error('Не удалось подготовить изображение обложки.');
+  return new File([blob], `exercise-cover-${Date.now()}.jpg`, { type: 'image/jpeg' });
+}
+
+async function createAutoThumbnail(file: File): Promise<File> {
+  const url = URL.createObjectURL(file);
+  const video = document.createElement('video');
+  video.muted = true;
+  video.preload = 'auto';
+  video.src = url;
+  try {
+    await waitForVideoEvent(video, 'loadeddata');
+    const targetTime = Math.min(1, Math.max(0, video.duration - 0.05));
+    if (Math.abs(video.currentTime - targetTime) > 0.01) {
+      video.currentTime = targetTime;
+      await waitForVideoEvent(video, 'seeked');
+    }
+    return await createThumbnailFromVideo(video);
+  } finally {
+    video.removeAttribute('src');
+    video.load();
+    URL.revokeObjectURL(url);
+  }
+}
 
 const DIRECTIONS: readonly DirectionOption[] = [
   { key: 'strength', label: 'Сила' },
@@ -53,7 +113,7 @@ const CATEGORIES: readonly CategoryOption[] = [
           </div>
           <div class="head-right">
             @if (mode() === 'edit') { <button type="button" class="ghost" (click)="duplicate()">Дублировать</button> }
-            <button type="button" class="save" [disabled]="saving() || isVideoUploading()" (click)="save()">{{ saving() ? 'Сохраняем…' : isVideoUploading() ? 'Загрузка видео…' : 'Сохранить' }}</button>
+            <button type="button" class="save" [disabled]="saving() || isSavingBlocked()" (click)="save()">{{ saving() ? 'Сохраняем…' : isVideoUploading() ? 'Загрузка видео…' : isThumbnailUploading() ? 'Загрузка обложки…' : 'Сохранить' }}</button>
             @if (embedded()) {
               <button type="button" class="close" (click)="closeRequested.emit()" aria-label="Закрыть">✕</button>
             } @else {
@@ -67,7 +127,7 @@ const CATEGORIES: readonly CategoryOption[] = [
             <div class="label">ВИДЕО ТЕХНИКИ</div>
             <div class="video">
               @if (previewUrl()) {
-                <video class="video-preview" controls [src]="previewUrl()"></video>
+                <video #videoPreview class="video-preview" controls crossorigin="anonymous" [poster]="thumbnailPreviewUrl()" [src]="previewUrl()"></video>
               } @else {
                 <div class="video-placeholder">
                 <span class="play"><svg width="22" height="22" viewBox="0 0 24 24" fill="#14181d" stroke="none"><path d="M8 5v14l11-7z" /></svg></span>
@@ -76,9 +136,14 @@ const CATEGORIES: readonly CategoryOption[] = [
             </div>
             <div class="video-actions">
               <input #videoInput class="visually-hidden" type="file" accept="video/mp4,video/webm,video/quicktime" (change)="selectVideo($event)" />
-              <button type="button" class="outline" [class.outline--uploading]="isVideoUploading()" [style.--upload-progress]="(uploadProgress() ?? 0) + '%'" [disabled]="isVideoUploading()" (click)="startOrRetryVideo(videoInput)">
+              <button type="button" class="outline" [class.outline--uploading]="isVideoUploading()" [style.--upload-progress]="(uploadProgress() ?? 0) + '%'" [disabled]="isUploadInProgress()" (click)="startOrRetryVideo(videoInput)">
                 {{ isVideoUploading() ? 'Загрузка ' + uploadProgress() + '%' : videoUploadStatus() === 'failed' ? 'Повторить загрузку' : draft().videoMediaId ? 'Заменить файл' : 'Загрузить файл' }}
               </button>
+            </div>
+            <div class="video-actions video-actions--cover">
+              <input #thumbnailInput class="visually-hidden" type="file" accept="image/jpeg,image/png,image/webp" (change)="selectThumbnail($event)" />
+              <button type="button" class="outline" [disabled]="!previewUrl() || isUploadInProgress()" (click)="captureThumbnail()">Сделать кадр обложкой</button>
+              <button type="button" class="outline" [disabled]="isUploadInProgress()" (click)="thumbnailInput.click()">{{ isThumbnailUploading() ? 'Загрузка обложки…' : 'Загрузить обложку' }}</button>
             </div>
             <div class="note">
               <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#2f5cff" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="9" /><path d="M12 8h.01M11 12h1v5h1" /></svg>
@@ -222,6 +287,7 @@ export class ExerciseEditorComponent {
   readonly saved = output<ExerciseResponse>();
 
   private readonly exercisesApi = inject(ExercisesApi);
+  private readonly previewVideo = viewChild<HTMLVideoElement>('videoPreview');
 
   protected readonly directions = DIRECTIONS;
   protected readonly categories = CATEGORIES;
@@ -229,11 +295,24 @@ export class ExerciseEditorComponent {
   protected readonly category = signal<Category>('load');
   protected readonly draft = signal<ExerciseEditorDraft>(emptyExerciseDraft());
   protected readonly previewUrl = signal<string | null>(null);
+  protected readonly thumbnailPreviewUrl = signal<string | null>(null);
   protected readonly uploadProgress = signal<number | null>(null);
   protected readonly videoUploadStatus = signal<VideoUploadStatus>('idle');
+  protected readonly thumbnailUploadStatus = signal<ThumbnailUploadStatus>('idle');
+  protected readonly thumbnailRequired = signal(false);
   protected readonly isVideoUploading = computed(
     () => !canSaveExercise(this.videoUploadStatus()),
   );
+  protected readonly isThumbnailUploading = computed(() => this.thumbnailUploadStatus() === 'uploading');
+  protected readonly canSave = computed(() => canSaveExerciseWithThumbnail(
+    this.videoUploadStatus(),
+    this.thumbnailUploadStatus(),
+    this.thumbnailRequired(),
+  ));
+  protected readonly isUploadInProgress = computed(
+    () => this.isVideoUploading() || this.isThumbnailUploading(),
+  );
+  protected readonly isSavingBlocked = computed(() => !this.canSave());
   protected readonly saving = signal(false);
   protected readonly message = signal('');
 
@@ -243,8 +322,11 @@ export class ExerciseEditorComponent {
       if (!exercise) {
         this.draft.set(emptyExerciseDraft());
         this.previewUrl.set(null);
+        this.thumbnailPreviewUrl.set(null);
         this.uploadProgress.set(null);
         this.videoUploadStatus.set('idle');
+        this.thumbnailUploadStatus.set('idle');
+        this.thumbnailRequired.set(false);
         return;
       }
       this.draft.set({
@@ -254,13 +336,20 @@ export class ExerciseEditorComponent {
         direction: exercise.direction,
         muscleGroups: exercise.muscle_groups,
         videoMediaId: exercise.video_media_id ?? null,
+        thumbnailMediaId: exercise.thumbnail_media_id ?? null,
         videoFile: null,
       });
       this.previewUrl.set(null);
+      this.thumbnailPreviewUrl.set(null);
       this.uploadProgress.set(null);
       this.videoUploadStatus.set(exercise.video_media_id ? 'uploaded' : 'idle');
+      this.thumbnailUploadStatus.set(exercise.thumbnail_media_id ? 'uploaded' : 'idle');
+      this.thumbnailRequired.set(false);
       if (exercise.video_media_id) {
         void this.loadPreview(exercise.id);
+      }
+      if (exercise.thumbnail_media_id) {
+        void this.loadThumbnailPreview(exercise.id);
       }
     });
   }
@@ -317,13 +406,32 @@ export class ExerciseEditorComponent {
     videoInput.click();
   }
 
+  protected selectThumbnail(event: Event): void {
+    const file = (event.target as HTMLInputElement).files?.item(0);
+    if (!file) return;
+    const validationError = validateThumbnailFile(file);
+    if (validationError) {
+      this.thumbnailUploadStatus.set('failed');
+      this.message.set(validationError);
+      return;
+    }
+    this.thumbnailPreviewUrl.set(URL.createObjectURL(file));
+    void this.uploadThumbnail(file, 'Обложка загружена. Теперь сохраните упражнение.');
+  }
+
+  protected captureThumbnail(): void {
+    const video = this.previewVideo();
+    if (!video) return;
+    void this.captureAndUploadThumbnail(video);
+  }
+
   protected duplicate(): void {
     this.message.set('Дублирование пока не добавлено. Сохраните упражнение и создайте копию вручную.');
   }
 
   protected async save(): Promise<void> {
     const current = this.draft();
-    if (this.isVideoUploading()) return;
+    if (!this.canSave()) return;
     if (!current.title.trim()) {
       this.message.set('Введите название упражнения.');
       return;
@@ -342,6 +450,7 @@ export class ExerciseEditorComponent {
         direction: current.direction,
         muscle_groups: current.muscleGroups,
         video_media_id: current.videoMediaId,
+        thumbnail_media_id: current.thumbnailMediaId,
       };
       let saved: ExerciseResponse;
       if (current.id) {
@@ -362,10 +471,12 @@ export class ExerciseEditorComponent {
         direction: saved.direction,
         muscleGroups: saved.muscle_groups,
         videoMediaId: saved.video_media_id ?? null,
+        thumbnailMediaId: saved.thumbnail_media_id ?? null,
         videoFile: null,
       });
       this.uploadProgress.set(null);
       this.videoUploadStatus.set(saved.video_media_id ? 'uploaded' : 'idle');
+      this.thumbnailUploadStatus.set(saved.thumbnail_media_id ? 'uploaded' : 'idle');
       this.message.set('Упражнение сохранено.');
       this.saved.emit(saved);
     } catch {
@@ -384,8 +495,18 @@ export class ExerciseEditorComponent {
     }
   }
 
+  private async loadThumbnailPreview(exerciseId: string): Promise<void> {
+    try {
+      const preview = await firstValueFrom(this.exercisesApi.createThumbnailReadUrl(exerciseId));
+      this.thumbnailPreviewUrl.set(preview.read_url);
+    } catch {
+      this.message.set('Обложка пока недоступна для предпросмотра.');
+    }
+  }
+
   private async uploadVideo(file: File): Promise<void> {
     this.videoUploadStatus.set('uploading');
+    this.thumbnailRequired.set(true);
     this.uploadProgress.set(0);
     this.message.set('');
     try {
@@ -406,11 +527,50 @@ export class ExerciseEditorComponent {
       }
       this.uploadProgress.set(100);
       this.videoUploadStatus.set('uploaded');
-      this.message.set('Видео загружено. Теперь сохраните упражнение.');
+      this.thumbnailUploadStatus.set('uploading');
+      try {
+        const thumbnail = await createAutoThumbnail(file);
+        this.thumbnailPreviewUrl.set(URL.createObjectURL(thumbnail));
+        await this.uploadThumbnail(thumbnail, 'Видео и обложка загружены. Теперь сохраните упражнение.');
+      } catch {
+        this.thumbnailUploadStatus.set('failed');
+        this.message.set('Видео загружено. Добавьте обложку кадром или отдельным изображением.');
+      }
     } catch (error) {
       this.uploadProgress.set(null);
       this.videoUploadStatus.set('failed');
+      this.thumbnailRequired.set(false);
       this.message.set(error instanceof Error ? error.message : 'Не удалось подготовить загрузку видео.');
+    }
+  }
+
+  private async captureAndUploadThumbnail(video: HTMLVideoElement): Promise<void> {
+    try {
+      const thumbnail = await createThumbnailFromVideo(video);
+      this.thumbnailPreviewUrl.set(URL.createObjectURL(thumbnail));
+      await this.uploadThumbnail(thumbnail, 'Кадр сохранён как обложка. Теперь сохраните упражнение.');
+    } catch (error) {
+      this.message.set(error instanceof Error ? error.message : 'Не удалось сделать кадр обложкой.');
+    }
+  }
+
+  private async uploadThumbnail(file: File, successMessage: string): Promise<void> {
+    this.thumbnailUploadStatus.set('uploading');
+    this.message.set('');
+    try {
+      const upload = await firstValueFrom(this.exercisesApi.createThumbnailUpload({
+        content_type: file.type as 'image/jpeg' | 'image/png' | 'image/webp',
+        content_length: file.size,
+      }));
+      await uploadFileToPresignedUrl(file, upload, () => undefined);
+      const confirmed = await firstValueFrom(this.exercisesApi.confirmThumbnailUpload(upload.media_id));
+      this.draft.update((current) => ({ ...current, thumbnailMediaId: confirmed.media_id }));
+      this.thumbnailUploadStatus.set('uploaded');
+      this.thumbnailRequired.set(false);
+      this.message.set(successMessage);
+    } catch {
+      this.thumbnailUploadStatus.set('failed');
+      this.message.set('Не удалось загрузить обложку. Повторите выбор кадра или изображения.');
     }
   }
 }

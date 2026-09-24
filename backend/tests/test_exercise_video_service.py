@@ -6,7 +6,11 @@ from pydantic import ValidationError
 
 from toptrainers_api.modules.exercises import service
 from toptrainers_api.modules.exercises.models import Exercise
-from toptrainers_api.modules.exercises.schemas import ExercisePatch, ExerciseVideoUploadRequest
+from toptrainers_api.modules.exercises.schemas import (
+    ExercisePatch,
+    ExerciseThumbnailUploadRequest,
+    ExerciseVideoUploadRequest,
+)
 
 
 class MemorySession:
@@ -70,6 +74,24 @@ async def test_video_upload_uses_private_exercise_video_prefix() -> None:
 
 
 @pytest.mark.asyncio
+async def test_thumbnail_upload_uses_private_exercise_thumbnail_prefix() -> None:
+    session = MemorySession()
+    storage = FakeStorage()
+
+    media, upload_url = await service.create_thumbnail_upload(
+        session,  # type: ignore[arg-type]
+        {"sub": "t" * 36, "role": "trainer"},
+        ExerciseThumbnailUploadRequest(content_type="image/jpeg", content_length=123),
+        storage,  # type: ignore[arg-type]
+    )
+
+    assert upload_url == "https://s3.example/video-upload"
+    assert media.purpose == "EXERCISE_THUMBNAIL"
+    assert media.object_key.startswith(f"exercise-thumbnail/{'t' * 36}/")
+    assert storage.created == (media.object_key, "image/jpeg", 123)
+
+
+@pytest.mark.asyncio
 async def test_patch_rejects_media_that_is_not_ready_owned_exercise_video(
     monkeypatch: pytest.MonkeyPatch,
 ) -> None:
@@ -91,6 +113,41 @@ async def test_patch_rejects_media_that_is_not_ready_owned_exercise_video(
 
     monkeypatch.setattr(service.repository, "get_for_trainer", get_owned)
     monkeypatch.setattr(service.media_service, "get_ready_owned_media", get_invalid_media)
+
+    with pytest.raises(HTTPException) as error:
+        await service.update_exercise(
+            MemorySession(),  # type: ignore[arg-type]
+            {"sub": exercise.trainer_id, "role": "trainer"},
+            exercise.id,
+            ExercisePatch(video_media_id="m" * 36),
+        )
+
+    assert error.value.status_code == 422
+    assert exercise.video_media_id is None
+
+
+@pytest.mark.asyncio
+async def test_patch_rejects_new_video_without_ready_thumbnail(
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    exercise = Exercise(
+        id="e" * 36,
+        trainer_id="t" * 36,
+        title="Жим лёжа",
+        direction="strength",
+        muscle_group="Грудь",
+        muscle_groups=["Грудь"],
+        instruction="",
+    )
+
+    async def get_owned(*_args: object) -> Exercise:
+        return exercise
+
+    async def get_valid_media(*_args: object, **_kwargs: object) -> object:
+        return object()
+
+    monkeypatch.setattr(service.repository, "get_for_trainer", get_owned)
+    monkeypatch.setattr(service.media_service, "get_ready_owned_media", get_valid_media)
 
     with pytest.raises(HTTPException) as error:
         await service.update_exercise(

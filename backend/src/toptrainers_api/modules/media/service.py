@@ -34,6 +34,10 @@ class UploadPolicy:
 
 TASK_PHOTO_POLICY = UploadPolicy(purpose="TASK_PHOTO", key_prefix="task-media")
 EXERCISE_VIDEO_POLICY = UploadPolicy(purpose="EXERCISE_VIDEO", key_prefix="exercise-video")
+EXERCISE_THUMBNAIL_POLICY = UploadPolicy(
+    purpose="EXERCISE_THUMBNAIL",
+    key_prefix="exercise-thumbnail",
+)
 
 
 def _not_found() -> HTTPException:

@@ -5,6 +5,7 @@ import {
   emptyExerciseDraft,
   removeMuscleGroup,
   canSaveExercise,
+  canSaveExerciseWithThumbnail,
   validateVideoFile,
 } from './exercise-editor-state';
 
@@ -31,5 +32,12 @@ describe('exercise editor draft state', () => {
     expect(canSaveExercise('idle')).toBe(true);
     expect(canSaveExercise('uploaded')).toBe(true);
     expect(canSaveExercise('failed')).toBe(true);
+  });
+
+  it('requires a confirmed cover after a newly selected video', () => {
+    expect(canSaveExerciseWithThumbnail('uploaded', 'uploading', true)).toBe(false);
+    expect(canSaveExerciseWithThumbnail('uploaded', 'failed', true)).toBe(false);
+    expect(canSaveExerciseWithThumbnail('uploaded', 'uploaded', true)).toBe(true);
+    expect(canSaveExerciseWithThumbnail('uploaded', 'idle', false)).toBe(true);
   });
 });

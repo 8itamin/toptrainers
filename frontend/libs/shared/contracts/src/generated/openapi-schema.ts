@@ -2684,6 +2684,99 @@ export const openApiDocument = {
         }
       }
     },
+    "/api/v1/exercises/thumbnail-uploads": {
+      "post": {
+        "tags": [
+          "exercises"
+        ],
+        "summary": "Create Thumbnail Upload",
+        "operationId": "create_thumbnail_upload_api_v1_exercises_thumbnail_uploads_post",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/ExerciseThumbnailUploadRequest"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "201": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/CreateUploadResponse"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "HTTPBearer": []
+          }
+        ]
+      }
+    },
+    "/api/v1/exercises/thumbnail-uploads/{media_id}/confirm": {
+      "post": {
+        "tags": [
+          "exercises"
+        ],
+        "summary": "Confirm Thumbnail Upload",
+        "operationId": "confirm_thumbnail_upload_api_v1_exercises_thumbnail_uploads__media_id__confirm_post",
+        "security": [
+          {
+            "HTTPBearer": []
+          }
+        ],
+        "parameters": [
+          {
+            "name": "media_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "title": "Media Id"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ConfirmUploadResponse"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
     "/api/v1/exercises/{exercise_id}": {
       "patch": {
         "tags": [
@@ -2748,6 +2841,53 @@ export const openApiDocument = {
         ],
         "summary": "Create Exercise Video Read Url",
         "operationId": "create_exercise_video_read_url_api_v1_exercises__exercise_id__video_read_url_post",
+        "security": [
+          {
+            "HTTPBearer": []
+          }
+        ],
+        "parameters": [
+          {
+            "name": "exercise_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "title": "Exercise Id"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/MediaReadUrlResponse"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/exercises/{exercise_id}/thumbnail/read-url": {
+      "post": {
+        "tags": [
+          "exercises"
+        ],
+        "summary": "Create Exercise Thumbnail Read Url",
+        "operationId": "create_exercise_thumbnail_read_url_api_v1_exercises__exercise_id__thumbnail_read_url_post",
         "security": [
           {
             "HTTPBearer": []
@@ -3242,6 +3382,19 @@ export const openApiDocument = {
               }
             ],
             "title": "Video Media Id"
+          },
+          "thumbnail_media_id": {
+            "anyOf": [
+              {
+                "type": "string",
+                "maxLength": 36,
+                "minLength": 36
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Thumbnail Media Id"
           }
         },
         "type": "object",
@@ -3382,6 +3535,17 @@ export const openApiDocument = {
               }
             ],
             "title": "Video Media Id"
+          },
+          "thumbnail_media_id": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Thumbnail Media Id"
           }
         },
         "type": "object",
@@ -3394,6 +3558,31 @@ export const openApiDocument = {
           "muscle_groups"
         ],
         "title": "ExerciseResponse"
+      },
+      "ExerciseThumbnailUploadRequest": {
+        "properties": {
+          "content_type": {
+            "type": "string",
+            "enum": [
+              "image/jpeg",
+              "image/png",
+              "image/webp"
+            ],
+            "title": "Content Type"
+          },
+          "content_length": {
+            "type": "integer",
+            "maximum": 5242880,
+            "exclusiveMinimum": 0,
+            "title": "Content Length"
+          }
+        },
+        "type": "object",
+        "required": [
+          "content_type",
+          "content_length"
+        ],
+        "title": "ExerciseThumbnailUploadRequest"
       },
       "ExerciseVideoUploadRequest": {
         "properties": {
@@ -4971,6 +5160,17 @@ export const openApiDocument = {
               }
             ],
             "title": "Video Media Id"
+          },
+          "thumbnail_media_id": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Thumbnail Media Id"
           },
           "weight_kg": {
             "anyOf": [

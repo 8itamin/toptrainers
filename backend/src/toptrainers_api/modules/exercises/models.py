@@ -29,3 +29,8 @@ class Exercise(Base):
         nullable=True,
         index=True,
     )
+    thumbnail_media_id: Mapped[str | None] = mapped_column(
+        ForeignKey("media_objects.id", ondelete="SET NULL"),
+        nullable=True,
+        index=True,
+    )
