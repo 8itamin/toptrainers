@@ -10,6 +10,7 @@ from toptrainers_api.modules.exercises.schemas import (
     ExerciseResponse,
     ExerciseThumbnailUploadRequest,
     ExerciseVideoConfirmResponse,
+    ExerciseVideoStreamStatus,
     ExerciseVideoUploadRequest,
 )
 from toptrainers_api.modules.media import service as media_service
@@ -80,7 +81,9 @@ async def confirm_video_upload(
     session: AsyncSession = Depends(get_session),
 ) -> ExerciseVideoConfirmResponse:
     media, stream = await service.confirm_video_upload(session, account, media_id, _storage())
-    stream_status = "READY" if stream.status == "READY" else "PROCESSING"
+    stream_status: ExerciseVideoStreamStatus = (
+        "READY" if stream.status == "READY" else "PROCESSING"
+    )
     return ExerciseVideoConfirmResponse(
         media_id=media.id,
         status="READY",
@@ -94,11 +97,12 @@ async def retry_video_stream(
     account: dict[str, object] = Depends(current_account),
     session: AsyncSession = Depends(get_session),
 ) -> ExerciseVideoConfirmResponse:
-    stream = await service.retry_video_stream(session, account, media_id)
+    await service.retry_video_stream(session, account, media_id)
+    stream_status: ExerciseVideoStreamStatus = "PROCESSING"
     return ExerciseVideoConfirmResponse(
         media_id=media_id,
         status="READY",
-        stream_status="PROCESSING" if stream.status == "PENDING" else stream.status,
+        stream_status=stream_status,
     )
 
 
