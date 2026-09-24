@@ -49,6 +49,36 @@ function waitForVideoEvent(video: HTMLVideoElement, eventName: 'loadeddata' | 's
   });
 }
 
+function waitForVideoFrame(video: HTMLVideoElement): Promise<void> {
+  const hasFrame = (): boolean => (
+    video.videoWidth > 0
+    && video.videoHeight > 0
+    && video.readyState >= HTMLMediaElement.HAVE_CURRENT_DATA
+  );
+  if (hasFrame()) return Promise.resolve();
+
+  return new Promise((resolve, reject) => {
+    const cleanup = (): void => {
+      video.removeEventListener('loadeddata', onReady);
+      video.removeEventListener('canplay', onReady);
+      video.removeEventListener('error', onError);
+    };
+    const onReady = (): void => {
+      if (!hasFrame()) return;
+      cleanup();
+      resolve();
+    };
+    const onError = (): void => {
+      cleanup();
+      reject(new Error('Не удалось получить кадр из видео.'));
+    };
+    video.addEventListener('loadeddata', onReady, { once: true });
+    video.addEventListener('canplay', onReady, { once: true });
+    video.addEventListener('error', onError, { once: true });
+    onReady();
+  });
+}
+
 async function createThumbnailFromVideo(video: HTMLVideoElement): Promise<File> {
   if (!video.videoWidth || !video.videoHeight) {
     throw new Error('Видео ещё не готово для создания обложки.');
@@ -70,7 +100,7 @@ async function createAutoThumbnail(file: File): Promise<File> {
   video.preload = 'auto';
   video.src = url;
   try {
-    await waitForVideoEvent(video, 'loadeddata');
+    await waitForVideoFrame(video);
     const targetTime = Math.min(1, Math.max(0, video.duration - 0.05));
     if (Math.abs(video.currentTime - targetTime) > 0.01) {
       video.currentTime = targetTime;
@@ -546,6 +576,7 @@ export class ExerciseEditorComponent {
 
   private async captureAndUploadThumbnail(video: HTMLVideoElement): Promise<void> {
     try {
+      await waitForVideoFrame(video);
       const thumbnail = await createThumbnailFromVideo(video);
       this.thumbnailPreviewUrl.set(URL.createObjectURL(thumbnail));
       await this.uploadThumbnail(thumbnail, 'Кадр сохранён как обложка. Теперь сохраните упражнение.');

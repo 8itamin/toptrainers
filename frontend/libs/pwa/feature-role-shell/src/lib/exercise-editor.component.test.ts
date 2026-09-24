@@ -77,4 +77,33 @@ describe('exercise editor layout', () => {
     expect(fixture.nativeElement.textContent).toContain('Сделать кадр обложкой');
     expect(fixture.nativeElement.textContent).toContain('Загрузить обложку');
   });
+
+  it('does not reject a manual cover while the selected video metadata is still loading', async () => {
+    TestBed.configureTestingModule({
+      providers: [
+        provideRouter([]),
+        { provide: ExercisesApi, useValue: {} },
+      ],
+    });
+    const fixture = TestBed.createComponent(ExerciseEditorComponent);
+    fixture.detectChanges();
+    const component = fixture.componentInstance as unknown as {
+      previewUrl: { set(value: string | null): void };
+      message(): string;
+      captureThumbnail(): void;
+    };
+    component.previewUrl.set('blob:exercise-preview');
+    fixture.detectChanges();
+    await fixture.whenStable();
+    fixture.detectChanges();
+
+    const video = fixture.nativeElement.querySelector<HTMLVideoElement>('video')!;
+    Object.defineProperty(video, 'videoWidth', { configurable: true, value: 0 });
+    Object.defineProperty(video, 'videoHeight', { configurable: true, value: 0 });
+    Object.defineProperty(component, 'previewVideo', { value: () => video });
+    component.captureThumbnail();
+    await new Promise((resolve) => setTimeout(resolve));
+
+    expect(component.message()).not.toBe('Видео ещё не готово для создания обложки.');
+  });
 });
