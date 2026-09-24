@@ -1,4 +1,4 @@
-import { ChangeDetectionStrategy, Component, computed, effect, inject, input, output, signal, viewChild } from '@angular/core';
+import { ChangeDetectionStrategy, Component, ElementRef, computed, effect, inject, input, output, signal, viewChild } from '@angular/core';
 import { RouterLink } from '@angular/router';
 import { firstValueFrom } from 'rxjs';
 
@@ -317,7 +317,7 @@ export class ExerciseEditorComponent {
   readonly saved = output<ExerciseResponse>();
 
   private readonly exercisesApi = inject(ExercisesApi);
-  private readonly previewVideo = viewChild<HTMLVideoElement>('videoPreview');
+  private readonly previewVideo = viewChild<ElementRef<HTMLVideoElement>>('videoPreview');
 
   protected readonly directions = DIRECTIONS;
   protected readonly categories = CATEGORIES;
@@ -450,7 +450,7 @@ export class ExerciseEditorComponent {
   }
 
   protected captureThumbnail(): void {
-    const video = this.previewVideo();
+    const video = this.previewVideo()?.nativeElement;
     if (!video) return;
     void this.captureAndUploadThumbnail(video);
   }

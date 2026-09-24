@@ -78,7 +78,7 @@ describe('exercise editor layout', () => {
     expect(fixture.nativeElement.textContent).toContain('Загрузить обложку');
   });
 
-  it('does not reject a manual cover while the selected video metadata is still loading', async () => {
+  it('uses the native video when a manual cover is requested from a view child', async () => {
     TestBed.configureTestingModule({
       providers: [
         provideRouter([]),
@@ -100,10 +100,10 @@ describe('exercise editor layout', () => {
     const video = fixture.nativeElement.querySelector<HTMLVideoElement>('video')!;
     Object.defineProperty(video, 'videoWidth', { configurable: true, value: 0 });
     Object.defineProperty(video, 'videoHeight', { configurable: true, value: 0 });
-    Object.defineProperty(component, 'previewVideo', { value: () => video });
+    Object.defineProperty(component, 'previewVideo', { value: () => ({ nativeElement: video }) });
     component.captureThumbnail();
     await new Promise((resolve) => setTimeout(resolve));
 
-    expect(component.message()).not.toBe('Видео ещё не готово для создания обложки.');
+    expect(component.message()).toBe('');
   });
 });
