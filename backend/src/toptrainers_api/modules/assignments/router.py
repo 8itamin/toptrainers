@@ -19,7 +19,7 @@ from toptrainers_api.modules.assignments.schemas import (
     WorkoutExecutionSetResultUpsertRequest,
 )
 from toptrainers_api.modules.media import service as media_service
-from toptrainers_api.modules.media.schemas import MediaReadUrlResponse
+from toptrainers_api.modules.media.schemas import MediaReadUrlResponse, MediaReadUrlsRequest
 from toptrainers_api.modules.media.storage import PrivateS3Storage
 
 router = APIRouter(prefix="/assignments", tags=["assignments"])
@@ -161,6 +161,39 @@ async def create_assignment_exercise_media_read_url(
         read_url=read_url,
         expires_in_seconds=media_service.read_expires_in_seconds(),
     )
+
+
+@router.post(
+    "/{assignment_id}/exercise-media/read-urls",
+    operation_id="getAssignmentExerciseThumbnailReadUrls",
+    response_model=list[MediaReadUrlResponse],
+    responses={404: {"model": BusinessErrorResponse}},
+)
+async def create_assignment_exercise_thumbnail_read_urls(
+    assignment_id: str,
+    payload: MediaReadUrlsRequest,
+    account: CurrentAccountDep,
+    session: SessionDep,
+) -> list[MediaReadUrlResponse]:
+    client_id = _require_client(account)
+    try:
+        urls = await service.create_assignment_exercise_thumbnail_read_urls(
+            session,
+            {**account, "sub": client_id},
+            assignment_id,
+            payload,
+            _storage(),
+        )
+    except BusinessRuleError as error:
+        raise as_http_exception(error) from error
+    return [
+        MediaReadUrlResponse(
+            media_id=media_id,
+            read_url=read_url,
+            expires_in_seconds=media_service.read_expires_in_seconds(),
+        )
+        for media_id, read_url in urls
+    ]
 
 
 @router.get("/{assignment_id}/exercise-media/{media_id}/stream.m3u8", response_class=Response)

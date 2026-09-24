@@ -286,13 +286,15 @@ export class WorkoutPlayerComponent {
           .filter((mediaId): mediaId is string => Boolean(mediaId)),
       ),
     );
-    for (const mediaId of thumbnailMediaIds) {
-      this.assignmentsApi.createExerciseMediaReadUrl(plan.assignmentId, mediaId).subscribe({
-        next: ({ read_url }) => {
-          this.exerciseThumbnailUrls.update((current) => ({ ...current, [mediaId]: read_url }));
-        },
-      });
-    }
+    if (thumbnailMediaIds.size === 0) return;
+    this.assignmentsApi.createExerciseThumbnailReadUrls(plan.assignmentId, [...thumbnailMediaIds]).subscribe({
+      next: (previews) => {
+        this.exerciseThumbnailUrls.update((current) => ({
+          ...current,
+          ...Object.fromEntries(previews.map((preview) => [preview.media_id, preview.read_url])),
+        }));
+      },
+    });
   }
 
   protected refreshExerciseStream(mediaId: string): void {

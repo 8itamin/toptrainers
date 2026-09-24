@@ -1172,6 +1172,77 @@ export const openApiDocument = {
         }
       }
     },
+    "/api/v1/assignments/{assignment_id}/exercise-media/read-urls": {
+      "post": {
+        "tags": [
+          "assignments"
+        ],
+        "summary": "Create Assignment Exercise Thumbnail Read Urls",
+        "operationId": "getAssignmentExerciseThumbnailReadUrls",
+        "security": [
+          {
+            "HTTPBearer": []
+          }
+        ],
+        "parameters": [
+          {
+            "name": "assignment_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "title": "Assignment Id"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/MediaReadUrlsRequest"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "array",
+                  "items": {
+                    "$ref": "#/components/schemas/MediaReadUrlResponse"
+                  },
+                  "title": "Response Getassignmentexercisethumbnailreadurls"
+                }
+              }
+            }
+          },
+          "404": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/BusinessErrorResponse"
+                }
+              }
+            },
+            "description": "Not Found"
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
     "/api/v1/assignments/{assignment_id}/exercise-media/{media_id}/stream.m3u8": {
       "get": {
         "tags": [
@@ -4120,6 +4191,24 @@ export const openApiDocument = {
           "expires_in_seconds"
         ],
         "title": "MediaReadUrlResponse"
+      },
+      "MediaReadUrlsRequest": {
+        "properties": {
+          "media_ids": {
+            "items": {
+              "type": "string"
+            },
+            "type": "array",
+            "maxItems": 200,
+            "minItems": 1,
+            "title": "Media Ids"
+          }
+        },
+        "type": "object",
+        "required": [
+          "media_ids"
+        ],
+        "title": "MediaReadUrlsRequest"
       },
       "MessageResponse": {
         "properties": {

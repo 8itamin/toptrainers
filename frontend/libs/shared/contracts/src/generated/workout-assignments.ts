@@ -22,6 +22,13 @@ export const WORKOUT_ASSIGNMENT_OPERATIONS = {
     "operationId": "getAssignmentExerciseMediaReadUrl",
     "successStatus": 200
   },
+  "createExerciseThumbnailReadUrls": {
+    "method": "POST",
+    "path": "/api/v1/assignments/{assignment_id}/exercise-media/read-urls",
+    "relativePath": "/assignments/{assignment_id}/exercise-media/read-urls",
+    "operationId": "getAssignmentExerciseThumbnailReadUrls",
+    "successStatus": 200
+  },
   "getExerciseStreamManifest": {
     "method": "GET",
     "path": "/api/v1/assignments/{assignment_id}/exercise-media/{media_id}/stream.m3u8",
@@ -119,4 +126,8 @@ export interface WorkoutSnapshotV1 {
   title: string;
   description: string;
   blocks: Array<WorkoutSnapshotBlockV1>;
+}
+
+export interface MediaReadUrlsRequest {
+  media_ids: Array<string>;
 }

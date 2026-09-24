@@ -25,6 +25,7 @@ const ASSIGNMENT_SCHEMA_NAMES = [
   'WorkoutSnapshotBlockV1',
   'WorkoutSnapshotExerciseV1',
   'WorkoutSnapshotV1',
+  'MediaReadUrlsRequest',
 ];
 
 const PROGRAM_SCHEMA_NAMES = [
@@ -230,6 +231,10 @@ const assignmentExerciseMediaReadUrlOperation = findOperation(
   document,
   'getAssignmentExerciseMediaReadUrl',
 );
+const assignmentExerciseThumbnailReadUrlsOperation = findOperation(
+  document,
+  'getAssignmentExerciseThumbnailReadUrls',
+);
 const assignmentExerciseStreamManifestOperation = findOperation(
   document,
   'get_assignment_exercise_stream_manifest_api_v1_assignments__assignment_id__exercise_media__media_id__stream_m3u8_get',
@@ -311,6 +316,12 @@ assertRequiredQueryParameter(listOperation.operation, 'scheduled_date', 'date');
 assertArrayResponseRef(listOperation.operation, '200', 'WorkoutAssignmentResponse');
 assertResponseRef(getOperation.operation, '200', 'WorkoutAssignmentResponse');
 assertResponseRef(assignmentExerciseMediaReadUrlOperation.operation, '200', 'MediaReadUrlResponse');
+assertRequestRef(assignmentExerciseThumbnailReadUrlsOperation.operation, 'MediaReadUrlsRequest');
+assertArrayResponseRef(
+  assignmentExerciseThumbnailReadUrlsOperation.operation,
+  '200',
+  'MediaReadUrlResponse',
+);
 assertRequestRef(createOperation.operation, 'CreateWorkoutAssignmentRequest');
 assertResponseRef(createOperation.operation, '201', 'WorkoutAssignmentResponse');
 assertRequestRef(rescheduleOperation.operation, 'RescheduleWorkoutAssignmentRequest');
@@ -398,6 +409,13 @@ const assignmentOperations = {
     path: assignmentExerciseMediaReadUrlOperation.path,
     relativePath: relativeAssignmentPath(assignmentExerciseMediaReadUrlOperation.path),
     operationId: 'getAssignmentExerciseMediaReadUrl',
+    successStatus: 200,
+  },
+  createExerciseThumbnailReadUrls: {
+    method: assignmentExerciseThumbnailReadUrlsOperation.method,
+    path: assignmentExerciseThumbnailReadUrlsOperation.path,
+    relativePath: relativeAssignmentPath(assignmentExerciseThumbnailReadUrlsOperation.path),
+    operationId: 'getAssignmentExerciseThumbnailReadUrls',
     successStatus: 200,
   },
   getExerciseStreamManifest: {

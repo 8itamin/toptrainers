@@ -181,12 +181,14 @@ export class ClientWorkoutListComponent {
           .filter((mediaId): mediaId is string => Boolean(mediaId)),
       ),
     );
-    for (const mediaId of mediaIds) {
-      this.assignmentsApi.createExerciseMediaReadUrl(assignmentId, mediaId).subscribe({
-        next: ({ read_url }) => {
-          this.thumbnailUrls.update((current) => ({ ...current, [mediaId]: read_url }));
-        },
-      });
-    }
+    if (mediaIds.size === 0) return;
+    this.assignmentsApi.createExerciseThumbnailReadUrls(assignmentId, [...mediaIds]).subscribe({
+      next: (previews) => {
+        this.thumbnailUrls.update((current) => ({
+          ...current,
+          ...Object.fromEntries(previews.map((preview) => [preview.media_id, preview.read_url])),
+        }));
+      },
+    });
   }
 }

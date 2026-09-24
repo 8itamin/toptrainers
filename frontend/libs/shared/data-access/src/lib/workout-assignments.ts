@@ -6,6 +6,7 @@ import { RUNTIME_CONFIG, type RuntimeConfig } from '@toptrainers/shared/config';
 import {
   WORKOUT_ASSIGNMENT_OPERATIONS,
   type CreateWorkoutAssignmentRequest,
+  type MediaReadUrlsRequest,
   type MediaReadUrlResponse,
   type RescheduleWorkoutAssignmentRequest,
   type WorkoutAssignmentResponse,
@@ -101,6 +102,20 @@ export class WorkoutAssignmentsApi {
     return this.http.post<MediaReadUrlResponse>(
       apiUrl(this.config, workoutAssignmentOperationPath('createExerciseMediaReadUrl', assignmentId, mediaId)),
       null,
+    );
+  }
+
+  createExerciseThumbnailReadUrls(
+    assignmentId: string,
+    mediaIds: string[],
+  ): Observable<MediaReadUrlResponse[]> {
+    const payload: MediaReadUrlsRequest = { media_ids: mediaIds };
+    return this.http.post<MediaReadUrlResponse[]>(
+      apiUrl(
+        this.config,
+        workoutAssignmentOperationPath('createExerciseThumbnailReadUrls', assignmentId),
+      ),
+      payload,
     );
   }
 
