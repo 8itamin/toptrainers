@@ -6,6 +6,7 @@ import { RUNTIME_CONFIG, type RuntimeConfig } from '@toptrainers/shared/config';
 import {
   EXERCISE_OPERATIONS,
   type ConfirmUploadResponse,
+  type ExerciseVideoConfirmResponse,
   type CreateUploadResponse,
   type ExerciseCreate,
   type ExercisePatch,
@@ -27,7 +28,7 @@ export function exerciseOperationPath(operation: ExerciseOperation, id?: string)
   if (!id) {
     throw new Error(`An ID is required for ${operation}`);
   }
-  const parameter = operation === 'confirmVideoUpload' || operation === 'confirmThumbnailUpload'
+  const parameter = operation === 'confirmVideoUpload' || operation === 'confirmThumbnailUpload' || operation === 'retryVideoStream'
     ? '{media_id}'
     : '{exercise_id}';
   return path.replace(parameter, encodeURIComponent(id)) as `/${string}`;
@@ -89,9 +90,16 @@ export class ExercisesApi {
     );
   }
 
-  confirmVideoUpload(mediaId: string): Observable<ConfirmUploadResponse> {
-    return this.http.post<ConfirmUploadResponse>(
+  confirmVideoUpload(mediaId: string): Observable<ExerciseVideoConfirmResponse> {
+    return this.http.post<ExerciseVideoConfirmResponse>(
       apiUrl(this.config, exerciseOperationPath('confirmVideoUpload', mediaId)),
+      null,
+    );
+  }
+
+  retryVideoStream(mediaId: string): Observable<ExerciseVideoConfirmResponse> {
+    return this.http.post<ExerciseVideoConfirmResponse>(
+      apiUrl(this.config, exerciseOperationPath('retryVideoStream', mediaId)),
       null,
     );
   }

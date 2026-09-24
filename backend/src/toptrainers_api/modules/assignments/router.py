@@ -163,6 +163,31 @@ async def create_assignment_exercise_media_read_url(
     )
 
 
+@router.get("/{assignment_id}/exercise-media/{media_id}/stream.m3u8", response_class=Response)
+async def get_assignment_exercise_stream_manifest(
+    assignment_id: str,
+    media_id: str,
+    account: CurrentAccountDep,
+    session: SessionDep,
+) -> Response:
+    client_id = _require_client(account)
+    try:
+        manifest = await service.create_assignment_exercise_stream_manifest(
+            session,
+            {**account, "sub": client_id},
+            assignment_id,
+            media_id,
+            _storage(),
+        )
+    except BusinessRuleError as error:
+        raise as_http_exception(error) from error
+    return Response(
+        content=manifest,
+        media_type="application/vnd.apple.mpegurl",
+        headers={"Cache-Control": "no-store"},
+    )
+
+
 @router.post(
     "",
     operation_id="createWorkoutAssignment",

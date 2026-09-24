@@ -25,6 +25,7 @@ export interface ExerciseEditorDraft {
 export type VideoValidationResult = { kind: 'valid' } | { kind: 'error'; message: string };
 export type VideoUploadStatus = 'idle' | 'uploading' | 'uploaded' | 'failed';
 export type ThumbnailUploadStatus = 'idle' | 'uploading' | 'uploaded' | 'failed';
+export type VideoStreamStatus = 'NONE' | 'PROCESSING' | 'READY' | 'FAILED';
 
 const MAX_VIDEO_BYTES = 200 * 1024 * 1024;
 const VIDEO_TYPES = new Set(['video/mp4', 'video/webm', 'video/quicktime']);
@@ -80,10 +81,12 @@ export function canSaveExerciseWithThumbnail(
   videoUploadStatus: VideoUploadStatus,
   thumbnailUploadStatus: ThumbnailUploadStatus,
   thumbnailRequired: boolean,
+  videoStreamStatus: VideoStreamStatus = 'NONE',
 ): boolean {
   return (
     videoUploadStatus !== 'uploading'
     && thumbnailUploadStatus !== 'uploading'
     && (!thumbnailRequired || thumbnailUploadStatus === 'uploaded')
+    && !['PROCESSING', 'FAILED'].includes(videoStreamStatus)
   );
 }

@@ -6,7 +6,10 @@ ENV PYTHONDONTWRITEBYTECODE=1 \
     PIP_NO_CACHE_DIR=1 \
     PATH="/home/appuser/.local/bin:${PATH}"
 
-RUN groupadd --gid 10001 appuser \
+RUN apt-get update \
+    && apt-get install --no-install-recommends --yes ffmpeg \
+    && rm -rf /var/lib/apt/lists/* \
+    && groupadd --gid 10001 appuser \
     && useradd --uid 10001 --gid appuser --create-home --shell /usr/sbin/nologin appuser
 
 WORKDIR /app

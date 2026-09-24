@@ -18,11 +18,12 @@ import {
   toWorkoutExecutionPlan,
   type WorkoutExecutionPlan,
 } from './workout-execution-view';
+import { ExerciseHlsPlayerDirective } from './exercise-hls-player.directive';
 
 @Component({
   selector: 'tt-workout-player',
   standalone: true,
-  imports: [RouterLink],
+  imports: [RouterLink, ExerciseHlsPlayerDirective],
   template: `
     <main class="screen">
       <header class="app-header">
@@ -92,7 +93,7 @@ import {
                   }
                   @if (exercise.video_media_id) {
                     @if (exerciseVideoUrl(exercise.video_media_id); as videoUrl) {
-                      <video class="exercise-video" controls preload="metadata" [poster]="exerciseThumbnailUrl(exercise)" [src]="videoUrl"></video>
+                      <video ttExerciseHlsPlayer class="exercise-video" controls preload="metadata" [poster]="exerciseThumbnailUrl(exercise)" [manifestUrl]="videoUrl" (manifestExpired)="refreshExerciseStream(exercise.video_media_id)"></video>
                     } @else {
                       <span class="video-loading">Подготавливаем видео техники…</span>
                     }
@@ -273,11 +274,10 @@ export class WorkoutPlayerComponent {
       ),
     );
     for (const mediaId of videoMediaIds) {
-      this.assignmentsApi.createExerciseMediaReadUrl(plan.assignmentId, mediaId).subscribe({
-        next: ({ read_url }) => {
-          this.exerciseVideoUrls.update((current) => ({ ...current, [mediaId]: read_url }));
-        },
-      });
+      this.exerciseVideoUrls.update((current) => ({
+        ...current,
+        [mediaId]: this.assignmentsApi.exerciseStreamManifestUrl(plan.assignmentId, mediaId),
+      }));
     }
     const thumbnailMediaIds = new Set(
       plan.blocks.flatMap((block) =>
@@ -293,6 +293,15 @@ export class WorkoutPlayerComponent {
         },
       });
     }
+  }
+
+  protected refreshExerciseStream(mediaId: string): void {
+    const assignmentId = this.plan()?.assignmentId;
+    if (!assignmentId) return;
+    this.exerciseVideoUrls.update((current) => ({
+      ...current,
+      [mediaId]: `${this.assignmentsApi.exerciseStreamManifestUrl(assignmentId, mediaId)}?refresh=${Date.now()}`,
+    }));
   }
 
   private runMutation(request: import('rxjs').Observable<WorkoutExecutionResponse>): void {

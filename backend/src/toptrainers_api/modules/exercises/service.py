@@ -9,10 +9,11 @@ from toptrainers_api.modules.exercises.schemas import (
     ExerciseCreate,
     ExercisePatch,
     ExerciseThumbnailUploadRequest,
+    ExerciseVideoStreamStatus,
     ExerciseVideoUploadRequest,
 )
 from toptrainers_api.modules.media import service as media_service
-from toptrainers_api.modules.media.models import MediaObject
+from toptrainers_api.modules.media.models import ExerciseVideoStream, MediaObject
 from toptrainers_api.modules.media.storage import PrivateS3Storage
 
 
@@ -64,6 +65,12 @@ async def update_exercise(
         )
         if media is None:
             raise HTTPException(status_code=422, detail="Exercise video is not ready or not owned")
+        stream = await media_service.get_exercise_video_stream(
+            session,
+            values["video_media_id"],
+        )
+        if stream is not None and stream.status != "READY":
+            raise HTTPException(status_code=422, detail="Exercise video stream is not ready")
     if "thumbnail_media_id" in values and values["thumbnail_media_id"] is not None:
         media = await media_service.get_ready_owned_media(
             session,
@@ -122,14 +129,56 @@ async def confirm_video_upload(
     account: dict[str, object],
     media_id: str,
     storage: PrivateS3Storage,
-) -> MediaObject:
-    return await media_service.confirm_upload(
+) -> tuple[MediaObject, ExerciseVideoStream]:
+    media = await media_service.confirm_upload(
         session,
         require_trainer(account),
         media_id,
         storage,
         purpose=media_service.EXERCISE_VIDEO_POLICY.purpose,
     )
+    stream = await media_service.enqueue_exercise_video_stream(session, media.id)
+    return media, stream
+
+
+async def get_video_stream_status(
+    session: AsyncSession,
+    media_id: str | None,
+) -> ExerciseVideoStreamStatus:
+    if media_id is None:
+        return "NONE"
+    stream = await media_service.get_exercise_video_stream(session, media_id)
+    if stream is None:
+        return "NONE"
+    if stream.status in {"PENDING", "PROCESSING"}:
+        return "PROCESSING"
+    if stream.status == "READY":
+        return "READY"
+    return "FAILED"
+
+
+async def retry_video_stream(
+    session: AsyncSession,
+    account: dict[str, object],
+    media_id: str,
+) -> ExerciseVideoStream:
+    trainer_id = require_trainer(account)
+    media = await media_service.get_ready_owned_media(
+        session,
+        trainer_id,
+        media_id,
+        purpose=media_service.EXERCISE_VIDEO_POLICY.purpose,
+    )
+    if media is None:
+        raise HTTPException(status_code=404, detail="Media object was not found")
+    stream = await media_service.get_exercise_video_stream(session, media.id)
+    if stream is None or stream.status != "FAILED":
+        raise HTTPException(status_code=409, detail="Exercise video stream cannot be retried")
+    stream.status = "PENDING"
+    stream.lease_expires_at = None
+    stream.last_error_code = None
+    await session.commit()
+    return stream
 
 
 async def create_thumbnail_upload(
@@ -180,6 +229,23 @@ async def create_exercise_video_read_url(
         purpose=media_service.EXERCISE_VIDEO_POLICY.purpose,
     )
     return exercise.video_media_id, read_url
+
+
+async def create_exercise_video_stream_manifest(
+    session: AsyncSession,
+    account: dict[str, object],
+    exercise_id: str,
+    storage: PrivateS3Storage,
+) -> str:
+    trainer_id = require_trainer(account)
+    exercise = await repository.get_for_trainer(session, trainer_id, exercise_id)
+    if exercise is None or exercise.video_media_id is None:
+        raise HTTPException(status_code=404, detail="Exercise video was not found")
+    return await media_service.create_authorized_stream_manifest(
+        session,
+        exercise.video_media_id,
+        storage,
+    )
 
 
 async def create_exercise_thumbnail_read_url(

@@ -19,7 +19,7 @@ beforeAll(() => {
 
 describe('workout player private exercise video', () => {
   it('requests and renders a signed URL only for snapshotted video media', () => {
-    const createExerciseMediaReadUrl = vi.fn(() => of({ read_url: 'https://storage.example/video' }));
+    const exerciseStreamManifestUrl = vi.fn(() => 'https://api.example/stream.m3u8');
     TestBed.configureTestingModule({
       providers: [
         provideRouter([]),
@@ -37,7 +37,7 @@ describe('workout player private exercise video', () => {
                 }] }],
               },
             }),
-            createExerciseMediaReadUrl,
+            exerciseStreamManifestUrl,
           },
         },
         { provide: WorkoutExecutionsApi, useValue: { get: () => throwError(() => new HttpErrorResponse({ status: 404 })) } },
@@ -48,9 +48,9 @@ describe('workout player private exercise video', () => {
     const fixture = TestBed.createComponent(WorkoutPlayerComponent);
     fixture.detectChanges();
 
-    expect(createExerciseMediaReadUrl).toHaveBeenCalledWith('assignment-1', 'media-1');
+    expect(exerciseStreamManifestUrl).toHaveBeenCalledWith('assignment-1', 'media-1');
     expect((fixture.componentInstance as any).exerciseVideoUrl('media-1')).toBe(
-      'https://storage.example/video',
+      'https://api.example/stream.m3u8',
     );
   });
 });

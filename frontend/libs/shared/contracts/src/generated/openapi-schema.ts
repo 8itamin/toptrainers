@@ -1172,6 +1172,55 @@ export const openApiDocument = {
         }
       }
     },
+    "/api/v1/assignments/{assignment_id}/exercise-media/{media_id}/stream.m3u8": {
+      "get": {
+        "tags": [
+          "assignments"
+        ],
+        "summary": "Get Assignment Exercise Stream Manifest",
+        "operationId": "get_assignment_exercise_stream_manifest_api_v1_assignments__assignment_id__exercise_media__media_id__stream_m3u8_get",
+        "security": [
+          {
+            "HTTPBearer": []
+          }
+        ],
+        "parameters": [
+          {
+            "name": "assignment_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "title": "Assignment Id"
+            }
+          },
+          {
+            "name": "media_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "title": "Media Id"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful Response"
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
     "/api/v1/assignments/{assignment_id}/reschedule": {
       "post": {
         "tags": [
@@ -2666,7 +2715,54 @@ export const openApiDocument = {
             "content": {
               "application/json": {
                 "schema": {
-                  "$ref": "#/components/schemas/ConfirmUploadResponse"
+                  "$ref": "#/components/schemas/ExerciseVideoConfirmResponse"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/exercises/video-uploads/{media_id}/retry-stream": {
+      "post": {
+        "tags": [
+          "exercises"
+        ],
+        "summary": "Retry Video Stream",
+        "operationId": "retry_video_stream_api_v1_exercises_video_uploads__media_id__retry_stream_post",
+        "security": [
+          {
+            "HTTPBearer": []
+          }
+        ],
+        "parameters": [
+          {
+            "name": "media_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "title": "Media Id"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ExerciseVideoConfirmResponse"
                 }
               }
             }
@@ -2867,6 +2963,46 @@ export const openApiDocument = {
                 }
               }
             }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/exercises/{exercise_id}/video/stream.m3u8": {
+      "get": {
+        "tags": [
+          "exercises"
+        ],
+        "summary": "Get Exercise Video Stream Manifest",
+        "operationId": "get_exercise_video_stream_manifest_api_v1_exercises__exercise_id__video_stream_m3u8_get",
+        "security": [
+          {
+            "HTTPBearer": []
+          }
+        ],
+        "parameters": [
+          {
+            "name": "exercise_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "title": "Exercise Id"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful Response"
           },
           "422": {
             "description": "Validation Error",
@@ -3546,6 +3682,17 @@ export const openApiDocument = {
               }
             ],
             "title": "Thumbnail Media Id"
+          },
+          "video_stream_status": {
+            "type": "string",
+            "enum": [
+              "NONE",
+              "PROCESSING",
+              "READY",
+              "FAILED"
+            ],
+            "title": "Video Stream Status",
+            "default": "NONE"
           }
         },
         "type": "object",
@@ -3583,6 +3730,36 @@ export const openApiDocument = {
           "content_length"
         ],
         "title": "ExerciseThumbnailUploadRequest"
+      },
+      "ExerciseVideoConfirmResponse": {
+        "properties": {
+          "media_id": {
+            "type": "string",
+            "title": "Media Id"
+          },
+          "status": {
+            "type": "string",
+            "const": "READY",
+            "title": "Status"
+          },
+          "stream_status": {
+            "type": "string",
+            "enum": [
+              "NONE",
+              "PROCESSING",
+              "READY",
+              "FAILED"
+            ],
+            "title": "Stream Status"
+          }
+        },
+        "type": "object",
+        "required": [
+          "media_id",
+          "status",
+          "stream_status"
+        ],
+        "title": "ExerciseVideoConfirmResponse"
       },
       "ExerciseVideoUploadRequest": {
         "properties": {

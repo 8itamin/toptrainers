@@ -73,8 +73,12 @@ dc build api
 dc build pwa
 dc build showcase
 
-printf '%s\n' 'Starting gateway, PWA, showcase and API...'
-dc up -d --no-build gateway pwa showcase api
+printf '%s\n' 'Starting gateway, PWA, showcase, API and video worker...'
+dc up -d --no-build gateway pwa showcase api video-worker
+
+if ! dc ps --status running --services | grep -qx 'video-worker'; then
+    fail "Video worker did not start. Inspect: docker compose logs video-worker"
+fi
 
 gateway_address="$(dc port gateway 8080)"
 [[ -n "$gateway_address" ]] || fail "Could not resolve the gateway port."

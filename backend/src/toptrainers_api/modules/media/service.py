@@ -9,7 +9,8 @@ from fastapi import HTTPException
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from toptrainers_api.modules.media import repository
-from toptrainers_api.modules.media.models import MediaObject
+from toptrainers_api.modules.media.hls import render_signed_hls_manifest
+from toptrainers_api.modules.media.models import ExerciseVideoStream, MediaObject
 from toptrainers_api.modules.media.schemas import CreateUploadRequest
 from toptrainers_api.modules.media.storage import (
     READ_EXPIRES_SECONDS,
@@ -132,6 +133,46 @@ async def get_ready_owned_media(
     if media is None or (purpose is not None and media.purpose != purpose):
         return None
     return media
+
+
+async def enqueue_exercise_video_stream(
+    session: AsyncSession,
+    media_id: str,
+) -> ExerciseVideoStream:
+    """Create the durable HLS job after the owning flow has confirmed a source video."""
+    media = await repository.get_ready_exercise_video(session, media_id)
+    if media is None:
+        raise _not_found()
+    existing_stream = await repository.get_exercise_video_stream(session, media_id)
+    if existing_stream is not None:
+        return existing_stream
+
+    stream = ExerciseVideoStream(source_media_id=media.id, status="PENDING")
+    session.add(stream)
+    await session.commit()
+    return stream
+
+
+async def get_exercise_video_stream(
+    session: AsyncSession,
+    media_id: str,
+) -> ExerciseVideoStream | None:
+    return await repository.get_exercise_video_stream(session, media_id)
+
+
+async def create_authorized_stream_manifest(
+    session: AsyncSession,
+    media_id: str,
+    storage: PrivateS3Storage,
+) -> str:
+    stream = await repository.get_ready_exercise_video_stream(session, media_id)
+    if stream is None or stream.manifest_key is None or stream.segment_prefix is None:
+        raise HTTPException(status_code=404, detail="Exercise video stream is not ready")
+    return render_signed_hls_manifest(
+        storage.get_text(stream.manifest_key),
+        stream.segment_prefix,
+        storage,
+    )
 
 
 def upload_expires_in_seconds() -> int:

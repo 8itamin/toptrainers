@@ -36,11 +36,11 @@ export function workoutAssignmentOperationPath(
   }
 
   const withAssignmentId = path.replace('{assignment_id}', encodeURIComponent(assignmentId));
-  if (operation !== 'createExerciseMediaReadUrl') {
+  if (operation !== 'createExerciseMediaReadUrl' && operation !== 'getExerciseStreamManifest') {
     return withAssignmentId as `/${string}`;
   }
   if (!mediaId) {
-    throw new Error('Media id is required for createExerciseMediaReadUrl');
+    throw new Error('Media id is required for exercise media access');
   }
   return withAssignmentId.replace('{media_id}', encodeURIComponent(mediaId)) as `/${string}`;
 }
@@ -101,6 +101,13 @@ export class WorkoutAssignmentsApi {
     return this.http.post<MediaReadUrlResponse>(
       apiUrl(this.config, workoutAssignmentOperationPath('createExerciseMediaReadUrl', assignmentId, mediaId)),
       null,
+    );
+  }
+
+  exerciseStreamManifestUrl(assignmentId: string, mediaId: string): string {
+    return apiUrl(
+      this.config,
+      workoutAssignmentOperationPath('getExerciseStreamManifest', assignmentId, mediaId),
     );
   }
 

@@ -2,7 +2,15 @@ from __future__ import annotations
 
 from datetime import datetime
 
-from sqlalchemy import CheckConstraint, DateTime, Integer, String, UniqueConstraint
+from sqlalchemy import (
+    CheckConstraint,
+    DateTime,
+    ForeignKey,
+    Index,
+    Integer,
+    String,
+    UniqueConstraint,
+)
 from sqlalchemy.orm import Mapped, mapped_column
 from sqlalchemy.sql import func
 
@@ -28,3 +36,34 @@ class MediaObject(Base):
         DateTime(timezone=True), server_default=func.now(), nullable=False
     )
     confirmed_at: Mapped[datetime | None] = mapped_column(DateTime(timezone=True), nullable=True)
+
+
+class ExerciseVideoStream(Base):
+    __tablename__ = "exercise_video_streams"
+    __table_args__ = (
+        CheckConstraint(
+            "status IN ('PENDING', 'PROCESSING', 'READY', 'FAILED')",
+            name="ck_exercise_video_streams_status",
+        ),
+        CheckConstraint("attempt_count >= 0", name="ck_exercise_video_streams_attempt_count"),
+        Index(
+            "ix_exercise_video_streams_status_lease_expires_at",
+            "status",
+            "lease_expires_at",
+        ),
+    )
+
+    source_media_id: Mapped[str] = mapped_column(
+        ForeignKey("media_objects.id", ondelete="CASCADE"),
+        primary_key=True,
+    )
+    status: Mapped[str] = mapped_column(String(16), nullable=False, default="PENDING")
+    manifest_key: Mapped[str | None] = mapped_column(String(512), nullable=True)
+    segment_prefix: Mapped[str | None] = mapped_column(String(512), nullable=True)
+    duration_seconds: Mapped[int | None] = mapped_column(Integer, nullable=True)
+    attempt_count: Mapped[int] = mapped_column(Integer, nullable=False, default=0)
+    lease_expires_at: Mapped[datetime | None] = mapped_column(
+        DateTime(timezone=True),
+        nullable=True,
+    )
+    last_error_code: Mapped[str | None] = mapped_column(String(64), nullable=True)

@@ -22,6 +22,13 @@ export const WORKOUT_ASSIGNMENT_OPERATIONS = {
     "operationId": "getAssignmentExerciseMediaReadUrl",
     "successStatus": 200
   },
+  "getExerciseStreamManifest": {
+    "method": "GET",
+    "path": "/api/v1/assignments/{assignment_id}/exercise-media/{media_id}/stream.m3u8",
+    "relativePath": "/assignments/{assignment_id}/exercise-media/{media_id}/stream.m3u8",
+    "operationId": "getAssignmentExerciseStreamManifest",
+    "successStatus": 200
+  },
   "create": {
     "method": "POST",
     "path": "/api/v1/assignments",

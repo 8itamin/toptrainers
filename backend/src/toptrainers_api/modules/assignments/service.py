@@ -5,6 +5,7 @@ from datetime import UTC, date, datetime
 from typing import Literal
 from uuid import uuid4
 
+from fastapi import HTTPException
 from sqlalchemy.exc import IntegrityError
 from sqlalchemy.ext.asyncio import AsyncSession
 
@@ -168,6 +169,34 @@ async def create_assignment_exercise_media_read_url(
         storage,
         purpose=purpose,
     )
+
+
+async def create_assignment_exercise_stream_manifest(
+    session: AsyncSession,
+    account: dict[str, object],
+    assignment_id: str,
+    media_id: str,
+    storage: PrivateS3Storage,
+) -> str:
+    if account.get("role") != "client":
+        raise _not_found("ASSIGNMENT_NOT_FOUND", "Workout assignment was not found")
+    assignment = await repository.get_assignment(session, assignment_id)
+    if assignment is None:
+        raise _not_found("ASSIGNMENT_NOT_FOUND", "Workout assignment was not found")
+    relationship = await clients_service.get_relationship(session, assignment.relationship_id)
+    if (
+        relationship is None
+        or relationship.client_id != str(account["sub"])
+        or relationship.status != RelationshipStatus.ACTIVE.value
+    ):
+        raise _not_found("ASSIGNMENT_NOT_FOUND", "Workout assignment was not found")
+    snapshot = WorkoutSnapshotV1.model_validate(assignment.workout_snapshot)
+    if snapshot_media_purpose(snapshot, media_id) != media_service.EXERCISE_VIDEO_POLICY.purpose:
+        raise _not_found("EXERCISE_MEDIA_NOT_FOUND", "Exercise media was not found")
+    try:
+        return await media_service.create_authorized_stream_manifest(session, media_id, storage)
+    except HTTPException:
+        raise _not_found("EXERCISE_MEDIA_NOT_FOUND", "Exercise media was not found") from None
 
 
 def to_response(result: AssignmentResult) -> WorkoutAssignmentResponse:

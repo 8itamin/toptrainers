@@ -146,8 +146,12 @@ async def test_patch_rejects_new_video_without_ready_thumbnail(
     async def get_valid_media(*_args: object, **_kwargs: object) -> object:
         return object()
 
+    async def get_legacy_stream(*_args: object) -> None:
+        return None
+
     monkeypatch.setattr(service.repository, "get_for_trainer", get_owned)
     monkeypatch.setattr(service.media_service, "get_ready_owned_media", get_valid_media)
+    monkeypatch.setattr(service.media_service, "get_exercise_video_stream", get_legacy_stream)
 
     with pytest.raises(HTTPException) as error:
         await service.update_exercise(

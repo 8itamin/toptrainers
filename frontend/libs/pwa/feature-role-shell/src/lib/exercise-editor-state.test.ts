@@ -40,4 +40,9 @@ describe('exercise editor draft state', () => {
     expect(canSaveExerciseWithThumbnail('uploaded', 'uploaded', true)).toBe(true);
     expect(canSaveExerciseWithThumbnail('uploaded', 'idle', false)).toBe(true);
   });
+
+  it('blocks save while a newly uploaded video stream is processing', () => {
+    expect(canSaveExerciseWithThumbnail('uploaded', 'uploaded', true, 'PROCESSING')).toBe(false);
+    expect(canSaveExerciseWithThumbnail('uploaded', 'uploaded', true, 'READY')).toBe(true);
+  });
 });

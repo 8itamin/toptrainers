@@ -17,6 +17,7 @@ import {
   type ExerciseEditorDraft,
   type ExerciseMuscleGroup,
   type ThumbnailUploadStatus,
+  type VideoStreamStatus,
   type VideoUploadStatus,
   validateVideoFile,
 } from './exercise-editor-state';
@@ -143,7 +144,7 @@ const CATEGORIES: readonly CategoryOption[] = [
           </div>
           <div class="head-right">
             @if (mode() === 'edit') { <button type="button" class="ghost" (click)="duplicate()">Дублировать</button> }
-            <button type="button" class="save" [disabled]="saving() || isSavingBlocked()" (click)="save()">{{ saving() ? 'Сохраняем…' : isVideoUploading() ? 'Загрузка видео…' : isThumbnailUploading() ? 'Загрузка обложки…' : 'Сохранить' }}</button>
+            <button type="button" class="save" [disabled]="saving() || isSavingBlocked()" (click)="save()">{{ saving() ? 'Сохраняем…' : isVideoUploading() ? 'Загрузка видео…' : videoStreamStatus() === 'PROCESSING' ? 'Обрабатываем видео…' : isThumbnailUploading() ? 'Загрузка обложки…' : 'Сохранить' }}</button>
             @if (embedded()) {
               <button type="button" class="close" (click)="closeRequested.emit()" aria-label="Закрыть">✕</button>
             } @else {
@@ -170,6 +171,7 @@ const CATEGORIES: readonly CategoryOption[] = [
                 {{ isVideoUploading() ? 'Загрузка ' + uploadProgress() + '%' : videoUploadStatus() === 'failed' ? 'Повторить загрузку' : draft().videoMediaId ? 'Заменить файл' : 'Загрузить файл' }}
               </button>
             </div>
+            @if (videoStreamStatus() === 'PROCESSING') { <p class="message">Обрабатываем видео…</p> }
             <div class="video-actions video-actions--cover">
               <input #thumbnailInput class="visually-hidden" type="file" accept="image/jpeg,image/png,image/webp" (change)="selectThumbnail($event)" />
               <button type="button" class="outline" [disabled]="!previewUrl() || isUploadInProgress()" (click)="captureThumbnail()">Сделать кадр обложкой</button>
@@ -328,6 +330,7 @@ export class ExerciseEditorComponent {
   protected readonly thumbnailPreviewUrl = signal<string | null>(null);
   protected readonly uploadProgress = signal<number | null>(null);
   protected readonly videoUploadStatus = signal<VideoUploadStatus>('idle');
+  protected readonly videoStreamStatus = signal<VideoStreamStatus>('NONE');
   protected readonly thumbnailUploadStatus = signal<ThumbnailUploadStatus>('idle');
   protected readonly thumbnailRequired = signal(false);
   protected readonly isVideoUploading = computed(
@@ -338,6 +341,7 @@ export class ExerciseEditorComponent {
     this.videoUploadStatus(),
     this.thumbnailUploadStatus(),
     this.thumbnailRequired(),
+    this.videoStreamStatus(),
   ));
   protected readonly isUploadInProgress = computed(
     () => this.isVideoUploading() || this.isThumbnailUploading(),
@@ -355,6 +359,7 @@ export class ExerciseEditorComponent {
         this.thumbnailPreviewUrl.set(null);
         this.uploadProgress.set(null);
         this.videoUploadStatus.set('idle');
+        this.videoStreamStatus.set('NONE');
         this.thumbnailUploadStatus.set('idle');
         this.thumbnailRequired.set(false);
         return;
@@ -373,6 +378,7 @@ export class ExerciseEditorComponent {
       this.thumbnailPreviewUrl.set(null);
       this.uploadProgress.set(null);
       this.videoUploadStatus.set(exercise.video_media_id ? 'uploaded' : 'idle');
+      this.videoStreamStatus.set(exercise.video_stream_status ?? 'NONE');
       this.thumbnailUploadStatus.set(exercise.thumbnail_media_id ? 'uploaded' : 'idle');
       this.thumbnailRequired.set(false);
       if (exercise.video_media_id) {
@@ -552,6 +558,7 @@ export class ExerciseEditorComponent {
       try {
         const confirmed = await firstValueFrom(this.exercisesApi.confirmVideoUpload(upload.media_id));
         this.draft.update((current) => ({ ...current, videoMediaId: confirmed.media_id }));
+        this.videoStreamStatus.set(confirmed.stream_status ?? 'PROCESSING');
       } catch {
         throw new Error('Видео загружено, но не удалось подтвердить его сохранение.');
       }

@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+from pathlib import Path
 from typing import Any
 
 import boto3  # type: ignore[import-untyped]
@@ -9,6 +10,7 @@ from toptrainers_api.core.config import Settings, settings
 
 UPLOAD_EXPIRES_SECONDS = 600
 READ_EXPIRES_SECONDS = 300
+HLS_SEGMENT_READ_EXPIRES_SECONDS = 900
 
 
 class PrivateS3Storage:
@@ -61,3 +63,29 @@ class PrivateS3Storage:
                 HttpMethod="GET",
             )
         )
+
+    def create_hls_segment_read_url(self, object_key: str) -> str:
+        return str(
+            self.client.generate_presigned_url(
+                "get_object",
+                Params={"Bucket": self.bucket, "Key": object_key},
+                ExpiresIn=HLS_SEGMENT_READ_EXPIRES_SECONDS,
+                HttpMethod="GET",
+            )
+        )
+
+    def put_file(self, object_key: str, local_path: Path, content_type: str) -> None:
+        self.client.upload_file(
+            str(local_path),
+            self.bucket,
+            object_key,
+            ExtraArgs={"ContentType": content_type},
+        )
+
+    def get_file(self, object_key: str, local_path: Path) -> None:
+        local_path.parent.mkdir(parents=True, exist_ok=True)
+        self.client.download_file(self.bucket, object_key, str(local_path))
+
+    def get_text(self, object_key: str) -> str:
+        response = self.client.get_object(Bucket=self.bucket, Key=object_key)
+        return str(response["Body"].read().decode("utf-8"))

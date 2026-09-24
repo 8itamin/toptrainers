@@ -26,6 +26,11 @@ export const EXERCISE_OPERATIONS = {
     "path": "/api/v1/exercises/video-uploads/{media_id}/confirm",
     "relativePath": "/exercises/video-uploads/{media_id}/confirm"
   },
+  "retryVideoStream": {
+    "method": "POST",
+    "path": "/api/v1/exercises/video-uploads/{media_id}/retry-stream",
+    "relativePath": "/exercises/video-uploads/{media_id}/retry-stream"
+  },
   "createVideoReadUrl": {
     "method": "POST",
     "path": "/api/v1/exercises/{exercise_id}/video/read-url",
@@ -85,6 +90,7 @@ export interface ExerciseResponse {
   muscle_groups: Array<"Ноги" | "Грудь" | "Спина" | "Плечи" | "Руки" | "Кор" | "Всё тело">;
   video_media_id?: string | null;
   thumbnail_media_id?: string | null;
+  video_stream_status?: "NONE" | "PROCESSING" | "READY" | "FAILED";
 }
 
 export interface ExerciseThumbnailUploadRequest {
@@ -102,6 +108,12 @@ export interface CreateUploadResponse {
   upload_url: string;
   upload_headers: Record<string, unknown>;
   expires_in_seconds: number;
+}
+
+export interface ExerciseVideoConfirmResponse {
+  media_id: string;
+  status: string;
+  stream_status: "NONE" | "PROCESSING" | "READY" | "FAILED";
 }
 
 export interface ConfirmUploadResponse {

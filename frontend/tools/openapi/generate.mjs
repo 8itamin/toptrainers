@@ -62,6 +62,7 @@ const EXERCISE_SCHEMA_NAMES = [
   'ExerciseThumbnailUploadRequest',
   'ExerciseVideoUploadRequest',
   'CreateUploadResponse',
+  ['ExerciseVideoConfirmResponse', 'ExerciseVideoConfirmResponse'],
   'ConfirmUploadResponse',
   ['ExerciseMediaReadUrlResponse', 'MediaReadUrlResponse'],
 ];
@@ -227,6 +228,10 @@ const assignmentExerciseMediaReadUrlOperation = findOperation(
   document,
   'getAssignmentExerciseMediaReadUrl',
 );
+const assignmentExerciseStreamManifestOperation = findOperation(
+  document,
+  'get_assignment_exercise_stream_manifest_api_v1_assignments__assignment_id__exercise_media__media_id__stream_m3u8_get',
+);
 const createOperation = findOperation(document, 'createWorkoutAssignment');
 const rescheduleOperation = findOperation(document, 'rescheduleWorkoutAssignment');
 const cancelOperation = findOperation(document, 'cancelWorkoutAssignment');
@@ -270,6 +275,10 @@ const createExerciseVideoUploadOperation = findOperation(
 const confirmExerciseVideoUploadOperation = findOperation(
   document,
   'confirm_video_upload_api_v1_exercises_video_uploads__media_id__confirm_post',
+);
+const retryExerciseVideoStreamOperation = findOperation(
+  document,
+  'retry_video_stream_api_v1_exercises_video_uploads__media_id__retry_stream_post',
 );
 const createExerciseVideoReadUrlOperation = findOperation(
   document,
@@ -325,7 +334,8 @@ assertRequestRef(updateExerciseOperation.operation, 'ExercisePatch');
 assertResponseRef(updateExerciseOperation.operation, '200', 'ExerciseResponse');
 assertRequestRef(createExerciseVideoUploadOperation.operation, 'ExerciseVideoUploadRequest');
 assertResponseRef(createExerciseVideoUploadOperation.operation, '201', 'CreateUploadResponse');
-assertResponseRef(confirmExerciseVideoUploadOperation.operation, '200', 'ConfirmUploadResponse');
+assertResponseRef(confirmExerciseVideoUploadOperation.operation, '200', 'ExerciseVideoConfirmResponse');
+assertResponseRef(retryExerciseVideoStreamOperation.operation, '200', 'ExerciseVideoConfirmResponse');
 assertResponseRef(createExerciseVideoReadUrlOperation.operation, '200', 'MediaReadUrlResponse');
 assertRequestRef(createExerciseThumbnailUploadOperation.operation, 'ExerciseThumbnailUploadRequest');
 assertResponseRef(createExerciseThumbnailUploadOperation.operation, '201', 'CreateUploadResponse');
@@ -360,6 +370,13 @@ const assignmentOperations = {
     path: assignmentExerciseMediaReadUrlOperation.path,
     relativePath: relativeAssignmentPath(assignmentExerciseMediaReadUrlOperation.path),
     operationId: 'getAssignmentExerciseMediaReadUrl',
+    successStatus: 200,
+  },
+  getExerciseStreamManifest: {
+    method: assignmentExerciseStreamManifestOperation.method,
+    path: assignmentExerciseStreamManifestOperation.path,
+    relativePath: relativeAssignmentPath(assignmentExerciseStreamManifestOperation.path),
+    operationId: 'getAssignmentExerciseStreamManifest',
     successStatus: 200,
   },
   create: {
@@ -498,6 +515,7 @@ const exerciseOperations = {
   update: { method: updateExerciseOperation.method, path: updateExerciseOperation.path, relativePath: relativeAssignmentPath(updateExerciseOperation.path) },
   createVideoUpload: { method: createExerciseVideoUploadOperation.method, path: createExerciseVideoUploadOperation.path, relativePath: relativeAssignmentPath(createExerciseVideoUploadOperation.path) },
   confirmVideoUpload: { method: confirmExerciseVideoUploadOperation.method, path: confirmExerciseVideoUploadOperation.path, relativePath: relativeAssignmentPath(confirmExerciseVideoUploadOperation.path) },
+  retryVideoStream: { method: retryExerciseVideoStreamOperation.method, path: retryExerciseVideoStreamOperation.path, relativePath: relativeAssignmentPath(retryExerciseVideoStreamOperation.path) },
   createVideoReadUrl: { method: createExerciseVideoReadUrlOperation.method, path: createExerciseVideoReadUrlOperation.path, relativePath: relativeAssignmentPath(createExerciseVideoReadUrlOperation.path) },
   createThumbnailUpload: { method: createExerciseThumbnailUploadOperation.method, path: createExerciseThumbnailUploadOperation.path, relativePath: relativeAssignmentPath(createExerciseThumbnailUploadOperation.path) },
   confirmThumbnailUpload: { method: confirmExerciseThumbnailUploadOperation.method, path: confirmExerciseThumbnailUploadOperation.path, relativePath: relativeAssignmentPath(confirmExerciseThumbnailUploadOperation.path) },

@@ -8,6 +8,7 @@ VideoPlatform = Literal["rutube", "youtube", "vk"]
 MuscleGroup = Literal["Ноги", "Грудь", "Спина", "Плечи", "Руки", "Кор", "Всё тело"]
 ExerciseVideoContentType = Literal["video/mp4", "video/webm", "video/quicktime"]
 ExerciseThumbnailContentType = Literal["image/jpeg", "image/png", "image/webp"]
+ExerciseVideoStreamStatus = Literal["NONE", "PROCESSING", "READY", "FAILED"]
 
 
 class ExerciseCreate(BaseModel):
@@ -49,6 +50,13 @@ class ExerciseResponse(ExerciseCreate):
     muscle_groups: list[MuscleGroup]
     video_media_id: str | None = None
     thumbnail_media_id: str | None = None
+    video_stream_status: ExerciseVideoStreamStatus = "NONE"
+
+
+class ExerciseVideoConfirmResponse(BaseModel):
+    media_id: str
+    status: Literal["READY"]
+    stream_status: ExerciseVideoStreamStatus
 
 
 class ExercisePatch(BaseModel):

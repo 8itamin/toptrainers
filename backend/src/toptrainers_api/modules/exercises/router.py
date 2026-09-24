@@ -1,4 +1,4 @@
-from fastapi import APIRouter, Depends
+from fastapi import APIRouter, Depends, Response
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from toptrainers_api.core.auth import current_account
@@ -9,6 +9,7 @@ from toptrainers_api.modules.exercises.schemas import (
     ExercisePatch,
     ExerciseResponse,
     ExerciseThumbnailUploadRequest,
+    ExerciseVideoConfirmResponse,
     ExerciseVideoUploadRequest,
 )
 from toptrainers_api.modules.media import service as media_service
@@ -26,13 +27,25 @@ def _storage() -> PrivateS3Storage:
     return PrivateS3Storage()
 
 
+async def _response(session: AsyncSession, exercise: object) -> ExerciseResponse:
+    response = ExerciseResponse.model_validate(exercise, from_attributes=True)
+    return response.model_copy(
+        update={
+            "video_stream_status": await service.get_video_stream_status(
+                session,
+                response.video_media_id,
+            )
+        }
+    )
+
+
 @router.get("", response_model=list[ExerciseResponse])
 async def list_exercises(
     account: dict[str, object] = Depends(current_account),
     session: AsyncSession = Depends(get_session),
 ) -> list[ExerciseResponse]:
     rows = await service.list_exercises(session, account)
-    return [ExerciseResponse.model_validate(row, from_attributes=True) for row in rows]
+    return [await _response(session, row) for row in rows]
 
 
 @router.post("", response_model=ExerciseResponse, status_code=201)
@@ -42,7 +55,7 @@ async def create_exercise(
     session: AsyncSession = Depends(get_session),
 ) -> ExerciseResponse:
     exercise = await service.create_exercise(session, account, payload)
-    return ExerciseResponse.model_validate(exercise, from_attributes=True)
+    return await _response(session, exercise)
 
 
 @router.post("/video-uploads", response_model=CreateUploadResponse, status_code=201)
@@ -60,14 +73,33 @@ async def create_video_upload(
     )
 
 
-@router.post("/video-uploads/{media_id}/confirm", response_model=ConfirmUploadResponse)
+@router.post("/video-uploads/{media_id}/confirm", response_model=ExerciseVideoConfirmResponse)
 async def confirm_video_upload(
     media_id: str,
     account: dict[str, object] = Depends(current_account),
     session: AsyncSession = Depends(get_session),
-) -> ConfirmUploadResponse:
-    media = await service.confirm_video_upload(session, account, media_id, _storage())
-    return ConfirmUploadResponse(media_id=media.id, status="READY")
+) -> ExerciseVideoConfirmResponse:
+    media, stream = await service.confirm_video_upload(session, account, media_id, _storage())
+    stream_status = "READY" if stream.status == "READY" else "PROCESSING"
+    return ExerciseVideoConfirmResponse(
+        media_id=media.id,
+        status="READY",
+        stream_status=stream_status,
+    )
+
+
+@router.post("/video-uploads/{media_id}/retry-stream", response_model=ExerciseVideoConfirmResponse)
+async def retry_video_stream(
+    media_id: str,
+    account: dict[str, object] = Depends(current_account),
+    session: AsyncSession = Depends(get_session),
+) -> ExerciseVideoConfirmResponse:
+    stream = await service.retry_video_stream(session, account, media_id)
+    return ExerciseVideoConfirmResponse(
+        media_id=media_id,
+        status="READY",
+        stream_status="PROCESSING" if stream.status == "PENDING" else stream.status,
+    )
 
 
 @router.post("/thumbnail-uploads", response_model=CreateUploadResponse, status_code=201)
@@ -103,7 +135,7 @@ async def update_exercise(
     session: AsyncSession = Depends(get_session),
 ) -> ExerciseResponse:
     exercise = await service.update_exercise(session, account, exercise_id, payload)
-    return ExerciseResponse.model_validate(exercise, from_attributes=True)
+    return await _response(session, exercise)
 
 
 @router.post("/{exercise_id}/video/read-url", response_model=MediaReadUrlResponse)
@@ -122,6 +154,22 @@ async def create_exercise_video_read_url(
         media_id=media_id,
         read_url=read_url,
         expires_in_seconds=media_service.read_expires_in_seconds(),
+    )
+
+
+@router.get("/{exercise_id}/video/stream.m3u8", response_class=Response)
+async def get_exercise_video_stream_manifest(
+    exercise_id: str,
+    account: dict[str, object] = Depends(current_account),
+    session: AsyncSession = Depends(get_session),
+) -> Response:
+    manifest = await service.create_exercise_video_stream_manifest(
+        session, account, exercise_id, _storage()
+    )
+    return Response(
+        content=manifest,
+        media_type="application/vnd.apple.mpegurl",
+        headers={"Cache-Control": "no-store"},
     )
 
 
