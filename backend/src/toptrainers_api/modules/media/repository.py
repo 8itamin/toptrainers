@@ -3,7 +3,11 @@ from typing import cast
 from sqlalchemy import select
 from sqlalchemy.ext.asyncio import AsyncSession
 
-from toptrainers_api.modules.media.models import ExerciseVideoStream, MediaObject
+from toptrainers_api.modules.media.models import (
+    ExerciseThumbnailJob,
+    ExerciseVideoStream,
+    MediaObject,
+)
 
 
 async def get_for_owner(
@@ -66,6 +70,20 @@ async def get_exercise_video_stream(
         ExerciseVideoStream | None,
         await session.scalar(
             select(ExerciseVideoStream).where(ExerciseVideoStream.source_media_id == media_id)
+        ),
+    )
+
+
+async def get_exercise_thumbnail_job(
+    session: AsyncSession,
+    media_id: str,
+) -> ExerciseThumbnailJob | None:
+    return cast(
+        ExerciseThumbnailJob | None,
+        await session.scalar(
+            select(ExerciseThumbnailJob).where(
+                ExerciseThumbnailJob.source_media_id == media_id
+            )
         ),
     )
 
