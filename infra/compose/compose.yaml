@@ -180,6 +180,34 @@ services:
           cpus: "1.0"
     restart: unless-stopped
 
+  thumbnail-worker:
+    image: toptrainers-api
+    build:
+      context: ./backend
+      dockerfile: Dockerfile
+    command: ["python", "-m", "toptrainers_api.workers.exercise_thumbnails"]
+    environment: *api-environment
+    depends_on:
+      postgres:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+    networks:
+      - edge
+      - data
+    security_opt:
+      - no-new-privileges:true
+    cap_drop:
+      - ALL
+    read_only: true
+    tmpfs:
+      - /tmp
+    deploy:
+      resources:
+        limits:
+          cpus: "1.0"
+    restart: unless-stopped
+
   migrate:
     build:
       context: ./backend

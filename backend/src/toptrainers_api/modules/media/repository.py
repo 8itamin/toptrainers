@@ -62,6 +62,18 @@ async def get_ready_exercise_video(session: AsyncSession, media_id: str) -> Medi
     )
 
 
+async def get_exercise_thumbnail(session: AsyncSession, media_id: str) -> MediaObject | None:
+    return cast(
+        MediaObject | None,
+        await session.scalar(
+            select(MediaObject).where(
+                MediaObject.id == media_id,
+                MediaObject.purpose == "EXERCISE_THUMBNAIL",
+            )
+        ),
+    )
+
+
 async def get_exercise_video_stream(
     session: AsyncSession,
     media_id: str,

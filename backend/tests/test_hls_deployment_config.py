@@ -15,3 +15,15 @@ def test_compose_declares_single_video_worker_with_tmpfs() -> None:
     assert worker["read_only"] is True
     assert worker["tmpfs"] == ["/tmp"]
     assert worker["deploy"]["resources"]["limits"]["cpus"] == "1.0"
+
+
+def test_compose_declares_thumbnail_worker_with_same_hardening() -> None:
+    repository_root = Path(__file__).resolve().parents[2]
+    compose = yaml.safe_load((repository_root / "infra" / "compose" / "compose.yaml").read_text())
+
+    worker = compose["services"]["thumbnail-worker"]
+    assert worker["image"] == compose["services"]["api"]["image"] == "toptrainers-api"
+    assert worker["command"] == ["python", "-m", "toptrainers_api.workers.exercise_thumbnails"]
+    assert worker["read_only"] is True
+    assert worker["tmpfs"] == ["/tmp"]
+    assert worker["deploy"]["resources"]["limits"]["cpus"] == "1.0"
