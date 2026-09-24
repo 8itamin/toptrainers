@@ -116,6 +116,7 @@ services:
     restart: unless-stopped
 
   api:
+    image: toptrainers-api
     build:
       context: ./backend
       dockerfile: Dockerfile
@@ -152,6 +153,7 @@ services:
     restart: unless-stopped
 
   video-worker:
+    image: toptrainers-api
     build:
       context: ./backend
       dockerfile: Dockerfile
