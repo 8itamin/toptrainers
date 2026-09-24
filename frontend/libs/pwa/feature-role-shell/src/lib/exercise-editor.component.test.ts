@@ -52,7 +52,8 @@ describe('exercise editor layout', () => {
     });
     const fixture = TestBed.createComponent(ExerciseEditorComponent);
     fixture.detectChanges();
-    const input = fixture.nativeElement.querySelector<HTMLInputElement>('input[type="file"]')!;
+    const input = fixture.nativeElement.querySelector<HTMLInputElement>('input[type="file"]');
+    if (!input) throw new Error('Video upload input was not rendered');
     const file = new File(['video'], 'squat.mp4', { type: 'video/mp4' });
     Object.defineProperty(input, 'files', { value: { item: () => file } });
 
@@ -97,7 +98,8 @@ describe('exercise editor layout', () => {
     await fixture.whenStable();
     fixture.detectChanges();
 
-    const video = fixture.nativeElement.querySelector<HTMLVideoElement>('video')!;
+    const video = fixture.nativeElement.querySelector<HTMLVideoElement>('video');
+    if (!video) throw new Error('Video preview was not rendered');
     Object.defineProperty(video, 'videoWidth', { configurable: true, value: 0 });
     Object.defineProperty(video, 'videoHeight', { configurable: true, value: 0 });
     Object.defineProperty(component, 'previewVideo', { value: () => ({ nativeElement: video }) });

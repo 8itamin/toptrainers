@@ -476,6 +476,8 @@ export class ExerciseEditorComponent {
       this.message.set('Выберите хотя бы одну группу мышц.');
       return;
     }
+    const primaryMuscle = current.muscleGroups[0];
+    if (!primaryMuscle) return;
 
     this.saving.set(true);
     this.message.set('');
@@ -496,7 +498,7 @@ export class ExerciseEditorComponent {
           title: patch.title,
           instruction: patch.instruction,
           direction: patch.direction,
-          muscle_group: current.muscleGroups[0]!,
+          muscle_group: primaryMuscle,
         }));
         saved = await firstValueFrom(this.exercisesApi.update(saved.id, patch));
       }

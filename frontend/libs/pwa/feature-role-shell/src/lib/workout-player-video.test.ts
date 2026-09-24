@@ -49,7 +49,10 @@ describe('workout player private exercise video', () => {
     fixture.detectChanges();
 
     expect(exerciseStreamManifestUrl).toHaveBeenCalledWith('assignment-1', 'media-1');
-    expect((fixture.componentInstance as any).exerciseVideoUrl('media-1')).toBe(
+    const component = fixture.componentInstance as unknown as {
+      exerciseVideoUrl(mediaId: string): string | null;
+    };
+    expect(component.exerciseVideoUrl('media-1')).toBe(
       'https://api.example/stream.m3u8',
     );
   });
