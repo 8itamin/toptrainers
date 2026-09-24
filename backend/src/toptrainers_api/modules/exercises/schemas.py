@@ -59,6 +59,24 @@ class ExerciseVideoConfirmResponse(BaseModel):
     stream_status: ExerciseVideoStreamStatus
 
 
+class ExerciseThumbnailConfirmResponse(BaseModel):
+    media_id: str
+    status: Literal["PROCESSING", "READY", "FAILED"]
+
+
+class ExerciseThumbnailReadUrlsRequest(BaseModel):
+    media_ids: list[str] = Field(min_length=1, max_length=200)
+
+    @field_validator("media_ids")
+    @classmethod
+    def reject_duplicate_media_ids(cls, value: list[str]) -> list[str]:
+        if len(value) != len(set(value)):
+            raise ValueError("media_ids must be unique")
+        if any(len(media_id) != 36 for media_id in value):
+            raise ValueError("media_ids must contain UUID values")
+        return value
+
+
 class ExercisePatch(BaseModel):
     title: str | None = Field(default=None, min_length=1, max_length=160)
     instruction: str | None = Field(default=None, max_length=4_000)
@@ -88,4 +106,4 @@ class ExerciseVideoUploadRequest(BaseModel):
 
 class ExerciseThumbnailUploadRequest(BaseModel):
     content_type: ExerciseThumbnailContentType
-    content_length: int = Field(gt=0, le=5 * 1024 * 1024)
+    content_length: int = Field(gt=0, le=100 * 1024)

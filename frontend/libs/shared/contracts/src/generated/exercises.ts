@@ -46,6 +46,16 @@ export const EXERCISE_OPERATIONS = {
     "path": "/api/v1/exercises/thumbnail-uploads/{media_id}/confirm",
     "relativePath": "/exercises/thumbnail-uploads/{media_id}/confirm"
   },
+  "getThumbnailUploadStatus": {
+    "method": "GET",
+    "path": "/api/v1/exercises/thumbnail-uploads/{media_id}",
+    "relativePath": "/exercises/thumbnail-uploads/{media_id}"
+  },
+  "createThumbnailReadUrls": {
+    "method": "POST",
+    "path": "/api/v1/exercises/thumbnail-read-urls",
+    "relativePath": "/exercises/thumbnail-read-urls"
+  },
   "createThumbnailReadUrl": {
     "method": "POST",
     "path": "/api/v1/exercises/{exercise_id}/thumbnail/read-url",
@@ -98,6 +108,10 @@ export interface ExerciseThumbnailUploadRequest {
   content_length: number;
 }
 
+export interface ExerciseThumbnailReadUrlsRequest {
+  media_ids: Array<string>;
+}
+
 export interface ExerciseVideoUploadRequest {
   content_type: "video/mp4" | "video/webm" | "video/quicktime";
   content_length: number;
@@ -114,6 +128,11 @@ export interface ExerciseVideoConfirmResponse {
   media_id: string;
   status: string;
   stream_status: "NONE" | "PROCESSING" | "READY" | "FAILED";
+}
+
+export interface ExerciseThumbnailConfirmResponse {
+  media_id: string;
+  status: "PROCESSING" | "READY" | "FAILED";
 }
 
 export interface ConfirmUploadResponse {

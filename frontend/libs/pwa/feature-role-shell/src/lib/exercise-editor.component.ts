@@ -84,14 +84,53 @@ async function createThumbnailFromVideo(video: HTMLVideoElement): Promise<File> 
   if (!video.videoWidth || !video.videoHeight) {
     throw new Error('Видео ещё не готово для создания обложки.');
   }
-  const scale = Math.min(1, 1280 / Math.max(video.videoWidth, video.videoHeight));
+  return createOptimizedThumbnail(video, video.videoWidth, video.videoHeight);
+}
+
+async function createOptimizedThumbnail(
+  image: CanvasImageSource,
+  sourceWidth: number,
+  sourceHeight: number,
+): Promise<File> {
   const canvas = document.createElement('canvas');
-  canvas.width = Math.round(video.videoWidth * scale);
-  canvas.height = Math.round(video.videoHeight * scale);
-  canvas.getContext('2d')?.drawImage(video, 0, 0, canvas.width, canvas.height);
-  const blob = await new Promise<Blob | null>((resolve) => canvas.toBlob(resolve, 'image/jpeg', 0.86));
-  if (!blob) throw new Error('Не удалось подготовить изображение обложки.');
-  return new File([blob], `exercise-cover-${Date.now()}.jpg`, { type: 'image/jpeg' });
+  canvas.width = 320;
+  canvas.height = 180;
+  const context = canvas.getContext('2d');
+  if (!context) throw new Error('Не удалось подготовить изображение обложки.');
+  const sourceRatio = sourceWidth / sourceHeight;
+  const targetRatio = canvas.width / canvas.height;
+  const sourceCropWidth = sourceRatio > targetRatio ? Math.round(sourceHeight * targetRatio) : sourceWidth;
+  const sourceCropHeight = sourceRatio > targetRatio ? sourceHeight : Math.round(sourceWidth / targetRatio);
+  context.drawImage(
+    image,
+    Math.round((sourceWidth - sourceCropWidth) / 2),
+    Math.round((sourceHeight - sourceCropHeight) / 2),
+    sourceCropWidth,
+    sourceCropHeight,
+    0,
+    0,
+    canvas.width,
+    canvas.height,
+  );
+  for (const quality of [0.6, 0.5, 0.4, 0.3]) {
+    const blob = await new Promise<Blob | null>((resolve) => canvas.toBlob(resolve, 'image/webp', quality));
+    if (blob && blob.size <= 100 * 1024) {
+      return new File([blob], `exercise-cover-${Date.now()}.webp`, { type: 'image/webp' });
+    }
+  }
+  throw new Error('Не удалось сжать обложку до 100 КБ. Выберите другое изображение.');
+}
+
+async function createThumbnailFromImage(file: File): Promise<File> {
+  const url = URL.createObjectURL(file);
+  const image = new Image();
+  image.src = url;
+  try {
+    await image.decode();
+    return await createOptimizedThumbnail(image, image.naturalWidth, image.naturalHeight);
+  } finally {
+    URL.revokeObjectURL(url);
+  }
 }
 
 async function createAutoThumbnail(file: File): Promise<File> {
@@ -451,8 +490,7 @@ export class ExerciseEditorComponent {
       this.message.set(validationError);
       return;
     }
-    this.thumbnailPreviewUrl.set(URL.createObjectURL(file));
-    void this.uploadThumbnail(file, 'Обложка загружена. Теперь сохраните упражнение.');
+    void this.prepareAndUploadThumbnail(file);
   }
 
   protected captureThumbnail(): void {
@@ -594,6 +632,17 @@ export class ExerciseEditorComponent {
     }
   }
 
+  private async prepareAndUploadThumbnail(file: File): Promise<void> {
+    try {
+      const thumbnail = await createThumbnailFromImage(file);
+      this.thumbnailPreviewUrl.set(URL.createObjectURL(thumbnail));
+      await this.uploadThumbnail(thumbnail, 'Обложка готова. Теперь сохраните упражнение.');
+    } catch (error) {
+      this.thumbnailUploadStatus.set('failed');
+      this.message.set(error instanceof Error ? error.message : 'Не удалось подготовить обложку.');
+    }
+  }
+
   private async uploadThumbnail(file: File, successMessage: string): Promise<void> {
     this.thumbnailUploadStatus.set('uploading');
     this.message.set('');
@@ -605,12 +654,33 @@ export class ExerciseEditorComponent {
       await uploadFileToPresignedUrl(file, upload, () => undefined);
       const confirmed = await firstValueFrom(this.exercisesApi.confirmThumbnailUpload(upload.media_id));
       this.draft.update((current) => ({ ...current, thumbnailMediaId: confirmed.media_id }));
-      this.thumbnailUploadStatus.set('uploaded');
-      this.thumbnailRequired.set(false);
-      this.message.set(successMessage);
+      if (confirmed.status === 'READY') {
+        this.thumbnailUploadStatus.set('uploaded');
+        this.thumbnailRequired.set(false);
+        this.message.set(successMessage);
+      } else {
+        await this.waitForThumbnail(upload.media_id, successMessage);
+      }
     } catch {
       this.thumbnailUploadStatus.set('failed');
       this.message.set('Не удалось загрузить обложку. Повторите выбор кадра или изображения.');
     }
+  }
+
+  private async waitForThumbnail(mediaId: string, successMessage: string): Promise<void> {
+    for (let attempt = 0; attempt < 90; attempt += 1) {
+      await new Promise<void>((resolve) => window.setTimeout(resolve, 1000));
+      const status = await firstValueFrom(this.exercisesApi.getThumbnailUploadStatus(mediaId));
+      if (status.status === 'READY') {
+        this.thumbnailUploadStatus.set('uploaded');
+        this.thumbnailRequired.set(false);
+        this.message.set(successMessage);
+        return;
+      }
+      if (status.status === 'FAILED') {
+        throw new Error('Не удалось подготовить обложку. Выберите другой файл.');
+      }
+    }
+    throw new Error('Подготовка обложки занимает слишком долго. Повторите попытку.');
   }
 }

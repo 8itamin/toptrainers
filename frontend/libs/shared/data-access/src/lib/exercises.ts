@@ -5,7 +5,8 @@ import { type Observable } from 'rxjs';
 import { RUNTIME_CONFIG, type RuntimeConfig } from '@toptrainers/shared/config';
 import {
   EXERCISE_OPERATIONS,
-  type ConfirmUploadResponse,
+  type ExerciseThumbnailConfirmResponse,
+  type ExerciseThumbnailReadUrlsRequest,
   type ExerciseVideoConfirmResponse,
   type CreateUploadResponse,
   type ExerciseCreate,
@@ -28,7 +29,7 @@ export function exerciseOperationPath(operation: ExerciseOperation, id?: string)
   if (!id) {
     throw new Error(`An ID is required for ${operation}`);
   }
-  const parameter = operation === 'confirmVideoUpload' || operation === 'confirmThumbnailUpload' || operation === 'retryVideoStream'
+  const parameter = operation === 'confirmVideoUpload' || operation === 'confirmThumbnailUpload' || operation === 'getThumbnailUploadStatus' || operation === 'retryVideoStream'
     ? '{media_id}'
     : '{exercise_id}';
   return path.replace(parameter, encodeURIComponent(id)) as `/${string}`;
@@ -111,10 +112,26 @@ export class ExercisesApi {
     );
   }
 
-  confirmThumbnailUpload(mediaId: string): Observable<ConfirmUploadResponse> {
-    return this.http.post<ConfirmUploadResponse>(
+  confirmThumbnailUpload(mediaId: string): Observable<ExerciseThumbnailConfirmResponse> {
+    return this.http.post<ExerciseThumbnailConfirmResponse>(
       apiUrl(this.config, exerciseOperationPath('confirmThumbnailUpload', mediaId)),
       null,
+    );
+  }
+
+  getThumbnailUploadStatus(mediaId: string): Observable<ExerciseThumbnailConfirmResponse> {
+    return this.http.get<ExerciseThumbnailConfirmResponse>(
+      apiUrl(this.config, exerciseOperationPath('getThumbnailUploadStatus', mediaId)),
+    );
+  }
+
+  createThumbnailReadUrls(
+    mediaIds: string[],
+  ): Observable<ExerciseMediaReadUrlResponse[]> {
+    const payload: ExerciseThumbnailReadUrlsRequest = { media_ids: mediaIds };
+    return this.http.post<ExerciseMediaReadUrlResponse[]>(
+      apiUrl(this.config, exerciseOperationPath('createThumbnailReadUrls')),
+      payload,
     );
   }
 

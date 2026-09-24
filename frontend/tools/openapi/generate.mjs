@@ -60,9 +60,11 @@ const EXERCISE_SCHEMA_NAMES = [
   'ExercisePatch',
   'ExerciseResponse',
   'ExerciseThumbnailUploadRequest',
+  'ExerciseThumbnailReadUrlsRequest',
   'ExerciseVideoUploadRequest',
   'CreateUploadResponse',
   ['ExerciseVideoConfirmResponse', 'ExerciseVideoConfirmResponse'],
+  'ExerciseThumbnailConfirmResponse',
   'ConfirmUploadResponse',
   ['ExerciseMediaReadUrlResponse', 'MediaReadUrlResponse'],
 ];
@@ -292,6 +294,14 @@ const confirmExerciseThumbnailUploadOperation = findOperation(
   document,
   'confirm_thumbnail_upload_api_v1_exercises_thumbnail_uploads__media_id__confirm_post',
 );
+const getExerciseThumbnailUploadStatusOperation = findOperation(
+  document,
+  'getExerciseThumbnailUploadStatus',
+);
+const createExerciseThumbnailReadUrlsOperation = findOperation(
+  document,
+  'createExerciseThumbnailReadUrls',
+);
 const createExerciseThumbnailReadUrlOperation = findOperation(
   document,
   'create_exercise_thumbnail_read_url_api_v1_exercises__exercise_id__thumbnail_read_url_post',
@@ -339,7 +349,25 @@ assertResponseRef(retryExerciseVideoStreamOperation.operation, '200', 'ExerciseV
 assertResponseRef(createExerciseVideoReadUrlOperation.operation, '200', 'MediaReadUrlResponse');
 assertRequestRef(createExerciseThumbnailUploadOperation.operation, 'ExerciseThumbnailUploadRequest');
 assertResponseRef(createExerciseThumbnailUploadOperation.operation, '201', 'CreateUploadResponse');
-assertResponseRef(confirmExerciseThumbnailUploadOperation.operation, '200', 'ConfirmUploadResponse');
+assertResponseRef(
+  confirmExerciseThumbnailUploadOperation.operation,
+  '200',
+  'ExerciseThumbnailConfirmResponse',
+);
+assertRequestRef(
+  createExerciseThumbnailReadUrlsOperation.operation,
+  'ExerciseThumbnailReadUrlsRequest',
+);
+assertArrayResponseRef(
+  createExerciseThumbnailReadUrlsOperation.operation,
+  '200',
+  'MediaReadUrlResponse',
+);
+assertResponseRef(
+  getExerciseThumbnailUploadStatusOperation.operation,
+  '200',
+  'ExerciseThumbnailConfirmResponse',
+);
 assertResponseRef(createExerciseThumbnailReadUrlOperation.operation, '200', 'MediaReadUrlResponse');
 
 const generatedSnapshot = [
@@ -519,6 +547,8 @@ const exerciseOperations = {
   createVideoReadUrl: { method: createExerciseVideoReadUrlOperation.method, path: createExerciseVideoReadUrlOperation.path, relativePath: relativeAssignmentPath(createExerciseVideoReadUrlOperation.path) },
   createThumbnailUpload: { method: createExerciseThumbnailUploadOperation.method, path: createExerciseThumbnailUploadOperation.path, relativePath: relativeAssignmentPath(createExerciseThumbnailUploadOperation.path) },
   confirmThumbnailUpload: { method: confirmExerciseThumbnailUploadOperation.method, path: confirmExerciseThumbnailUploadOperation.path, relativePath: relativeAssignmentPath(confirmExerciseThumbnailUploadOperation.path) },
+  getThumbnailUploadStatus: { method: getExerciseThumbnailUploadStatusOperation.method, path: getExerciseThumbnailUploadStatusOperation.path, relativePath: relativeAssignmentPath(getExerciseThumbnailUploadStatusOperation.path) },
+  createThumbnailReadUrls: { method: createExerciseThumbnailReadUrlsOperation.method, path: createExerciseThumbnailReadUrlsOperation.path, relativePath: relativeAssignmentPath(createExerciseThumbnailReadUrlsOperation.path) },
   createThumbnailReadUrl: { method: createExerciseThumbnailReadUrlOperation.method, path: createExerciseThumbnailReadUrlOperation.path, relativePath: relativeAssignmentPath(createExerciseThumbnailReadUrlOperation.path) },
 };
 

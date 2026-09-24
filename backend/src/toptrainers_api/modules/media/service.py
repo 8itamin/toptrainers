@@ -2,7 +2,7 @@ from __future__ import annotations
 
 from dataclasses import dataclass
 from datetime import UTC, datetime
-from typing import Protocol
+from typing import Literal, Protocol
 from uuid import uuid4
 
 from fastapi import HTTPException
@@ -10,7 +10,11 @@ from sqlalchemy.ext.asyncio import AsyncSession
 
 from toptrainers_api.modules.media import repository
 from toptrainers_api.modules.media.hls import render_signed_hls_manifest
-from toptrainers_api.modules.media.models import ExerciseVideoStream, MediaObject
+from toptrainers_api.modules.media.models import (
+    ExerciseThumbnailJob,
+    ExerciseVideoStream,
+    MediaObject,
+)
 from toptrainers_api.modules.media.schemas import CreateUploadRequest
 from toptrainers_api.modules.media.storage import (
     READ_EXPIRES_SECONDS,
@@ -75,6 +79,8 @@ async def confirm_upload(
     media_id: str,
     storage: PrivateS3Storage,
     purpose: str | None = None,
+    *,
+    mark_ready: bool = True,
 ) -> MediaObject:
     media = await repository.get_for_owner(session, owner_id, media_id)
     if media is None:
@@ -89,7 +95,8 @@ async def confirm_upload(
         raise HTTPException(status_code=422, detail=str(error)) from error
     except Exception as error:
         raise HTTPException(status_code=502, detail="Media storage confirmation failed") from error
-    media.status = "READY"
+    if mark_ready:
+        media.status = "READY"
     media.confirmed_at = datetime.now(UTC)
     await session.commit()
     await session.refresh(media)
@@ -135,6 +142,18 @@ async def get_ready_owned_media(
     return media
 
 
+async def get_owned_media(
+    session: AsyncSession,
+    owner_id: str,
+    media_id: str,
+    purpose: str | None = None,
+) -> MediaObject | None:
+    media = await repository.get_for_owner(session, owner_id, media_id)
+    if media is None or (purpose is not None and media.purpose != purpose):
+        return None
+    return media
+
+
 async def enqueue_exercise_video_stream(
     session: AsyncSession,
     media_id: str,
@@ -151,6 +170,39 @@ async def enqueue_exercise_video_stream(
     session.add(stream)
     await session.commit()
     return stream
+
+
+async def enqueue_exercise_thumbnail_job(
+    session: AsyncSession,
+    media: MediaObject,
+) -> ExerciseThumbnailJob:
+    """Queue canonicalization after the raw private cover was confirmed."""
+    existing_job = await repository.get_exercise_thumbnail_job(session, media.id)
+    if existing_job is not None:
+        return existing_job
+    job = ExerciseThumbnailJob(source_media_id=media.id, status="PENDING")
+    session.add(job)
+    await session.commit()
+    return job
+
+
+async def get_exercise_thumbnail_job_status(
+    session: AsyncSession,
+    media_id: str,
+) -> Literal["PROCESSING", "READY", "FAILED"]:
+    job = await repository.get_exercise_thumbnail_job(session, media_id)
+    if job is None or job.status in {"PENDING", "PROCESSING"}:
+        return "PROCESSING"
+    if job.status == "READY":
+        return "READY"
+    return "FAILED"
+
+
+async def get_exercise_thumbnail_job(
+    session: AsyncSession,
+    media_id: str,
+) -> ExerciseThumbnailJob | None:
+    return await repository.get_exercise_thumbnail_job(session, media_id)
 
 
 async def get_exercise_video_stream(

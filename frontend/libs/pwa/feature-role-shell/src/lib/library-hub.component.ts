@@ -113,7 +113,7 @@ const PROGRAMS: readonly ProgramRow[] = [
                   @for (ex of filteredExercises(); track ex.id) {
                     <button type="button" class="card" (click)="openExerciseModal('edit', ex)">
                       <div class="card-media">
-                        @if (thumbnailUrl(ex); as thumbnail) { <img class="card-thumbnail" [src]="thumbnail" [alt]="ex.title" /> }
+                        @if (thumbnailUrl(ex); as thumbnail) { <img class="card-thumbnail" [src]="thumbnail" [alt]="ex.title" width="320" height="180" loading="lazy" decoding="async" /> }
                         @if (ex.video_media_id) { <span class="card-play"><svg width="16" height="16" viewBox="0 0 24 24" fill="#14181d" stroke="none"><path d="M8 5v14l11-7z" /></svg></span><span class="card-dur">ВИДЕО</span> }
                         @else { <span class="card-novideo">БЕЗ ВИДЕО</span> }
                       </div>
@@ -386,18 +386,17 @@ export class LibraryHubComponent {
   private async loadExercises(): Promise<void> {
     try {
       this.exercises.set(await firstValueFrom(this.exercisesApi.list()));
-      await Promise.all(
+      const mediaIds = [...new Set(
         this.exercises()
-          .filter((exercise) => Boolean(exercise.thumbnail_media_id))
-          .map(async (exercise) => {
-            try {
-              const preview = await firstValueFrom(this.exercisesApi.createThumbnailReadUrl(exercise.id));
-              this.thumbnailUrls.update((current) => ({ ...current, [preview.media_id]: preview.read_url }));
-            } catch {
-              // A missing cover must not block the trainer's exercise list.
-            }
-          }),
-      );
+          .map((exercise) => exercise.thumbnail_media_id)
+          .filter((mediaId): mediaId is string => Boolean(mediaId)),
+      )];
+      if (mediaIds.length === 0) return;
+      const previews = await firstValueFrom(this.exercisesApi.createThumbnailReadUrls(mediaIds));
+      this.thumbnailUrls.update((current) => ({
+        ...current,
+        ...Object.fromEntries(previews.map((preview) => [preview.media_id, preview.read_url])),
+      }));
     } catch {
       this.exercises.set([]);
     }

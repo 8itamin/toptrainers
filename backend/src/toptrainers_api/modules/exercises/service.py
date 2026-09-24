@@ -8,12 +8,17 @@ from toptrainers_api.modules.exercises.models import Exercise
 from toptrainers_api.modules.exercises.schemas import (
     ExerciseCreate,
     ExercisePatch,
+    ExerciseThumbnailReadUrlsRequest,
     ExerciseThumbnailUploadRequest,
     ExerciseVideoStreamStatus,
     ExerciseVideoUploadRequest,
 )
 from toptrainers_api.modules.media import service as media_service
-from toptrainers_api.modules.media.models import ExerciseVideoStream, MediaObject
+from toptrainers_api.modules.media.models import (
+    ExerciseThumbnailJob,
+    ExerciseVideoStream,
+    MediaObject,
+)
 from toptrainers_api.modules.media.storage import PrivateS3Storage
 
 
@@ -201,14 +206,68 @@ async def confirm_thumbnail_upload(
     account: dict[str, object],
     media_id: str,
     storage: PrivateS3Storage,
-) -> MediaObject:
-    return await media_service.confirm_upload(
+) -> tuple[MediaObject, ExerciseThumbnailJob]:
+    media = await media_service.confirm_upload(
         session,
         require_trainer(account),
         media_id,
         storage,
         purpose=media_service.EXERCISE_THUMBNAIL_POLICY.purpose,
+        mark_ready=False,
     )
+    job = await media_service.enqueue_exercise_thumbnail_job(session, media)
+    return media, job
+
+
+async def get_thumbnail_upload_status(
+    session: AsyncSession,
+    account: dict[str, object],
+    media_id: str,
+) -> ExerciseThumbnailJob:
+    trainer_id = require_trainer(account)
+    media = await media_service.get_owned_media(
+        session,
+        trainer_id,
+        media_id,
+        purpose=media_service.EXERCISE_THUMBNAIL_POLICY.purpose,
+    )
+    job = await media_service.get_exercise_thumbnail_job(session, media_id)
+    if media is None:
+        raise HTTPException(status_code=404, detail="Exercise thumbnail was not found")
+    if job is None:
+        raise HTTPException(status_code=404, detail="Exercise thumbnail processing was not found")
+    return job
+
+
+async def create_thumbnail_read_urls(
+    session: AsyncSession,
+    account: dict[str, object],
+    payload: ExerciseThumbnailReadUrlsRequest,
+    storage: PrivateS3Storage,
+) -> list[tuple[str, str]]:
+    trainer_id = require_trainer(account)
+    exercises = await repository.list_for_trainer(session, trainer_id)
+    owned_ids = {
+        exercise.thumbnail_media_id
+        for exercise in exercises
+        if exercise.thumbnail_media_id is not None
+    }
+    results: list[tuple[str, str]] = []
+    for media_id in payload.media_ids:
+        if media_id not in owned_ids:
+            continue
+        try:
+            read_url = await media_service.create_owner_read_url(
+                session,
+                trainer_id,
+                media_id,
+                storage,
+                purpose=media_service.EXERCISE_THUMBNAIL_POLICY.purpose,
+            )
+        except HTTPException:
+            continue
+        results.append((media_id, read_url))
+    return results
 
 
 async def create_exercise_video_read_url(

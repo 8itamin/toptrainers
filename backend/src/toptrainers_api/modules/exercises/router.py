@@ -1,3 +1,5 @@
+from typing import Literal
+
 from fastapi import APIRouter, Depends, Response
 from sqlalchemy.ext.asyncio import AsyncSession
 
@@ -8,6 +10,8 @@ from toptrainers_api.modules.exercises.schemas import (
     ExerciseCreate,
     ExercisePatch,
     ExerciseResponse,
+    ExerciseThumbnailConfirmResponse,
+    ExerciseThumbnailReadUrlsRequest,
     ExerciseThumbnailUploadRequest,
     ExerciseVideoConfirmResponse,
     ExerciseVideoStreamStatus,
@@ -15,7 +19,6 @@ from toptrainers_api.modules.exercises.schemas import (
 )
 from toptrainers_api.modules.media import service as media_service
 from toptrainers_api.modules.media.schemas import (
-    ConfirmUploadResponse,
     CreateUploadResponse,
     MediaReadUrlResponse,
 )
@@ -121,14 +124,66 @@ async def create_thumbnail_upload(
     )
 
 
-@router.post("/thumbnail-uploads/{media_id}/confirm", response_model=ConfirmUploadResponse)
+@router.post(
+    "/thumbnail-uploads/{media_id}/confirm",
+    response_model=ExerciseThumbnailConfirmResponse,
+)
 async def confirm_thumbnail_upload(
     media_id: str,
     account: dict[str, object] = Depends(current_account),
     session: AsyncSession = Depends(get_session),
-) -> ConfirmUploadResponse:
-    media = await service.confirm_thumbnail_upload(session, account, media_id, _storage())
-    return ConfirmUploadResponse(media_id=media.id, status="READY")
+) -> ExerciseThumbnailConfirmResponse:
+    media, job = await service.confirm_thumbnail_upload(session, account, media_id, _storage())
+    status: Literal["PROCESSING", "READY", "FAILED"] = (
+        "READY"
+        if job.status == "READY"
+        else "FAILED"
+        if job.status == "FAILED"
+        else "PROCESSING"
+    )
+    return ExerciseThumbnailConfirmResponse(media_id=media.id, status=status)
+
+
+@router.get(
+    "/thumbnail-uploads/{media_id}",
+    operation_id="getExerciseThumbnailUploadStatus",
+    response_model=ExerciseThumbnailConfirmResponse,
+)
+async def get_thumbnail_upload_status(
+    media_id: str,
+    account: dict[str, object] = Depends(current_account),
+    session: AsyncSession = Depends(get_session),
+) -> ExerciseThumbnailConfirmResponse:
+    job = await service.get_thumbnail_upload_status(session, account, media_id)
+    status: Literal["PROCESSING", "READY", "FAILED"] = (
+        "READY"
+        if job.status == "READY"
+        else "FAILED"
+        if job.status == "FAILED"
+        else "PROCESSING"
+    )
+    return ExerciseThumbnailConfirmResponse(media_id=media_id, status=status)
+
+
+@router.post(
+    "/thumbnail-read-urls",
+    operation_id="createExerciseThumbnailReadUrls",
+    response_model=list[MediaReadUrlResponse],
+)
+async def create_thumbnail_read_urls(
+    payload: ExerciseThumbnailReadUrlsRequest,
+    account: dict[str, object] = Depends(current_account),
+    session: AsyncSession = Depends(get_session),
+) -> list[MediaReadUrlResponse]:
+    urls = await service.create_thumbnail_read_urls(session, account, payload, _storage())
+    return [
+        MediaReadUrlResponse(
+            media_id=media_id,
+            read_url=read_url,
+            expires_in_seconds=media_service.read_expires_in_seconds(),
+        )
+        for media_id, read_url in urls
+    ]
 
 
 @router.patch("/{exercise_id}", response_model=ExerciseResponse)

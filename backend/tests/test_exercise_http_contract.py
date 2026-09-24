@@ -28,7 +28,7 @@ def test_exercise_video_upload_request_restricts_size_and_type() -> None:
 def test_exercise_thumbnail_upload_request_restricts_size_and_type() -> None:
     schema = create_app().openapi()["components"]["schemas"]["ExerciseThumbnailUploadRequest"]
 
-    assert schema["properties"]["content_length"]["maximum"] == 5 * 1024 * 1024
+    assert schema["properties"]["content_length"]["maximum"] == 100 * 1024
     assert schema["properties"]["content_type"]["enum"] == [
         "image/jpeg",
         "image/png",
