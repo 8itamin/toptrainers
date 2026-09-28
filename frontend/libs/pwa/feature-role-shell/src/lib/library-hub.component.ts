@@ -1,4 +1,4 @@
-import { ChangeDetectionStrategy, Component, computed, HostListener, inject, signal } from '@angular/core';
+import { ChangeDetectionStrategy, Component, computed, inject, signal } from '@angular/core';
 import { RouterLink } from '@angular/router';
 import { firstValueFrom } from 'rxjs';
 
@@ -14,12 +14,13 @@ import {
 } from './exercise-modal-state';
 import { TrainerTasksComponent } from './trainer-tasks.component';
 import { TrainerSidebarComponent } from './trainer-sidebar.component';
+import { WorkoutConstructorComponent, type WorkoutPreview } from './workout-constructor.component';
 
 type Tab = 'exercises' | 'workouts' | 'programs' | 'tasks';
 type Direction = 'all' | 'strength' | 'speed' | 'agility' | 'cardio';
 type ExerciseDirection = Exclude<Direction, 'all'>;
 
-interface WorkoutRow { id: string; title: string; meta: string; tone: 'lime' | 'blue'; }
+interface WorkoutRow extends WorkoutPreview { id: string; tone: 'lime' | 'blue'; }
 interface ProgramRow { id: string; title: string; meta: string; assigned: number; }
 
 const DIRECTIONS: readonly { key: Direction; label: string }[] = [
@@ -36,10 +37,10 @@ const MUSCLES: readonly { name: string; count: number }[] = [
 ];
 
 const WORKOUTS: readonly WorkoutRow[] = [
-  { id: 'legs', title: 'Ноги + кор', meta: '6 УПР · 55 МИН', tone: 'lime' },
-  { id: 'chest', title: 'Грудь + трицепс', meta: '5 УПР · 50 МИН', tone: 'lime' },
-  { id: 'back', title: 'Спина + бицепс', meta: '6 УПР · 55 МИН', tone: 'lime' },
-  { id: 'cardio', title: 'Кардио + мобильность', meta: '4 УПР · 35 МИН', tone: 'blue' },
+  { id: 'legs', title: 'Ноги + кор', description: 'База на квадрицепс и заднюю поверхность, в конце — упражнения на кор.', tags: ['Сила', 'Ноги', 'Кор'], exerciseCount: 6, durationMinutes: 55, tone: 'lime' },
+  { id: 'chest', title: 'Грудь + трицепс', description: 'Жимовые движения для груди и трицепса с полным отдыхом между подходами.', tags: ['Сила', 'Грудь', 'Руки'], exerciseCount: 5, durationMinutes: 50, tone: 'lime' },
+  { id: 'back', title: 'Спина + бицепс', description: 'Тяговая тренировка для спины и рук с акцентом на технику.', tags: ['Сила', 'Спина', 'Руки'], exerciseCount: 6, durationMinutes: 55, tone: 'lime' },
+  { id: 'cardio', title: 'Кардио + мобильность', description: 'Кардио в комфортном темпе и упражнения на подвижность суставов.', tags: ['Кардио', 'Мобильность'], exerciseCount: 4, durationMinutes: 35, tone: 'blue' },
 ];
 
 const PROGRAMS: readonly ProgramRow[] = [
@@ -51,7 +52,8 @@ const PROGRAMS: readonly ProgramRow[] = [
 @Component({
   selector: 'tt-library-hub',
   standalone: true,
-  imports: [RouterLink, ExerciseEditorComponent, TrainerSidebarComponent, TrainerTasksComponent],
+  imports: [RouterLink, ExerciseEditorComponent, TrainerSidebarComponent, TrainerTasksComponent, WorkoutConstructorComponent],
+  host: { '(document:keydown.escape)': 'closeModalOnEscape()' },
   template: `
     <div class="hub">
       <tt-trainer-sidebar />
@@ -70,7 +72,7 @@ const PROGRAMS: readonly ProgramRow[] = [
           </div>
           <div class="tabs">
             <button type="button" [class.is-active]="tab() === 'exercises'" (click)="tab.set('exercises')">Упражнения <b>{{ exercises().length }}</b></button>
-            <button type="button" [class.is-active]="tab() === 'workouts'" (click)="tab.set('workouts')">Тренировки <b>38</b></button>
+            <button type="button" [class.is-active]="tab() === 'workouts'" (click)="tab.set('workouts')">Тренировки <b>{{ workouts.length }}</b></button>
             <button type="button" [class.is-active]="tab() === 'programs'" (click)="tab.set('programs')">Программы <b>9</b></button>
             <button type="button" [class.is-active]="tab() === 'tasks'" (click)="tab.set('tasks')">Задачи <b>12</b></button>
           </div>
@@ -137,15 +139,17 @@ const PROGRAMS: readonly ProgramRow[] = [
             </div>
           }
           @case ('workouts') {
-            <div class="rows">
+            <div class="rows workout-rows">
+              <div class="workout-header" aria-hidden="true"><span>ТРЕНИРОВКА</span><span>ТЕГИ</span><span>УПРАЖНЕНИЙ</span><span>ВРЕМЯ</span></div>
               @for (w of workouts; track w.id) {
-                <a class="row-item" routerLink="/trainer/library/workout">
-                  <span class="row-bar" [attr.data-tone]="w.tone"></span>
-                  <span class="row-text"><span class="row-name">{{ w.title }}</span><span class="row-meta">{{ w.meta }}</span></span>
-                  <span class="row-arrow">›</span>
-                </a>
+                <button type="button" class="workout-row" (click)="openWorkoutModal(w)" [attr.aria-label]="'Открыть тренировку ' + w.title">
+                  <span class="workout-title-cell"><span class="row-bar" [attr.data-tone]="w.tone"></span><span class="row-text"><span class="row-name">{{ w.title }}</span><span class="workout-description" [title]="w.description">{{ w.description }}</span></span></span>
+                  <span class="workout-tags">@for (tag of w.tags; track tag) { <span class="workout-tag">{{ tag }}</span> }</span>
+                  <span class="workout-exercise-count">{{ w.exerciseCount }}</span>
+                  <span class="workout-duration">{{ w.durationMinutes }} мин</span>
+                </button>
               }
-              <a class="row-add" routerLink="/trainer/library/workout">＋ Новая тренировка</a>
+              <button type="button" class="row-add" (click)="openWorkoutModal()">＋ Новая тренировка</button>
             </div>
           }
           @case ('programs') {
@@ -170,6 +174,14 @@ const PROGRAMS: readonly ProgramRow[] = [
         <div class="exercise-overlay" (click)="closeExerciseModal()">
           <div class="exercise-dialog" role="dialog" aria-modal="true" [attr.aria-label]="exerciseModal()?.mode === 'create' ? 'Создание упражнения' : 'Редактирование упражнения'" (click)="$event.stopPropagation()">
             <tt-exercise-editor [embedded]="true" [mode]="exerciseModal()!.mode" [exercise]="selectedExercise()" (closeRequested)="closeExerciseModal()" (saved)="saveExercise($event)" />
+          </div>
+        </div>
+      }
+
+      @if (workoutModalOpen()) {
+        <div class="workout-overlay" (click)="closeWorkoutModal()">
+          <div class="workout-dialog" role="dialog" aria-modal="true" [attr.aria-label]="selectedWorkout() ? 'Тренировка ' + selectedWorkout()!.title : 'Новая тренировка'" (click)="$event.stopPropagation()">
+            <tt-workout-constructor [embedded]="true" [workout]="selectedWorkout()" [availableExercises]="exercises()" [exerciseThumbnailUrls]="thumbnailUrls()" (closeRequested)="closeWorkoutModal()" />
           </div>
         </div>
       }
@@ -249,6 +261,16 @@ const PROGRAMS: readonly ProgramRow[] = [
     .add-title { font-size: 0.8125rem; font-weight: 600; }
     .add-hint { font-family: 'JetBrains Mono', monospace; font-size: 0.625rem; color: #5b6472; }
     .rows { padding: 1.25rem; display: flex; flex-direction: column; gap: 0.625rem; }
+    .workout-header, .workout-row { display: grid; grid-template-columns: minmax(15rem, 2.4fr) minmax(11rem, 1.6fr) minmax(7rem, .7fr) minmax(6rem, .7fr); align-items: center; gap: 1rem; }
+    .workout-header { padding: 0.25rem 1rem; font-family: 'JetBrains Mono', monospace; font-size: 0.625rem; letter-spacing: 0.08em; color: #8a94a6; }
+    .workout-row { width: 100%; min-height: 5rem; padding: 0.8125rem 1rem; text-align: left; font: inherit; color: inherit; background: #1c222b; border: 1px solid rgb(245 247 250 / 6%); border-radius: 0.875rem; cursor: pointer; }
+    .workout-row:hover, .workout-row:focus-visible { border-color: #c9f24b; }
+    .workout-title-cell { display: flex; align-items: stretch; gap: 0.75rem; min-width: 0; }
+    .workout-title-cell .row-bar { flex: none; }
+    .workout-description { display: block; margin-top: 0.25rem; overflow: hidden; white-space: nowrap; text-overflow: ellipsis; color: #8a94a6; font-size: 0.75rem; }
+    .workout-tags { display: flex; flex-wrap: wrap; gap: 0.3125rem; }
+    .workout-tag { padding: 0.3125rem 0.5rem; border-radius: 0.375rem; background: rgb(201 242 75 / 10%); color: #c9f24b; font-family: 'JetBrains Mono', monospace; font-size: 0.625rem; }
+    .workout-exercise-count, .workout-duration { color: #f5f7fa; font-family: 'JetBrains Mono', monospace; font-size: 0.8125rem; white-space: nowrap; }
     .row-item { display: flex; align-items: center; gap: 0.75rem; background: #1c222b; border-radius: 0.875rem; padding: 0.9375rem 1rem; text-decoration: none; color: inherit; }
     .row-bar { width: 0.25rem; align-self: stretch; border-radius: 999px; }
     .row-bar[data-tone='lime'] { background: #c9f24b; }
@@ -258,10 +280,12 @@ const PROGRAMS: readonly ProgramRow[] = [
     .row-meta { display: block; font-family: 'JetBrains Mono', monospace; font-size: 0.625rem; color: #8a94a6; margin-top: 0.1875rem; }
     .row-assigned { font-family: 'JetBrains Mono', monospace; font-size: 0.625rem; color: #c9f24b; background: rgb(201 242 75 / 12%); padding: 0.25rem 0.5rem; border-radius: 999px; }
     .row-arrow { color: #8a94a6; }
-    .row-add { text-align: center; padding: 0.875rem; border: 1.5px dashed rgb(245 247 250 / 18%); border-radius: 0.875rem; color: #8a94a6; text-decoration: none; font-size: 0.8125rem; font-weight: 600; }
+    .row-add { text-align: center; padding: 0.875rem; border: 1.5px dashed rgb(245 247 250 / 18%); border-radius: 0.875rem; color: #8a94a6; background: transparent; text-decoration: none; font: inherit; font-size: 0.8125rem; font-weight: 600; cursor: pointer; }
     .tasks-wrap { padding: 1.25rem; }
     .exercise-overlay { position: fixed; inset: 0; z-index: 20; display: grid; align-items: start; justify-items: center; overflow: auto; padding: clamp(1rem, 4vw, 2.5rem) 1rem; background: rgb(14 17 22 / 78%); }
     .exercise-dialog { width: min(100%, 61.25rem); }
+    .workout-overlay { position: fixed; inset: 0; z-index: 20; display: grid; place-items: center; padding: 1rem; background: rgb(14 17 22 / 78%); }
+    .workout-dialog { width: min(100%, 90rem); max-height: calc(100dvh - 2rem); overflow: auto; border: 1px solid rgb(245 247 250 / 12%); border-radius: 1rem; box-shadow: 0 1.5rem 4rem rgb(0 0 0 / 35%); }
     .tabbar { position: fixed; inset-inline: 0; bottom: 0; display: flex; justify-content: space-between; padding: 0.75rem 1.25rem calc(0.75rem + env(safe-area-inset-bottom)); background: #14181d; border-top: 1px solid rgb(245 247 250 / 6%); }
     .tab { display: flex; flex-direction: column; align-items: center; gap: 0.25rem; color: #5b6472; text-decoration: none; font-size: 0.625rem; }
     .tab.is-active { color: #c9f24b; font-weight: 600; }
@@ -286,6 +310,12 @@ const PROGRAMS: readonly ProgramRow[] = [
     @media (max-width: 860px) {
       .exercise-overlay { padding: 0; }
       .exercise-dialog { width: 100%; }
+      .workout-overlay { padding: 0; }
+      .workout-dialog { width: 100%; max-height: 100dvh; min-height: 100dvh; border: 0; border-radius: 0; }
+      .workout-header { display: none; }
+      .workout-row { grid-template-columns: 1fr auto; gap: 0.625rem; }
+      .workout-title-cell, .workout-tags { grid-column: 1 / -1; }
+      .workout-exercise-count::after { content: ' упр.'; }
     }
   `,
   changeDetection: ChangeDetectionStrategy.OnPush,
@@ -299,6 +329,8 @@ export class LibraryHubComponent {
   protected readonly thumbnailUrls = signal<Readonly<Record<string, string>>>({});
   protected readonly workouts = WORKOUTS;
   protected readonly programs = PROGRAMS;
+  protected readonly workoutModalOpen = signal(false);
+  protected readonly selectedWorkout = signal<WorkoutRow | null>(null);
 
   protected readonly tab = signal<Tab>('exercises');
   protected readonly exerciseModal = signal<ExerciseModalState | null>(null);
@@ -353,10 +385,21 @@ export class LibraryHubComponent {
     this.selectedExercise.set(null);
   }
 
-  @HostListener('document:keydown.escape')
-  protected closeExerciseModalOnEscape(): void {
+  protected openWorkoutModal(workout: WorkoutRow | null = null): void {
+    this.selectedWorkout.set(workout);
+    this.workoutModalOpen.set(true);
+  }
+
+  protected closeWorkoutModal(): void {
+    this.workoutModalOpen.set(false);
+    this.selectedWorkout.set(null);
+  }
+
+  protected closeModalOnEscape(): void {
     if (this.exerciseModal()) {
       this.closeExerciseModal();
+    } else if (this.workoutModalOpen()) {
+      this.closeWorkoutModal();
     }
   }
 

@@ -1,7 +1,16 @@
-import { ChangeDetectionStrategy, Component, computed, signal } from '@angular/core';
+import { ChangeDetectionStrategy, Component, computed, EventEmitter, signal } from '@angular/core';
 import { RouterLink } from '@angular/router';
+import type { ExerciseResponse } from '@toptrainers/shared/contracts';
 
-interface LibraryItem { id: string; title: string; meta: string; }
+export interface WorkoutPreview {
+  title: string;
+  description: string;
+  tags: readonly string[];
+  exerciseCount: number;
+  durationMinutes: number;
+}
+
+interface LibraryItem { id: string; title: string; thumbnailUrl?: string | null; }
 
 interface Block {
   tag: string;
@@ -18,11 +27,11 @@ interface Block {
 }
 
 const LIBRARY: readonly LibraryItem[] = [
-  { id: 'rdl', title: 'Румынская тяга', meta: 'СИЛА · НОГИ · КГ×ПОВТ' },
-  { id: 'legext', title: 'Разгибание ног', meta: 'СИЛА · НОГИ · КГ×ПОВТ' },
-  { id: 'calf', title: 'Подъём на носки', meta: 'СИЛА · НОГИ · ПОВТ' },
-  { id: 'sideplank', title: 'Боковая планка', meta: 'ВЫНОСЛ. · КОР · ВРЕМЯ' },
-  { id: 'glute', title: 'Ягодичный мост', meta: 'СИЛА · НОГИ · КГ×ПОВТ' },
+  { id: 'rdl', title: 'Румынская тяга' },
+  { id: 'legext', title: 'Разгибание ног' },
+  { id: 'calf', title: 'Подъём на носки' },
+  { id: 'sideplank', title: 'Боковая планка' },
+  { id: 'glute', title: 'Ягодичный мост' },
 ];
 
 const INITIAL_BLOCKS: readonly Block[] = [
@@ -36,18 +45,25 @@ const INITIAL_BLOCKS: readonly Block[] = [
   selector: 'tt-workout-constructor',
   standalone: true,
   imports: [RouterLink],
+  inputs: ['embedded', 'workout', 'availableExercises', 'exerciseThumbnailUrls'],
+  outputs: ['closeRequested'],
   template: `
-    <div class="screen">
+    <div class="screen" [class.is-embedded]="embedded">
       <header class="toolbar">
         <div class="left">
-          <a class="back" routerLink="/trainer/library"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M15 18l-6-6 6-6" /></svg>Тренировки</a>
-          <span class="wname">Ноги + кор</span>
-          <span class="pill">{{ blocks().length }} УПР · ~55 МИН</span>
+          @if (embedded) {
+            <button type="button" class="back back-button" (click)="closeRequested.emit()"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M15 18l-6-6 6-6" /></svg>Тренировки</button>
+          } @else {
+            <a class="back" routerLink="/trainer/library"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M15 18l-6-6 6-6" /></svg>Тренировки</a>
+          }
+          <span class="wname">{{ currentTitle() }}</span>
+          <span class="pill">{{ workout?.exerciseCount ?? blocks().length }} УПР · ~{{ currentDuration() }} МИН</span>
         </div>
         <div class="right">
           <span class="hotkeys">⌘S сохранить · D дубль</span>
           <button type="button" class="outline" (click)="preview()">Предпросмотр клиента</button>
           <button type="button" class="fill" (click)="save()">Сохранить</button>
+          @if (embedded) { <button type="button" class="close" aria-label="Закрыть тренировку" (click)="closeRequested.emit()">✕</button> }
         </div>
       </header>
 
@@ -57,29 +73,31 @@ const INITIAL_BLOCKS: readonly Block[] = [
           <div class="search"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#5b6472" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="11" cy="11" r="7" /><path d="m20 20-4.5-4.5" /></svg><span>Поиск упражнения</span></div>
           <div class="picker-chips"><span class="pc is-active">Ноги</span><span class="pc">Кор</span><span class="pc">Сила</span></div>
           <div class="picker-list">
-            @for (item of library; track item.id) {
-              <button type="button" class="pick-row" (click)="addFromLibrary(item)">
-                <span class="pick-thumb"></span>
-                <span class="pick-text"><span class="pick-name">{{ item.title }}</span><span class="pick-meta">{{ item.meta }}</span></span>
-                <span class="pick-plus">＋</span>
+            @for (item of library(); track item.id) {
+              <button type="button" class="pick-card" (click)="addFromLibrary(item)" [attr.aria-label]="'Добавить упражнение ' + item.title">
+                <span class="pick-photo">
+                  @if (item.thumbnailUrl) { <img [src]="item.thumbnailUrl" [alt]="item.title" width="320" height="180" loading="lazy" decoding="async" /> }
+                  @else { <span class="pick-placeholder">Фото нет</span> }
+                </span>
+                <span class="pick-name">{{ item.title }}</span>
               </button>
-            }
+            } @empty { <p class="picker-empty">Пока нет упражнений в библиотеке.</p> }
           </div>
         </aside>
 
         <section class="editor">
           <div class="field">
             <div class="label">НАЗВАНИЕ ТРЕНИРОВКИ</div>
-            <div class="value value--name">Ноги + кор</div>
+            <div class="value value--name">{{ currentTitle() }}</div>
           </div>
           <div class="field">
             <div class="label">ОПИСАНИЕ</div>
-            <div class="value value--desc">База на квадрицепс и заднюю поверхность + кор в конце. Блок A — тяжёлый, отдых полный. Блок B — объёмный, темп держим.</div>
+            <div class="value value--desc">{{ currentDescription() }}</div>
           </div>
 
           <div class="ex-head">
             <span class="label">УПРАЖНЕНИЯ · {{ blocks().length }}</span>
-            <span class="label">объём: {{ totalSets() }} подходов · ~55 мин</span>
+            <span class="label">объём: {{ totalSets() }} подходов · ~{{ currentDuration() }} мин</span>
           </div>
 
           <div class="blocks">
@@ -123,7 +141,7 @@ const INITIAL_BLOCKS: readonly Block[] = [
           <div class="sum-title">СВОДКА ТРЕНИРОВКИ</div>
           <div class="sum-scores">
             <div class="sum-cell"><span class="sum-val lime">{{ totalSets() }}</span><span class="sum-lbl">ПОДХОДОВ</span></div>
-            <div class="sum-cell"><span class="sum-val">55</span><span class="sum-lbl">МИНУТ</span></div>
+            <div class="sum-cell"><span class="sum-val">{{ currentDuration() }}</span><span class="sum-lbl">МИНУТ</span></div>
           </div>
           <div>
             <div class="label">НАГРУЗКА ПО ГРУППАМ</div>
@@ -152,9 +170,12 @@ const INITIAL_BLOCKS: readonly Block[] = [
   styles: `
     :host { display: block; }
     .screen { min-height: 100dvh; background: #14181d; color: #f5f7fa; font-family: 'Golos Text', system-ui, sans-serif; }
+    .screen.is-embedded { min-height: 0; }
     .toolbar { display: flex; align-items: center; justify-content: space-between; padding: 1.125rem 1.75rem; border-bottom: 1px solid rgb(245 247 250 / 6%); gap: 1rem; flex-wrap: wrap; }
     .left { display: flex; align-items: center; gap: 0.875rem; flex-wrap: wrap; }
     .back { display: inline-flex; align-items: center; gap: 0.5rem; color: #8a94a6; text-decoration: none; font-size: 0.875rem; }
+    .back-button { padding: 0; border: 0; background: transparent; font: inherit; cursor: pointer; }
+    .close { width: 2.25rem; height: 2.25rem; border: 1px solid rgb(245 247 250 / 16%); border-radius: 0.5625rem; background: transparent; color: #f5f7fa; cursor: pointer; }
     .wname { font-family: 'Unbounded', sans-serif; font-weight: 600; font-size: 1.125rem; color: #f5f7fa; }
     .pill { font-family: 'JetBrains Mono', monospace; font-size: 0.625rem; color: #8a94a6; background: #1c222b; padding: 0.25rem 0.5rem; border-radius: 999px; }
     .right { display: flex; align-items: center; gap: 0.625rem; }
@@ -163,19 +184,21 @@ const INITIAL_BLOCKS: readonly Block[] = [
     .outline { border: 1px solid rgb(245 247 250 / 16%); background: transparent; color: #f5f7fa; }
     .fill { border: 0; font-weight: 700; color: #14181d; background: #c9f24b; }
     .panels { display: flex; min-height: calc(100dvh - 4.5rem); }
+    .is-embedded .panels { min-height: 0; }
     .picker { width: 20rem; flex: none; border-right: 1px solid rgb(245 247 250 / 6%); padding: 1.25rem 1.125rem; display: flex; flex-direction: column; gap: 0.75rem; }
     .picker-label, .label { font-family: 'JetBrains Mono', monospace; font-size: 0.625rem; letter-spacing: 0.1em; color: #8a94a6; }
     .search { display: flex; align-items: center; gap: 0.5625rem; height: 2.5rem; padding: 0 0.8125rem; background: #1c222b; border: 1px solid rgb(245 247 250 / 8%); border-radius: 0.625rem; color: #5b6472; font-size: 0.8125rem; }
     .picker-chips { display: flex; gap: 0.375rem; }
     .pc { font-size: 0.6875rem; color: #8a94a6; background: #1c222b; padding: 0.375rem 0.625rem; border-radius: 0.4375rem; }
     .pc.is-active { font-weight: 700; color: #14181d; background: #c9f24b; }
-    .picker-list { display: flex; flex-direction: column; gap: 0.5rem; margin-top: 0.25rem; }
-    .pick-row { display: flex; align-items: center; gap: 0.6875rem; padding: 0.625rem; background: #1c222b; border: 0; border-radius: 0.6875rem; cursor: pointer; text-align: left; color: inherit; font: inherit; }
-    .pick-thumb { width: 3.25rem; height: 2.375rem; border-radius: 0.4375rem; flex: none; background: repeating-linear-gradient(135deg, #242b34, #242b34 8px, #20272f 8px, #20272f 16px); }
-    .pick-text { flex: 1; min-width: 0; }
-    .pick-name { display: block; font-size: 0.8125rem; font-weight: 600; color: #f5f7fa; }
-    .pick-meta { display: block; font-family: 'JetBrains Mono', monospace; font-size: 0.5625rem; color: #8a94a6; margin-top: 0.1875rem; }
-    .pick-plus { color: #c9f24b; font-size: 1rem; }
+    .picker-list { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); align-content: start; gap: 0.625rem; margin-top: 0.25rem; }
+    .pick-card { min-width: 0; padding: 0; overflow: hidden; background: #1c222b; border: 1px solid rgb(245 247 250 / 8%); border-radius: 0.6875rem; cursor: pointer; text-align: left; color: inherit; font: inherit; }
+    .pick-card:hover, .pick-card:focus-visible { border-color: #c9f24b; }
+    .pick-photo { display: block; width: 100%; aspect-ratio: 16 / 9; background: repeating-linear-gradient(135deg, #242b34, #242b34 8px, #20272f 8px, #20272f 16px); }
+    .pick-photo img { display: block; width: 100%; height: 100%; object-fit: cover; }
+    .pick-placeholder { display: grid; place-items: center; height: 100%; color: #8a94a6; font-size: 0.6875rem; }
+    .pick-name { display: block; padding: 0.625rem; font-size: 0.75rem; font-weight: 600; line-height: 1.3; color: #f5f7fa; }
+    .picker-empty { grid-column: 1 / -1; color: #8a94a6; font-size: 0.8125rem; }
     .editor { flex: 1; min-width: 0; border-right: 1px solid rgb(245 247 250 / 6%); padding: 1.5rem 1.75rem; }
     .field + .field { margin-top: 0.75rem; }
     .field .label { display: block; margin-bottom: 0.4375rem; }
@@ -239,12 +262,29 @@ const INITIAL_BLOCKS: readonly Block[] = [
   changeDetection: ChangeDetectionStrategy.OnPush,
 })
 export class WorkoutConstructorComponent {
-  protected readonly library = LIBRARY;
+  embedded = false;
+  workout: WorkoutPreview | null = null;
+  availableExercises: readonly ExerciseResponse[] | null = null;
+  exerciseThumbnailUrls: Readonly<Record<string, string>> = {};
+  readonly closeRequested = new EventEmitter<void>();
+
+  protected library(): readonly LibraryItem[] {
+    const exercises = this.availableExercises;
+    if (exercises === null) return LIBRARY;
+    return exercises.map((exercise) => ({
+      id: exercise.id,
+      title: exercise.title,
+      thumbnailUrl: this.exerciseThumbnailUrls[exercise.thumbnail_media_id ?? ''] ?? exercise.thumbnail_url ?? null,
+    }));
+  }
   protected readonly blocks = signal<Block[]>([...INITIAL_BLOCKS.map((b) => ({ ...b }))]);
   protected readonly selectedTag = signal<string>('A1');
   protected readonly message = signal('');
 
   protected readonly totalSets = computed(() => this.blocks().reduce((sum, b) => sum + b.sets, 0));
+  protected currentTitle(): string { return this.workout?.title ?? (this.embedded ? 'Новая тренировка' : 'Ноги + кор'); }
+  protected currentDescription(): string { return this.workout?.description ?? (this.embedded ? '' : 'База на квадрицепс и заднюю поверхность + кор в конце. Блок A — тяжёлый, отдых полный. Блок B — объёмный, темп держим.'); }
+  protected currentDuration(): number { return this.workout?.durationMinutes ?? 55; }
 
   protected select(tag: string): void {
     this.selectedTag.set(tag);
@@ -276,7 +316,7 @@ export class WorkoutConstructorComponent {
   }
 
   protected addBlock(): void {
-    this.addFromLibrary({ id: 'new', title: 'Новое упражнение', meta: '' });
+    this.addFromLibrary({ id: 'new', title: 'Новое упражнение' });
   }
 
   protected addTask(): void {
