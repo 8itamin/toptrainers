@@ -19,17 +19,7 @@ async def create_workout(
     payload: WorkoutCreate,
 ) -> Workout:
     trainer_id = require_trainer(account)
-    exercise_ids = {
-        exercise.exercise_id
-        for block in payload.blocks
-        for exercise in block.exercises
-    }
-    owned_ids = await get_owned_exercise_ids(session, trainer_id, exercise_ids)
-    if owned_ids != exercise_ids:
-        raise HTTPException(
-            status_code=422,
-            detail="Every workout exercise must belong to the trainer",
-        )
+    await _validate_exercises(session, trainer_id, payload)
 
     workout = Workout(
         id=str(uuid4()),
@@ -37,10 +27,53 @@ async def create_workout(
         title=payload.title,
         description=payload.description,
     )
+    workout.blocks = _build_blocks(payload)
+    session.add(workout)
+    await session.commit()
+    saved_workout = await repository.get_for_trainer(session, trainer_id, workout.id)
+    if saved_workout is None:
+        raise RuntimeError("Created workout was not found")
+    return saved_workout
+
+
+async def replace_workout(
+    session: AsyncSession,
+    account: dict[str, object],
+    workout_id: str,
+    payload: WorkoutCreate,
+) -> Workout | None:
+    trainer_id = require_trainer(account)
+    workout = await repository.get_for_trainer(session, trainer_id, workout_id)
+    if workout is None:
+        return None
+    await _validate_exercises(session, trainer_id, payload)
+    workout.title = payload.title
+    workout.description = payload.description
+    workout.blocks = _build_blocks(payload)
+    await session.commit()
+    return await repository.get_for_trainer(session, trainer_id, workout_id)
+
+
+async def _validate_exercises(
+    session: AsyncSession, trainer_id: str, payload: WorkoutCreate
+) -> None:
+    exercise_ids = {
+        exercise.exercise_id for block in payload.blocks for exercise in block.exercises
+    }
+    owned_ids = await get_owned_exercise_ids(session, trainer_id, exercise_ids)
+    if owned_ids != exercise_ids:
+        raise HTTPException(
+            status_code=422, detail="Every workout exercise must belong to the trainer"
+        )
+
+
+def _build_blocks(payload: WorkoutCreate) -> list[WorkoutBlock]:
+    blocks: list[WorkoutBlock] = []
     for block_position, block_payload in enumerate(payload.blocks):
         block = WorkoutBlock(
             id=str(uuid4()),
             kind=block_payload.kind,
+            title=block_payload.title,
             position=block_position,
         )
         for exercise_position, exercise_payload in enumerate(block_payload.exercises):
@@ -52,15 +85,11 @@ async def create_workout(
                     weight_kg=exercise_payload.weight_kg,
                     sets=exercise_payload.sets,
                     reps=exercise_payload.reps,
+                    rest_seconds=exercise_payload.rest_seconds,
                 )
             )
-        workout.blocks.append(block)
-    session.add(workout)
-    await session.commit()
-    saved_workout = await repository.get_for_trainer(session, trainer_id, workout.id)
-    if saved_workout is None:
-        raise RuntimeError("Created workout was not found")
-    return saved_workout
+        blocks.append(block)
+    return blocks
 
 
 async def get_owned_workout(

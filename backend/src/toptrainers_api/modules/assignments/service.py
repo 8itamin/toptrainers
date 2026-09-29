@@ -107,12 +107,14 @@ def build_workout_snapshot_v1(
                     weight_kg=float(item.weight_kg) if item.weight_kg is not None else None,
                     sets=item.sets,
                     reps=item.reps,
+                    rest_seconds=item.rest_seconds if item.rest_seconds is not None else 60,
                 )
             )
         blocks.append(
             WorkoutSnapshotBlockV1(
                 kind=block.kind,
                 position=block.position,
+                title=block.title or "",
                 exercises=snapshot_exercises,
             )
         )

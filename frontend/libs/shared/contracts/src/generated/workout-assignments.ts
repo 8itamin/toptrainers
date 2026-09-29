@@ -99,6 +99,7 @@ export interface WorkoutAssignmentResponse {
 export interface WorkoutSnapshotBlockV1 {
   kind: string;
   position: number;
+  title?: string;
   exercises: Array<WorkoutSnapshotExerciseV1>;
 }
 
@@ -120,6 +121,7 @@ export interface WorkoutSnapshotExerciseV1 {
   weight_kg?: number | null;
   sets: number;
   reps: number;
+  rest_seconds?: number;
 }
 
 export interface WorkoutSnapshotV1 {

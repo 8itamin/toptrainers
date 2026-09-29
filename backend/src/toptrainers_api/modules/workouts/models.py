@@ -27,6 +27,7 @@ class WorkoutBlock(Base):
         index=True,
     )
     kind: Mapped[str] = mapped_column(String(32))
+    title: Mapped[str] = mapped_column(String(160), default="", server_default="")
     position: Mapped[int] = mapped_column(Integer)
     workout: Mapped[Workout] = relationship(back_populates="blocks")
     items: Mapped[list["WorkoutExercise"]] = relationship(
@@ -50,4 +51,5 @@ class WorkoutExercise(Base):
     weight_kg: Mapped[Decimal | None] = mapped_column(Numeric(6, 2), nullable=True)
     sets: Mapped[int] = mapped_column(Integer)
     reps: Mapped[int] = mapped_column(Integer)
+    rest_seconds: Mapped[int] = mapped_column(Integer, default=60, server_default="60")
     block: Mapped[WorkoutBlock] = relationship(back_populates="items")

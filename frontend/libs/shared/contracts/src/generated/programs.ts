@@ -33,6 +33,24 @@ export const PROGRAM_OPERATIONS = {
   }
 } as const;
 
+export const WORKOUT_OPERATIONS = {
+  "list": {
+    "method": "GET",
+    "path": "/api/v1/workouts",
+    "relativePath": "/workouts"
+  },
+  "create": {
+    "method": "POST",
+    "path": "/api/v1/workouts",
+    "relativePath": "/workouts"
+  },
+  "replace": {
+    "method": "PUT",
+    "path": "/api/v1/workouts/{workout_id}",
+    "relativePath": "/workouts/{workout_id}"
+  }
+} as const;
+
 
 
 export interface IssueProgramRequest {
@@ -113,6 +131,7 @@ export type RelationshipStatus = "ACTIVE" | "TERMINATED";
 export interface WorkoutBlockResponse {
   id: string;
   kind: "warmup" | "main" | "cooldown";
+  title: string;
   exercises: Array<WorkoutExerciseResponse>;
 }
 
@@ -121,6 +140,7 @@ export interface WorkoutExerciseResponse {
   weight_kg?: number | null;
   sets: number;
   reps: number;
+  rest_seconds?: number;
   id: string;
 }
 
@@ -130,4 +150,24 @@ export interface WorkoutResponse {
   id: string;
   trainer_id: string;
   blocks: Array<WorkoutBlockResponse>;
+}
+
+export interface WorkoutCreate {
+  title: string;
+  description?: string;
+  blocks: Array<WorkoutBlockCreate>;
+}
+
+export interface WorkoutBlockCreate {
+  kind: "warmup" | "main" | "cooldown";
+  title?: string;
+  exercises: Array<WorkoutExerciseCreate>;
+}
+
+export interface WorkoutExerciseCreate {
+  exercise_id: string;
+  weight_kg?: number | null;
+  sets: number;
+  reps: number;
+  rest_seconds?: number;
 }

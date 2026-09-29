@@ -1,6 +1,6 @@
 from typing import cast
 
-from fastapi import APIRouter, Depends
+from fastapi import APIRouter, Depends, HTTPException
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from toptrainers_api.core.auth import current_account
@@ -28,6 +28,7 @@ def to_response(workout: Workout) -> WorkoutResponse:
             WorkoutBlockResponse(
                 id=block.id,
                 kind=cast(WorkoutBlockKind, block.kind),
+                title=block.title,
                 exercises=[
                     WorkoutExerciseResponse(
                         id=item.id,
@@ -35,6 +36,7 @@ def to_response(workout: Workout) -> WorkoutResponse:
                         weight_kg=float(item.weight_kg) if item.weight_kg is not None else None,
                         sets=item.sets,
                         reps=item.reps,
+                        rest_seconds=item.rest_seconds,
                     )
                     for item in block.items
                 ],
@@ -62,3 +64,16 @@ async def create_workout(
     session: AsyncSession = Depends(get_session),
 ) -> WorkoutResponse:
     return to_response(await service.create_workout(session, account, payload))
+
+
+@router.put("/{workout_id}", response_model=WorkoutResponse)
+async def replace_workout(
+    workout_id: str,
+    payload: WorkoutCreate,
+    account: dict[str, object] = Depends(current_account),
+    session: AsyncSession = Depends(get_session),
+) -> WorkoutResponse:
+    workout = await service.replace_workout(session, account, workout_id, payload)
+    if workout is None:
+        raise HTTPException(status_code=404, detail="Workout not found")
+    return to_response(workout)

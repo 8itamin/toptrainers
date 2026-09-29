@@ -10,10 +10,12 @@ class WorkoutExerciseCreate(BaseModel):
     weight_kg: float | None = Field(default=None, ge=0, le=1_000)
     sets: int = Field(ge=1, le=100)
     reps: int = Field(ge=1, le=1_000)
+    rest_seconds: int = Field(default=60, ge=0, le=3_600)
 
 
 class WorkoutBlockCreate(BaseModel):
     kind: WorkoutBlockKind
+    title: str = Field(default="", max_length=160)
     exercises: list[WorkoutExerciseCreate] = Field(min_length=1, max_length=100)
 
 
@@ -33,6 +35,7 @@ class WorkoutExerciseResponse(WorkoutExerciseCreate):
 class WorkoutBlockResponse(BaseModel):
     id: str
     kind: WorkoutBlockKind
+    title: str
     exercises: list[WorkoutExerciseResponse]
 
 

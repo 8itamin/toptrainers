@@ -1,333 +1,280 @@
-import { ChangeDetectionStrategy, Component, computed, EventEmitter, signal } from '@angular/core';
+import { ChangeDetectionStrategy, Component, computed, EventEmitter, inject, signal } from '@angular/core';
 import { RouterLink } from '@angular/router';
-import type { ExerciseResponse } from '@toptrainers/shared/contracts';
+import { firstValueFrom } from 'rxjs';
 
-export interface WorkoutPreview {
-  title: string;
-  description: string;
-  tags: readonly string[];
-  exerciseCount: number;
-  durationMinutes: number;
-}
+import type { ExerciseResponse, ProgramResponse, WorkoutResponse } from '@toptrainers/shared/contracts';
+import { ExercisesApi, ProgramsApi, WorkoutsApi } from '@toptrainers/shared/data-access';
 
-interface LibraryItem { id: string; title: string; thumbnailUrl?: string | null; }
+import {
+  draftFromWorkout, exerciseTags, programUsage, summarizeWorkout, workoutPayload,
+  type BlockKind, type DraftBlock, type DraftExercise,
+} from './workout-editor-state';
 
-interface Block {
-  tag: string;
-  name: string;
-  category: string;
-  group: 'A' | 'B';
-  superset: boolean;
-  sets: number;
-  reps: string;
-  weight: number | null;
-  rest: number | null;
-  timeSec?: number;
-  chips?: string[];
-}
-
-const LIBRARY: readonly LibraryItem[] = [
-  { id: 'rdl', title: 'Румынская тяга' },
-  { id: 'legext', title: 'Разгибание ног' },
-  { id: 'calf', title: 'Подъём на носки' },
-  { id: 'sideplank', title: 'Боковая планка' },
-  { id: 'glute', title: 'Ягодичный мост' },
-];
-
-const INITIAL_BLOCKS: readonly Block[] = [
-  { tag: 'A1', name: 'Присед со штангой', category: 'КГ × ПОВТОРЕНИЯ', group: 'A', superset: false, sets: 4, reps: '8', weight: 80, rest: 90 },
-  { tag: 'A2', name: 'Румынская тяга', category: 'КГ × ПОВТОРЕНИЯ', group: 'A', superset: false, sets: 3, reps: '10', weight: 70, rest: 75, chips: ['3 × 10', '@ 70 кг', 'отдых 75 с'] },
-  { tag: 'B1', name: 'Выпады с гантелями', category: '', group: 'B', superset: true, sets: 3, reps: '10 / нога', weight: 16, rest: null, chips: ['3 × 10 / нога', '@ 16 кг', 'без отдыха'] },
-  { tag: 'B2', name: 'Планка на локтях', category: 'ВРЕМЯ, СЕК', group: 'B', superset: true, sets: 3, reps: '45 с', weight: null, rest: 60, chips: ['3 × 45 с', 'отдых 60 с'] },
-];
+let localId = 0;
+const nextId = () => `local-${++localId}`;
 
 @Component({
   selector: 'tt-workout-constructor',
   standalone: true,
   imports: [RouterLink],
-  inputs: ['embedded', 'workout', 'availableExercises', 'exerciseThumbnailUrls'],
-  outputs: ['closeRequested'],
+  inputs: ['embedded', 'workout', 'availableExercises', 'exerciseThumbnailUrls', 'programs'],
+  outputs: ['closeRequested', 'saved'],
   template: `
     <div class="screen" [class.is-embedded]="embedded">
       <header class="toolbar">
         <div class="left">
           @if (embedded) {
-            <button type="button" class="back back-button" (click)="closeRequested.emit()"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M15 18l-6-6 6-6" /></svg>Тренировки</button>
-          } @else {
-            <a class="back" routerLink="/trainer/library"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M15 18l-6-6 6-6" /></svg>Тренировки</a>
-          }
-          <span class="wname">{{ currentTitle() }}</span>
-          <span class="pill">{{ workout?.exerciseCount ?? blocks().length }} УПР · ~{{ currentDuration() }} МИН</span>
+            <button type="button" class="back" (click)="closeRequested.emit()">‹ Тренировки</button>
+          } @else { <a class="back" routerLink="/trainer/library">‹ Тренировки</a> }
+          <strong class="wname">{{ draft().title || 'Новая тренировка' }}</strong>
+          <span class="pill">{{ summary().exerciseCount }} УПР · ~{{ summary().durationMinutes }} МИН</span>
         </div>
         <div class="right">
-          <span class="hotkeys">⌘S сохранить · D дубль</span>
-          <button type="button" class="outline" (click)="preview()">Предпросмотр клиента</button>
-          <button type="button" class="fill" (click)="save()">Сохранить</button>
+          <button type="button" class="fill" [disabled]="saving()" (click)="save()">{{ saving() ? 'Сохраняем…' : 'Сохранить' }}</button>
           @if (embedded) { <button type="button" class="close" aria-label="Закрыть тренировку" (click)="closeRequested.emit()">✕</button> }
         </div>
       </header>
 
       <div class="panels">
         <aside class="picker">
-          <div class="picker-label">БИБЛИОТЕКА · ПЕРЕТАЩИТЕ В СПИСОК</div>
-          <div class="search"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#5b6472" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="11" cy="11" r="7" /><path d="m20 20-4.5-4.5" /></svg><span>Поиск упражнения</span></div>
-          <div class="picker-chips"><span class="pc is-active">Ноги</span><span class="pc">Кор</span><span class="pc">Сила</span></div>
+          <div class="label">БИБЛИОТЕКА УПРАЖНЕНИЙ</div>
+          <input class="search" type="search" aria-label="Поиск упражнения" placeholder="Поиск упражнения" [value]="search()" (input)="search.set($any($event.target).value)" />
+          <div class="picker-chips">
+            @for (tag of selectedTags(); track tag) {
+              <button type="button" class="pc is-active" [attr.aria-label]="'Убрать тег ' + tag" (click)="removeTag(tag)">{{ tag }} ×</button>
+            }
+            <select aria-label="Добавить тег" (change)="addTag($event)">
+              <option value="">＋ Тег</option>
+              @for (tag of availableTags(); track tag) { @if (!selectedTags().includes(tag)) { <option [value]="tag">{{ tag }}</option> } }
+            </select>
+          </div>
           <div class="picker-list">
-            @for (item of library(); track item.id) {
-              <button type="button" class="pick-card" (click)="addFromLibrary(item)" [attr.aria-label]="'Добавить упражнение ' + item.title">
+            @for (exercise of filteredExercises(); track exercise.id) {
+              <button type="button" class="pick-card" (click)="addFromLibrary(exercise)" [attr.aria-label]="'Добавить упражнение ' + exercise.title">
                 <span class="pick-photo">
-                  @if (item.thumbnailUrl) { <img [src]="item.thumbnailUrl" [alt]="item.title" width="320" height="180" loading="lazy" decoding="async" /> }
+                  @if (thumbnailUrl(exercise); as url) { <img [src]="url" [alt]="exercise.title" width="320" height="180" loading="lazy" /> }
                   @else { <span class="pick-placeholder">Фото нет</span> }
                 </span>
-                <span class="pick-name">{{ item.title }}</span>
+                <span class="pick-name">{{ exercise.title }}</span>
               </button>
-            } @empty { <p class="picker-empty">Пока нет упражнений в библиотеке.</p> }
+            } @empty { <p class="empty">Упражнений по этим тегам нет.</p> }
           </div>
         </aside>
 
         <section class="editor">
-          <div class="field">
-            <div class="label">НАЗВАНИЕ ТРЕНИРОВКИ</div>
-            <div class="value value--name">{{ currentTitle() }}</div>
-          </div>
-          <div class="field">
-            <div class="label">ОПИСАНИЕ</div>
-            <div class="value value--desc">{{ currentDescription() }}</div>
-          </div>
-
-          <div class="ex-head">
-            <span class="label">УПРАЖНЕНИЯ · {{ blocks().length }}</span>
-            <span class="label">объём: {{ totalSets() }} подходов · ~{{ currentDuration() }} мин</span>
-          </div>
+          <label class="field"><span class="label">НАЗВАНИЕ ТРЕНИРОВКИ</span>
+            <input class="value name" aria-label="Название тренировки" maxlength="160" [value]="draft().title" (input)="setTitle($any($event.target).value)" />
+          </label>
+          <label class="field"><span class="label">ОПИСАНИЕ</span>
+            <textarea class="value description" aria-label="Описание тренировки" maxlength="2000" rows="3" [value]="draft().description" (input)="setDescription($any($event.target).value)"></textarea>
+          </label>
+          <div class="ex-head"><span class="label">УПРАЖНЕНИЯ · {{ summary().exerciseCount }}</span><span class="label">{{ summary().totalSets }} подходов · ~{{ summary().durationMinutes }} мин</span></div>
 
           <div class="blocks">
-            <div class="block-label">БЛОК A · СИЛА</div>
-            @for (block of blocks(); track block.tag; let i = $index) {
-              @if (block.tag === 'B1') { <div class="block-label">БЛОК B · ОБЪЁМ · СУПЕРСЕТ</div> }
-              <article class="block" [class.is-selected]="block.tag === selectedTag()" [class.is-superset]="block.superset" (click)="select(block.tag)">
-                <div class="block-row">
-                  <span class="drag">⠿</span>
-                  <span class="tag" [class.tag--blue]="block.tag === selectedTag()">{{ block.tag }}</span>
-                  <span class="thumb"></span>
-                  <span class="block-text"><span class="block-name">{{ block.name }}</span>@if (block.category) {<span class="block-cat">КАТЕГОРИЯ: {{ block.category }}</span>}</span>
-                  <button type="button" class="rm" (click)="remove(block.tag); $event.stopPropagation()">✕</button>
+            @for (block of draft().blocks; track block.id; let blockIndex = $index) {
+              <section class="training-block" [class.is-selected]="selectedBlockId() === block.id">
+                <div class="block-head">
+                  <button type="button" class="block-select" (click)="selectedBlockId.set(block.id)" [attr.aria-label]="'Выбрать блок ' + (blockIndex + 1)">БЛОК {{ blockIndex + 1 }}</button>
+                  <input class="block-title" [attr.aria-label]="'Название блока ' + (blockIndex + 1)" maxlength="160" [value]="block.title" (input)="setBlockTitle(block.id, $any($event.target).value)" />
+                  <select [attr.aria-label]="'Тип блока ' + (blockIndex + 1)" [value]="block.kind" (change)="setBlockKind(block.id, $any($event.target).value)">
+                    <option value="warmup">Разминка</option><option value="main">Основной</option><option value="cooldown">Заминка</option>
+                  </select>
+                  <button type="button" class="rm" [attr.aria-label]="'Удалить блок ' + (blockIndex + 1)" (click)="removeBlock(block.id)">✕</button>
                 </div>
-                @if (block.tag === selectedTag()) {
-                  <div class="steppers">
-                    <div class="stp"><div class="stp-label">ПОДХОДЫ</div><div class="stp-box"><button type="button" (click)="bump(block.tag,'sets',-1); $event.stopPropagation()">−</button><span>{{ block.sets }}</span><button type="button" class="plus" (click)="bump(block.tag,'sets',1); $event.stopPropagation()">+</button></div></div>
-                    <span class="mult">×</span>
-                    <div class="stp"><div class="stp-label">ПОВТОРЫ</div><div class="stp-box"><button type="button" (click)="bump(block.tag,'reps',-1); $event.stopPropagation()">−</button><span>{{ block.reps }}</span><button type="button" class="plus" (click)="bump(block.tag,'reps',1); $event.stopPropagation()">+</button></div></div>
-                    <div class="stp"><div class="stp-label">ВЕС, КГ</div><div class="stp-box"><button type="button" (click)="bump(block.tag,'weight',-1); $event.stopPropagation()">−</button><span class="lime">{{ block.weight }}</span><button type="button" class="plus" (click)="bump(block.tag,'weight',1); $event.stopPropagation()">+</button></div></div>
-                    <div class="stp"><div class="stp-label">ОТДЫХ</div><div class="stp-box"><button type="button" (click)="bump(block.tag,'rest',-1); $event.stopPropagation()">−</button><span>{{ block.rest }}</span><button type="button" class="plus" (click)="bump(block.tag,'rest',1); $event.stopPropagation()">+</button></div></div>
-                  </div>
-                } @else if (block.chips) {
-                  <div class="chip-row">
-                    @for (c of block.chips; track c; let first = $first; let last = $last) {
-                      <span class="chip" [class.chip--lime]="!first && !last && block.weight !== null">{{ c }}</span>
-                    }
-                  </div>
-                }
-              </article>
+                @for (item of block.exercises; track item.id; let i = $index) {
+                  <article class="exercise" [class.is-selected]="selectedExerciseId() === item.id" (click)="selectExercise(block.id, item.id)">
+                    <div class="exercise-row">
+                      <span class="tag">{{ blockIndex + 1 }}.{{ i + 1 }}</span>
+                      @if (findExercise(item.exercise_id); as source) {
+                        <span class="thumb">@if (thumbnailUrl(source); as url) { <img [src]="url" [alt]="source.title" width="64" height="48" /> }</span>
+                        <span class="exercise-name">{{ source.title }}</span>
+                      } @else { <span class="exercise-name">Упражнение недоступно</span> }
+                      <button type="button" class="move" aria-label="Выше" [disabled]="i === 0" (click)="moveExercise(block.id, i, -1); $event.stopPropagation()">↑</button>
+                      <button type="button" class="move" aria-label="Ниже" [disabled]="i === block.exercises.length - 1" (click)="moveExercise(block.id, i, 1); $event.stopPropagation()">↓</button>
+                      <button type="button" class="rm" aria-label="Удалить упражнение" (click)="removeExercise(block.id, item.id); $event.stopPropagation()">✕</button>
+                    </div>
+                    @if (selectedExerciseId() === item.id) {
+                      <div class="steppers">
+                        <div class="stp"><label class="stp-label">ПОДХОДЫ</label><div class="stp-box"><button type="button" (click)="bump(item.id, 'sets', -1); $event.stopPropagation()">−</button><input type="number" min="1" max="100" step="1" aria-label="Подходы" [value]="item.sets" (change)="setNumeric(item.id, 'sets', $any($event.target).value)" (click)="$event.stopPropagation()" /><button type="button" (click)="bump(item.id, 'sets', 1); $event.stopPropagation()">+</button></div></div>
+                        <div class="stp"><label class="stp-label">ПОВТОРЫ</label><div class="stp-box"><button type="button" (click)="bump(item.id, 'reps', -1); $event.stopPropagation()">−</button><input type="number" min="1" max="1000" step="1" aria-label="Повторы" [value]="item.reps" (change)="setNumeric(item.id, 'reps', $any($event.target).value)" (click)="$event.stopPropagation()" /><button type="button" (click)="bump(item.id, 'reps', 1); $event.stopPropagation()">+</button></div></div>
+                        <div class="stp"><label class="stp-label">ВЕС, КГ</label><div class="stp-box"><button type="button" (click)="bump(item.id, 'weight_kg', -2.5); $event.stopPropagation()">−</button><input type="number" min="0" max="1000" step="0.01" aria-label="Вес, кг" [value]="item.weight_kg ?? ''" (change)="setNumeric(item.id, 'weight_kg', $any($event.target).value)" (click)="$event.stopPropagation()" /><button type="button" (click)="bump(item.id, 'weight_kg', 2.5); $event.stopPropagation()">+</button></div></div>
+                        <div class="stp"><label class="stp-label">ОТДЫХ, С</label><div class="stp-box"><button type="button" (click)="bump(item.id, 'rest_seconds', -15); $event.stopPropagation()">−</button><input type="number" min="0" max="3600" step="1" aria-label="Отдых, секунды" [value]="item.rest_seconds" (change)="setNumeric(item.id, 'rest_seconds', $any($event.target).value)" (click)="$event.stopPropagation()" /><button type="button" (click)="bump(item.id, 'rest_seconds', 15); $event.stopPropagation()">+</button></div></div>
+                      </div>
+                    } @else { <div class="chip-row"><span class="chip">{{ item.sets }} × {{ item.reps }}</span><span class="chip">{{ item.weight_kg ?? 0 }} кг</span><span class="chip">отдых {{ item.rest_seconds }} с</span></div> }
+                  </article>
+                } @empty { <p class="empty">Выберите блок и добавьте упражнение из библиотеки слева.</p> }
+              </section>
             }
-            <div class="add-row">
-              <button type="button" class="dashed" (click)="addBlock()">＋ Упражнение</button>
-              <button type="button" class="dashed" (click)="addBlock()">＋ Суперсет</button>
-              <button type="button" class="dashed" (click)="addTask()">＋ Задача в конец</button>
-            </div>
+            <div class="add-row"><button type="button" class="dashed" (click)="addBlock()">＋ Блок</button><button type="button" class="dashed" (click)="addTask()">＋ Задача</button></div>
           </div>
         </section>
 
-        <aside class="summary">
+        <aside class="summary-panel">
           <div class="sum-title">СВОДКА ТРЕНИРОВКИ</div>
-          <div class="sum-scores">
-            <div class="sum-cell"><span class="sum-val lime">{{ totalSets() }}</span><span class="sum-lbl">ПОДХОДОВ</span></div>
-            <div class="sum-cell"><span class="sum-val">{{ currentDuration() }}</span><span class="sum-lbl">МИНУТ</span></div>
-          </div>
-          <div>
-            <div class="label">НАГРУЗКА ПО ГРУППАМ</div>
-            <div class="load">
-              <div class="load-row"><div class="load-head">Ноги <span>11</span></div><div class="load-bar"><i style="width:78%;background:#c9f24b"></i></div></div>
-              <div class="load-row"><div class="load-head">Кор <span>5</span></div><div class="load-bar"><i style="width:36%;background:#2f5cff"></i></div></div>
-              <div class="load-row"><div class="load-head">Спина <span>2</span></div><div class="load-bar"><i style="width:14%;background:#8a94a6"></i></div></div>
-            </div>
-          </div>
-          <div>
-            <div class="label">ИСПОЛЬЗУЕТСЯ В ПРОГРАММАХ</div>
-            <div class="used">
-              <div class="used-row"><span>Гипертрофия · 8 нед</span><span class="x">×3</span></div>
-              <div class="used-row"><span>Старт с нуля · 4 нед</span><span class="x">×1</span></div>
-            </div>
-          </div>
-          <div class="warn">
-            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#e8833a" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 9v4M12 17h.01" /><path d="M10.3 3.9 1.8 18a2 2 0 0 0 1.7 3h17a2 2 0 0 0 1.7-3L13.7 3.9a2 2 0 0 0-3.4 0z" /></svg>
-            <span>Правка тренировки обновит её во всех программах. Чтобы изменить точечно — «Дублировать».</span>
-          </div>
-          @if (message()) { <p class="message">{{ message() }}</p> }
+          <div class="sum-scores"><div class="sum-cell"><strong>{{ summary().totalSets }}</strong><span>ПОДХОДОВ</span></div><div class="sum-cell"><strong>{{ summary().durationMinutes }}</strong><span>МИНУТ</span></div></div>
+          <div><div class="label">НАГРУЗКА ПО ГРУППАМ</div><div class="load">
+            @for (entry of summary().load; track entry.name) { <div class="load-row"><div class="load-head">{{ entry.name }} <span>{{ entry.sets }}</span></div><div class="load-bar"><i [style.width.%]="loadPercent(entry.sets)"></i></div></div> }
+            @if (summary().load.length === 0) { <p class="empty">Добавьте упражнения, чтобы увидеть нагрузку.</p> }
+          </div></div>
+          <div><div class="label">ИСПОЛЬЗУЕТСЯ В ПРОГРАММАХ</div><div class="used">
+            @for (entry of usage(); track entry.title) { <div class="used-row"><span>{{ entry.title }}</span><span>×{{ entry.count }}</span></div> }
+            @if (usage().length === 0) { <p class="empty">Пока не используется.</p> }
+          </div></div>
+          <p class="note">Изменения шаблона видны в программах; уже выданные тренировки сохраняют прежнюю версию.</p>
+          @if (message()) { <p class="message" role="status">{{ message() }}</p> }
         </aside>
       </div>
     </div>
   `,
   styles: `
-    :host { display: block; }
-    .screen { min-height: 100dvh; background: #14181d; color: #f5f7fa; font-family: 'Golos Text', system-ui, sans-serif; }
-    .screen.is-embedded { min-height: 0; }
-    .toolbar { display: flex; align-items: center; justify-content: space-between; padding: 1.125rem 1.75rem; border-bottom: 1px solid rgb(245 247 250 / 6%); gap: 1rem; flex-wrap: wrap; }
-    .left { display: flex; align-items: center; gap: 0.875rem; flex-wrap: wrap; }
-    .back { display: inline-flex; align-items: center; gap: 0.5rem; color: #8a94a6; text-decoration: none; font-size: 0.875rem; }
-    .back-button { padding: 0; border: 0; background: transparent; font: inherit; cursor: pointer; }
-    .close { width: 2.25rem; height: 2.25rem; border: 1px solid rgb(245 247 250 / 16%); border-radius: 0.5625rem; background: transparent; color: #f5f7fa; cursor: pointer; }
-    .wname { font-family: 'Unbounded', sans-serif; font-weight: 600; font-size: 1.125rem; color: #f5f7fa; }
-    .pill { font-family: 'JetBrains Mono', monospace; font-size: 0.625rem; color: #8a94a6; background: #1c222b; padding: 0.25rem 0.5rem; border-radius: 999px; }
-    .right { display: flex; align-items: center; gap: 0.625rem; }
-    .hotkeys { font-family: 'JetBrains Mono', monospace; font-size: 0.6875rem; color: #8a94a6; }
-    .outline, .fill { font: inherit; font-weight: 600; font-size: 0.875rem; padding: 0.5625rem 1rem; border-radius: 0.5625rem; cursor: pointer; }
-    .outline { border: 1px solid rgb(245 247 250 / 16%); background: transparent; color: #f5f7fa; }
-    .fill { border: 0; font-weight: 700; color: #14181d; background: #c9f24b; }
-    .panels { display: flex; min-height: calc(100dvh - 4.5rem); }
-    .is-embedded .panels { min-height: 0; }
-    .picker { width: 20rem; flex: none; border-right: 1px solid rgb(245 247 250 / 6%); padding: 1.25rem 1.125rem; display: flex; flex-direction: column; gap: 0.75rem; }
-    .picker-label, .label { font-family: 'JetBrains Mono', monospace; font-size: 0.625rem; letter-spacing: 0.1em; color: #8a94a6; }
-    .search { display: flex; align-items: center; gap: 0.5625rem; height: 2.5rem; padding: 0 0.8125rem; background: #1c222b; border: 1px solid rgb(245 247 250 / 8%); border-radius: 0.625rem; color: #5b6472; font-size: 0.8125rem; }
-    .picker-chips { display: flex; gap: 0.375rem; }
-    .pc { font-size: 0.6875rem; color: #8a94a6; background: #1c222b; padding: 0.375rem 0.625rem; border-radius: 0.4375rem; }
-    .pc.is-active { font-weight: 700; color: #14181d; background: #c9f24b; }
-    .picker-list { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); align-content: start; gap: 0.625rem; margin-top: 0.25rem; }
-    .pick-card { min-width: 0; padding: 0; overflow: hidden; background: #1c222b; border: 1px solid rgb(245 247 250 / 8%); border-radius: 0.6875rem; cursor: pointer; text-align: left; color: inherit; font: inherit; }
-    .pick-card:hover, .pick-card:focus-visible { border-color: #c9f24b; }
-    .pick-photo { display: block; width: 100%; aspect-ratio: 16 / 9; background: repeating-linear-gradient(135deg, #242b34, #242b34 8px, #20272f 8px, #20272f 16px); }
-    .pick-photo img { display: block; width: 100%; height: 100%; object-fit: cover; }
-    .pick-placeholder { display: grid; place-items: center; height: 100%; color: #8a94a6; font-size: 0.6875rem; }
-    .pick-name { display: block; padding: 0.625rem; font-size: 0.75rem; font-weight: 600; line-height: 1.3; color: #f5f7fa; }
-    .picker-empty { grid-column: 1 / -1; color: #8a94a6; font-size: 0.8125rem; }
-    .editor { flex: 1; min-width: 0; border-right: 1px solid rgb(245 247 250 / 6%); padding: 1.5rem 1.75rem; }
-    .field + .field { margin-top: 0.75rem; }
-    .field .label { display: block; margin-bottom: 0.4375rem; }
-    .value { background: #1c222b; border: 1px solid rgb(245 247 250 / 10%); border-radius: 0.6875rem; padding: 0.8125rem 0.9375rem; color: #f5f7fa; }
-    .value--name { font-family: 'Unbounded', sans-serif; font-weight: 600; font-size: 1.25rem; letter-spacing: -0.02em; }
-    .value--desc { font-size: 0.875rem; line-height: 1.5; }
-    .ex-head { display: flex; align-items: center; justify-content: space-between; margin: 1.5rem 0 0.75rem; }
-    .blocks { display: flex; flex-direction: column; gap: 0.625rem; }
-    .block-label { font-family: 'JetBrains Mono', monospace; font-size: 0.625rem; letter-spacing: 0.1em; color: #c9f24b; margin-top: 0.5rem; }
-    .block { background: #1c222b; border-radius: 0.875rem; padding: 0.9375rem 1.0625rem; border: 1px solid transparent; cursor: pointer; }
-    .block.is-selected { border-color: #2f5cff; }
-    .block.is-superset { border-left: 3px solid #c9f24b; }
-    .block-row { display: flex; align-items: center; gap: 0.75rem; }
-    .drag { color: #5b6472; }
-    .tag { width: 1.625rem; height: 1.625rem; border-radius: 0.4375rem; background: #2a323d; color: #f5f7fa; font-family: 'JetBrains Mono', monospace; font-weight: 700; font-size: 0.75rem; display: flex; align-items: center; justify-content: center; flex: none; }
-    .tag--blue { background: #2f5cff; color: #fff; }
-    .thumb { width: 3rem; height: 2.125rem; border-radius: 0.4375rem; flex: none; background: repeating-linear-gradient(135deg, #242b34, #242b34 8px, #20272f 8px, #20272f 16px); }
-    .block-text { flex: 1; min-width: 0; }
-    .block-name { display: block; font-weight: 600; font-size: 0.9375rem; color: #f5f7fa; }
-    .block-cat { display: block; font-family: 'JetBrains Mono', monospace; font-size: 0.5625rem; color: #8a94a6; margin-top: 0.125rem; }
-    .rm { border: 0; background: none; color: #5b6472; font: inherit; font-size: 0.875rem; cursor: pointer; }
-    .steppers { display: flex; align-items: flex-end; gap: 0.625rem; margin-top: 0.8125rem; }
-    .stp { flex: 1; }
-    .stp-label { font-family: 'JetBrains Mono', monospace; font-size: 0.5625rem; letter-spacing: 0.08em; color: #8a94a6; margin-bottom: 0.3125rem; }
-    .stp-box { display: flex; align-items: center; justify-content: space-between; background: #14181d; border-radius: 0.5625rem; padding: 0.5625rem 0.75rem; }
-    .stp-box button { border: 0; background: none; color: #5b6472; font: inherit; font-size: 1rem; cursor: pointer; padding: 0; }
-    .stp-box button.plus { color: #c9f24b; }
-    .stp-box span { font-family: 'Unbounded', sans-serif; font-weight: 600; font-size: 1rem; color: #f5f7fa; }
-    .stp-box span.lime { color: #c9f24b; }
-    .mult { font-family: 'JetBrains Mono', monospace; color: #5b6472; padding-bottom: 0.6875rem; }
-    .chip-row { display: flex; gap: 0.5rem; margin-top: 0.75rem; flex-wrap: wrap; }
-    .chip { font-family: 'JetBrains Mono', monospace; font-size: 0.75rem; background: #14181d; color: #f5f7fa; padding: 0.4375rem 0.75rem; border-radius: 0.5rem; }
-    .chip--lime { color: #c9f24b; }
-    .add-row { display: flex; gap: 0.625rem; margin-top: 0.25rem; }
-    .dashed { flex: 1; text-align: center; padding: 0.75rem; border: 1.5px dashed rgb(245 247 250 / 18%); border-radius: 0.75rem; background: transparent; color: #8a94a6; font: inherit; font-size: 0.8125rem; font-weight: 600; cursor: pointer; }
-    .summary { width: 18.75rem; flex: none; border-left: 1px solid rgb(245 247 250 / 6%); padding: 1.5rem 1.375rem; display: flex; flex-direction: column; gap: 1.125rem; }
-    .sum-title { font-family: 'JetBrains Mono', monospace; font-size: 0.625rem; letter-spacing: 0.1em; color: #f5f7fa; font-weight: 700; }
-    .sum-scores { display: flex; gap: 0.5rem; }
-    .sum-cell { flex: 1; background: #1c222b; border-radius: 0.75rem; padding: 0.8125rem; }
-    .sum-val { display: block; font-family: 'Unbounded', sans-serif; font-weight: 600; font-size: 1.375rem; color: #f5f7fa; }
-    .sum-val.lime { color: #c9f24b; }
-    .sum-lbl { display: block; font-family: 'JetBrains Mono', monospace; font-size: 0.5625rem; letter-spacing: 0.08em; color: #8a94a6; margin-top: 0.25rem; }
-    .load { display: flex; flex-direction: column; gap: 0.5625rem; margin-top: 0.625rem; }
-    .load-head { display: flex; justify-content: space-between; font-size: 0.75rem; color: #f5f7fa; margin-bottom: 0.3125rem; }
-    .load-head span { font-family: 'JetBrains Mono', monospace; color: #8a94a6; }
-    .load-bar { height: 0.375rem; border-radius: 999px; background: rgb(245 247 250 / 8%); }
-    .load-bar i { display: block; height: 100%; border-radius: 999px; }
-    .used { display: flex; flex-direction: column; gap: 0.4375rem; margin-top: 0.625rem; }
-    .used-row { display: flex; align-items: center; justify-content: space-between; background: #1c222b; border-radius: 0.625rem; padding: 0.6875rem 0.75rem; font-size: 0.8125rem; color: #f5f7fa; }
-    .used-row .x { font-family: 'JetBrains Mono', monospace; font-size: 0.625rem; color: #8a94a6; }
-    .warn { margin-top: auto; display: flex; align-items: flex-start; gap: 0.5625rem; padding: 0.75rem 0.8125rem; background: rgb(232 131 58 / 10%); border-radius: 0.6875rem; }
-    .warn svg { flex: none; margin-top: 0.0625rem; }
-    .warn span { font-size: 0.75rem; line-height: 1.45; color: #8a94a6; }
-    .message { margin: 0; font-size: 0.75rem; color: #8a94a6; }
-    @media (max-width: 1200px) {
-      .panels { flex-wrap: wrap; }
-      .picker, .summary { width: 100%; border-right: 0; border-left: 0; border-bottom: 1px solid rgb(245 247 250 / 6%); }
-      .editor { flex: 1 1 100%; border-right: 0; }
-    }
+    :host{display:block}.screen{min-height:100dvh;background:#14181d;color:#f5f7fa;font-family:'Golos Text',system-ui,sans-serif}.screen.is-embedded{min-height:0}
+    button,input,textarea,select{font:inherit}.toolbar{display:flex;align-items:center;justify-content:space-between;gap:1rem;flex-wrap:wrap;padding:1.125rem 1.75rem;border-bottom:1px solid #ffffff12}.left,.right{display:flex;align-items:center;gap:.75rem;flex-wrap:wrap}.back{border:0;background:none;color:#8a94a6;text-decoration:none;cursor:pointer}.wname{font-family:Unbounded,sans-serif;font-size:1.05rem}.pill,.label,.stp-label{font-family:'JetBrains Mono',monospace;color:#8a94a6;letter-spacing:.06em;font-size:.625rem}.pill{background:#1c222b;padding:.3rem .5rem;border-radius:99px}.fill{border:0;border-radius:.55rem;background:#c9f24b;color:#14181d;font-weight:700;padding:.6rem 1rem;cursor:pointer}.fill:disabled{opacity:.6}.close{border:1px solid #ffffff28;background:none;color:#fff;border-radius:.5rem;width:2.25rem;height:2.25rem;cursor:pointer}
+    .panels{display:flex;min-height:calc(100dvh - 4.5rem)}.is-embedded .panels{min-height:0}.picker{width:20rem;flex:none;padding:1.25rem 1.125rem;border-right:1px solid #ffffff12;display:flex;flex-direction:column;gap:.75rem}.search,.value,.block-title,.block-head select,.picker-chips select{background:#1c222b;border:1px solid #ffffff1a;color:#f5f7fa;border-radius:.6rem;padding:.65rem .75rem;min-width:0}.search{width:100%;box-sizing:border-box}.picker-chips{display:flex;flex-wrap:wrap;gap:.4rem}.pc{border:0;border-radius:.45rem;background:#c9f24b;color:#14181d;padding:.4rem .55rem;cursor:pointer;font-size:.7rem;font-weight:700}.picker-chips select{font-size:.7rem;padding:.35rem .45rem}.picker-list{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));align-content:start;gap:.625rem;max-height:70dvh;overflow:auto}.pick-card{overflow:hidden;border:1px solid #ffffff14;border-radius:.7rem;background:#1c222b;color:inherit;text-align:left;cursor:pointer;padding:0}.pick-card:hover,.pick-card:focus-visible{border-color:#c9f24b}.pick-photo{display:block;aspect-ratio:16/9;background:#252c35}.pick-photo img{width:100%;height:100%;object-fit:cover}.pick-placeholder{height:100%;display:grid;place-items:center;color:#8a94a6;font-size:.7rem}.pick-name{display:block;padding:.6rem;font-size:.75rem;font-weight:600}
+    .editor{flex:1;min-width:0;padding:1.5rem 1.75rem;border-right:1px solid #ffffff12}.field{display:block;margin-bottom:.8rem}.field .label{display:block;margin-bottom:.4rem}.value{display:block;box-sizing:border-box;width:100%}.name{font-family:Unbounded,sans-serif;font-weight:600;font-size:1.15rem}.description{resize:vertical;line-height:1.5}.ex-head{display:flex;justify-content:space-between;gap:.5rem;margin:1.5rem 0 .75rem}.blocks{display:flex;flex-direction:column;gap:.75rem}.training-block{border:1px solid #ffffff18;border-radius:.85rem;padding:.75rem;background:#181d23}.training-block.is-selected{border-color:#2f5cff}.block-head{display:flex;align-items:center;gap:.55rem;margin-bottom:.7rem}.block-select{border:0;background:none;color:#c9f24b;white-space:nowrap;font-family:'JetBrains Mono',monospace;font-size:.7rem;cursor:pointer}.block-title{flex:1}.block-head select{font-size:.75rem}.rm,.move{border:0;background:none;color:#8a94a6;cursor:pointer}.move:disabled{opacity:.3;cursor:default}.exercise{background:#1c222b;border:1px solid transparent;border-radius:.7rem;padding:.7rem;margin-top:.5rem;cursor:pointer}.exercise.is-selected{border-color:#2f5cff}.exercise-row{display:flex;align-items:center;gap:.55rem}.tag{background:#2a323d;border-radius:.4rem;padding:.35rem;font-family:'JetBrains Mono',monospace;font-size:.7rem}.thumb{width:3rem;height:2.2rem;background:#252c35;border-radius:.35rem;overflow:hidden;flex:none}.thumb img{width:100%;height:100%;object-fit:cover}.exercise-name{flex:1;font-weight:600;min-width:0}.steppers{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:.5rem;margin-top:.8rem}.stp-label{display:block;margin-bottom:.25rem}.stp-box{display:flex;align-items:center;background:#14181d;border-radius:.5rem;padding:.35rem}.stp-box button{border:0;background:none;color:#c9f24b;cursor:pointer;padding:.25rem}.stp-box input{width:100%;min-width:0;background:none;border:0;color:#fff;text-align:center;appearance:textfield}.stp-box input::-webkit-inner-spin-button{appearance:none}.chip-row{display:flex;gap:.4rem;margin-top:.6rem}.chip{background:#14181d;border-radius:.4rem;padding:.35rem .5rem;font-size:.7rem}.add-row{display:flex;gap:.6rem}.dashed{flex:1;background:none;border:1px dashed #ffffff35;border-radius:.7rem;color:#8a94a6;padding:.75rem;cursor:pointer}.empty{color:#8a94a6;font-size:.75rem;line-height:1.5}
+    .summary-panel{width:18.75rem;flex:none;padding:1.5rem 1.375rem;display:flex;flex-direction:column;gap:1.2rem}.sum-title{font-family:'JetBrains Mono',monospace;font-size:.65rem;letter-spacing:.07em}.sum-scores{display:flex;gap:.5rem}.sum-cell{flex:1;padding:.8rem;background:#1c222b;border-radius:.7rem}.sum-cell strong{display:block;font-family:Unbounded,sans-serif;font-size:1.4rem}.sum-cell:first-child strong{color:#c9f24b}.sum-cell span{font-family:'JetBrains Mono',monospace;font-size:.6rem;color:#8a94a6}.load{margin-top:.6rem;display:flex;flex-direction:column;gap:.5rem}.load-head{display:flex;justify-content:space-between;font-size:.75rem}.load-head span{color:#8a94a6}.load-bar{height:.4rem;border-radius:99px;background:#ffffff18;margin-top:.25rem}.load-bar i{display:block;height:100%;background:#c9f24b;border-radius:99px}.used{margin-top:.6rem}.used-row{display:flex;justify-content:space-between;gap:.5rem;background:#1c222b;border-radius:.5rem;padding:.65rem;font-size:.75rem;margin-bottom:.4rem}.note{color:#8a94a6;font-size:.75rem;line-height:1.5}.message{color:#c9f24b;font-size:.8rem}
+    @media(max-width:1180px){.panels{flex-wrap:wrap}.picker{width:17rem}.summary-panel{width:auto;flex:1 1 100%;border-top:1px solid #ffffff12}.editor{border-right:0}}@media(max-width:760px){.picker{width:auto;flex:1 1 100%;border-right:0;border-bottom:1px solid #ffffff12}.picker-list{max-height:15rem}.editor{padding:1.1rem}.steppers{grid-template-columns:repeat(2,minmax(0,1fr))}.block-head{flex-wrap:wrap}.summary-panel{padding:1.1rem}}
   `,
   changeDetection: ChangeDetectionStrategy.OnPush,
 })
 export class WorkoutConstructorComponent {
+  private readonly workoutsApi = inject(WorkoutsApi);
+  private readonly exercisesApi = inject(ExercisesApi);
+  private readonly programsApi = inject(ProgramsApi);
+  private currentWorkout: WorkoutResponse | null = null;
+
   embedded = false;
-  workout: WorkoutPreview | null = null;
-  availableExercises: readonly ExerciseResponse[] | null = null;
+  set workout(value: WorkoutResponse | null) {
+    this.currentWorkout = value;
+    this.draft.set(draftFromWorkout(value));
+    this.selectedBlockId.set(value?.blocks[0]?.id ?? null);
+    this.selectedExerciseId.set(value?.blocks[0]?.exercises[0]?.id ?? null);
+    this.workoutId.set(value?.id ?? null);
+  }
+  set availableExercises(value: readonly ExerciseResponse[] | null) { if (value !== null) this.exercises.set(value); }
   exerciseThumbnailUrls: Readonly<Record<string, string>> = {};
+  set programs(value: readonly ProgramResponse[]) { this.programList.set(value); }
   readonly closeRequested = new EventEmitter<void>();
+  readonly saved = new EventEmitter<WorkoutResponse>();
 
-  protected library(): readonly LibraryItem[] {
-    const exercises = this.availableExercises;
-    if (exercises === null) return LIBRARY;
-    return exercises.map((exercise) => ({
-      id: exercise.id,
-      title: exercise.title,
-      thumbnailUrl: this.exerciseThumbnailUrls[exercise.thumbnail_media_id ?? ''] ?? exercise.thumbnail_url ?? null,
-    }));
-  }
-  protected readonly blocks = signal<Block[]>([...INITIAL_BLOCKS.map((b) => ({ ...b }))]);
-  protected readonly selectedTag = signal<string>('A1');
+  protected readonly draft = signal(draftFromWorkout(null));
+  protected readonly exercises = signal<readonly ExerciseResponse[]>([]);
+  protected readonly programList = signal<readonly ProgramResponse[]>([]);
+  protected readonly workoutId = signal<string | null>(null);
+  protected readonly selectedBlockId = signal<string | null>(null);
+  protected readonly selectedExerciseId = signal<string | null>(null);
+  protected readonly selectedTags = signal<string[]>([]);
+  protected readonly search = signal('');
+  protected readonly saving = signal(false);
   protected readonly message = signal('');
+  protected readonly summary = computed(() => summarizeWorkout(this.draft(), this.exercises()));
+  protected readonly usage = computed(() => programUsage(this.workoutId(), this.programList()));
+  protected readonly availableTags = computed(() => [...new Set(this.exercises().flatMap(exerciseTags))]);
+  protected readonly filteredExercises = computed(() => this.exercises().filter((exercise) => {
+    const search = this.search().trim().toLocaleLowerCase('ru');
+    const tags = exerciseTags(exercise);
+    return (!search || exercise.title.toLocaleLowerCase('ru').includes(search)) && this.selectedTags().every((tag) => tags.includes(tag));
+  }));
 
-  protected readonly totalSets = computed(() => this.blocks().reduce((sum, b) => sum + b.sets, 0));
-  protected currentTitle(): string { return this.workout?.title ?? (this.embedded ? 'Новая тренировка' : 'Ноги + кор'); }
-  protected currentDescription(): string { return this.workout?.description ?? (this.embedded ? '' : 'База на квадрицепс и заднюю поверхность + кор в конце. Блок A — тяжёлый, отдых полный. Блок B — объёмный, темп держим.'); }
-  protected currentDuration(): number { return this.workout?.durationMinutes ?? 55; }
-
-  protected select(tag: string): void {
-    this.selectedTag.set(tag);
+  constructor() {
+    queueMicrotask(() => { if (!this.embedded) void this.loadStandalone(); });
   }
 
-  protected bump(tag: string, field: 'sets' | 'reps' | 'weight' | 'rest', delta: number): void {
-    this.blocks.update((items) =>
-      items.map((b) => {
-        if (b.tag !== tag) return b;
-        if (field === 'sets') return { ...b, sets: Math.max(1, b.sets + delta) };
-        if (field === 'weight') return { ...b, weight: Math.max(0, (b.weight ?? 0) + delta * 2.5) };
-        if (field === 'rest') return { ...b, rest: Math.max(0, (b.rest ?? 0) + delta * 15) };
-        const n = Number.parseInt(b.reps, 10);
-        return { ...b, reps: Number.isNaN(n) ? b.reps : String(Math.max(1, n + delta)) };
-      }),
-    );
+  private async loadStandalone(): Promise<void> {
+    try { this.exercises.set(await firstValueFrom(this.exercisesApi.list())); } catch { this.message.set('Не удалось загрузить упражнения.'); }
+    try { this.programList.set(await firstValueFrom(this.programsApi.list())); } catch { /* Usage stays empty. */ }
   }
 
-  protected remove(tag: string): void {
-    this.blocks.update((items) => items.filter((b) => b.tag !== tag));
+  protected thumbnailUrl(exercise: ExerciseResponse): string | null {
+    return this.exerciseThumbnailUrls[exercise.thumbnail_media_id ?? ''] ?? exercise.thumbnail_url ?? null;
   }
-
-  protected addFromLibrary(item: LibraryItem): void {
-    const next = this.blocks().length + 1;
-    this.blocks.update((items) => [
-      ...items,
-      { tag: `A${next}`, name: item.title, category: 'КГ × ПОВТОРЕНИЯ', group: 'A', superset: false, sets: 3, reps: '10', weight: 20, rest: 60 },
-    ]);
+  protected findExercise(id: string): ExerciseResponse | undefined { return this.exercises().find((exercise) => exercise.id === id); }
+  protected loadPercent(sets: number): number { return 100 * sets / Math.max(1, ...this.summary().load.map((item) => item.sets)); }
+  protected setTitle(title: string): void { this.draft.update((draft) => ({ ...draft, title })); }
+  protected setDescription(description: string): void { this.draft.update((draft) => ({ ...draft, description })); }
+  protected addTag(event: Event): void {
+    const element = event.target as HTMLSelectElement;
+    if (element.value) this.selectedTags.update((tags) => [...tags, element.value]);
+    element.value = '';
   }
-
+  protected removeTag(tag: string): void { this.selectedTags.update((tags) => tags.filter((item) => item !== tag)); }
+  protected selectExercise(blockId: string, itemId: string): void { this.selectedBlockId.set(blockId); this.selectedExerciseId.set(itemId); }
   protected addBlock(): void {
-    this.addFromLibrary({ id: 'new', title: 'Новое упражнение' });
+    if (this.draft().blocks.length >= 12) { this.message.set('Максимум 12 блоков.'); return; }
+    const block: DraftBlock = { id: nextId(), title: `Блок ${this.draft().blocks.length + 1}`, kind: 'main', exercises: [] };
+    this.draft.update((draft) => ({ ...draft, blocks: [...draft.blocks, block] }));
+    this.selectedBlockId.set(block.id);
+    this.selectedExerciseId.set(null);
+    this.message.set('');
   }
-
-  protected addTask(): void {
-    this.message.set('Добавление задачи в тренировку появится вместе с модулем «Задачи».');
+  protected removeBlock(id: string): void {
+    this.draft.update((draft) => ({ ...draft, blocks: draft.blocks.filter((block) => block.id !== id) }));
+    if (this.selectedBlockId() === id) this.selectedBlockId.set(this.draft().blocks[0]?.id ?? null);
   }
-
-  protected preview(): void {
-    this.message.set('Предпросмотр клиента появится вместе с сохранением тренировки.');
+  protected setBlockTitle(id: string, title: string): void { this.changeBlock(id, (block) => ({ ...block, title })); }
+  protected setBlockKind(id: string, kind: BlockKind): void { this.changeBlock(id, (block) => ({ ...block, kind })); }
+  private changeBlock(id: string, change: (block: DraftBlock) => DraftBlock): void {
+    this.draft.update((draft) => ({ ...draft, blocks: draft.blocks.map((block) => block.id === id ? change(block) : block) }));
   }
-
-  protected save(): void {
-    this.message.set('Сохранение появится вместе с обновлением модели тренировки.');
+  protected addFromLibrary(exercise: ExerciseResponse): void {
+    if (!this.selectedBlockId()) this.addBlock();
+    const blockId = this.selectedBlockId();
+    if (!blockId) return;
+    const item: DraftExercise = { id: nextId(), exercise_id: exercise.id, sets: 3, reps: 10, weight_kg: null, rest_seconds: 60 };
+    this.changeBlock(blockId, (block) => ({ ...block, exercises: [...block.exercises, item] }));
+    this.selectedExerciseId.set(item.id);
+  }
+  protected removeExercise(blockId: string, itemId: string): void {
+    this.changeBlock(blockId, (block) => ({ ...block, exercises: block.exercises.filter((item) => item.id !== itemId) }));
+    if (this.selectedExerciseId() === itemId) this.selectedExerciseId.set(null);
+  }
+  protected moveExercise(blockId: string, index: number, delta: number): void {
+    this.changeBlock(blockId, (block) => {
+      const exercises = [...block.exercises];
+      const current = exercises[index];
+      const neighbor = exercises[index + delta];
+      if (!current || !neighbor) return block;
+      exercises[index] = neighbor;
+      exercises[index + delta] = current;
+      return { ...block, exercises };
+    });
+  }
+  protected setNumeric(itemId: string, field: 'sets' | 'reps' | 'weight_kg' | 'rest_seconds', raw: string): void {
+    if (raw === '' && field === 'weight_kg') { this.changeExercise(itemId, (item) => ({ ...item, weight_kg: null })); return; }
+    const value = Number(raw);
+    if (!Number.isFinite(value)) return;
+    const min = field === 'sets' || field === 'reps' ? 1 : 0;
+    const max = field === 'sets' ? 100 : field === 'reps' || field === 'weight_kg' ? 1000 : 3600;
+    const bounded = Math.min(max, Math.max(min, field === 'weight_kg' ? Math.round(value * 100) / 100 : Math.trunc(value)));
+    this.changeExercise(itemId, (item) => ({ ...item, [field]: bounded }));
+  }
+  protected bump(itemId: string, field: 'sets' | 'reps' | 'weight_kg' | 'rest_seconds', delta: number): void {
+    const item = this.draft().blocks.flatMap((block) => block.exercises).find((entry) => entry.id === itemId);
+    if (item) this.setNumeric(itemId, field, String((item[field] ?? 0) + delta));
+  }
+  private changeExercise(id: string, change: (item: DraftExercise) => DraftExercise): void {
+    this.draft.update((draft) => ({ ...draft, blocks: draft.blocks.map((block) => ({
+      ...block, exercises: block.exercises.map((item) => item.id === id ? change(item) : item),
+    })) }));
+  }
+  protected addTask(): void { this.message.set('Задачи внутри тренировки пока не сохраняются.'); }
+  protected async save(): Promise<void> {
+    const payload = workoutPayload(this.draft());
+    if (!payload.title) { this.message.set('Введите название тренировки.'); return; }
+    if (!payload.blocks.length || payload.blocks.some((block) => !block.exercises.length)) {
+      this.message.set('Добавьте хотя бы одно упражнение в каждый блок.'); return;
+    }
+    this.saving.set(true);
+    this.message.set('');
+    try {
+      const saved = await firstValueFrom(this.currentWorkout
+        ? this.workoutsApi.replace(this.currentWorkout.id, payload)
+        : this.workoutsApi.create(payload));
+      this.currentWorkout = saved;
+      this.workoutId.set(saved.id);
+      this.draft.set(draftFromWorkout(saved));
+      this.message.set('Тренировка сохранена.');
+      this.saved.emit(saved);
+    } catch { this.message.set('Не удалось сохранить тренировку. Проверьте данные и попробуйте снова.'); }
+    finally { this.saving.set(false); }
   }
 }

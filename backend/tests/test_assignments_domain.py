@@ -4,7 +4,10 @@ from sqlalchemy.dialects import postgresql
 from sqlalchemy.schema import CreateTable
 
 from toptrainers_api.modules.assignments.models import WorkoutAssignment, WorkoutAssignmentStatus
-from toptrainers_api.modules.assignments.schemas import CreateWorkoutAssignmentRequest
+from toptrainers_api.modules.assignments.schemas import (
+    CreateWorkoutAssignmentRequest,
+    WorkoutSnapshotV1,
+)
 from toptrainers_api.modules.exercises.models import Exercise
 from toptrainers_api.modules.workouts.models import Workout, WorkoutBlock, WorkoutExercise
 
@@ -55,8 +58,9 @@ def test_snapshot_v1_copies_user_visible_exercise_metadata() -> None:
         weight_kg=Decimal("50.50"),
         sets=4,
         reps=10,
+        rest_seconds=90,
     )
-    block = WorkoutBlock(id="b" * 36, kind="main", position=0)
+    block = WorkoutBlock(id="b" * 36, kind="main", title="Тяжёлый", position=0)
     block.items = [item]
     workout = Workout(
         id="w" * 36,
@@ -73,6 +77,8 @@ def test_snapshot_v1_copies_user_visible_exercise_metadata() -> None:
     assert frozen["blocks"][0]["exercises"][0]["muscle_groups"] == ["Спина", "Руки"]
     assert frozen["blocks"][0]["exercises"][0]["video_media_id"] == "m" * 36
     assert frozen["blocks"][0]["exercises"][0]["thumbnail_media_id"] == "n" * 36
+    assert frozen["blocks"][0]["title"] == "Тяжёлый"
+    assert frozen["blocks"][0]["exercises"][0]["rest_seconds"] == 90
 
     workout.title = "Changed"
     exercise.title = "Changed"
@@ -80,3 +86,33 @@ def test_snapshot_v1_copies_user_visible_exercise_metadata() -> None:
     assert snapshot.title == "Leg day"
     assert snapshot.blocks[0].exercises[0].title == "Squat"
     assert snapshot.blocks[0].exercises[0].reps == 10
+
+
+def test_existing_workout_snapshots_without_new_editor_fields_stay_readable() -> None:
+    snapshot = WorkoutSnapshotV1.model_validate(
+        {
+            "title": "Legacy",
+            "description": "",
+            "blocks": [
+                {
+                    "kind": "main",
+                    "position": 0,
+                    "exercises": [
+                        {
+                            "source_exercise_id": "e",
+                            "position": 0,
+                            "title": "Squat",
+                            "direction": "strength",
+                            "muscle_group": "legs",
+                            "instruction": "",
+                            "sets": 3,
+                            "reps": 10,
+                        },
+                    ],
+                }
+            ],
+        }
+    )
+
+    assert snapshot.blocks[0].title == ""
+    assert snapshot.blocks[0].exercises[0].rest_seconds == 60

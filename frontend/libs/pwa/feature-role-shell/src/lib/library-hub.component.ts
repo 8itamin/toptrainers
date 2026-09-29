@@ -2,8 +2,8 @@ import { ChangeDetectionStrategy, Component, computed, inject, signal } from '@a
 import { RouterLink } from '@angular/router';
 import { firstValueFrom } from 'rxjs';
 
-import { ExercisesApi } from '@toptrainers/shared/data-access';
-import type { ExerciseResponse } from '@toptrainers/shared/contracts';
+import { ExercisesApi, ProgramsApi, WorkoutsApi } from '@toptrainers/shared/data-access';
+import type { ExerciseResponse, ProgramResponse, WorkoutResponse } from '@toptrainers/shared/contracts';
 
 import { ExerciseEditorComponent } from './exercise-editor.component';
 import {
@@ -14,13 +14,13 @@ import {
 } from './exercise-modal-state';
 import { TrainerTasksComponent } from './trainer-tasks.component';
 import { TrainerSidebarComponent } from './trainer-sidebar.component';
-import { WorkoutConstructorComponent, type WorkoutPreview } from './workout-constructor.component';
+import { WorkoutConstructorComponent } from './workout-constructor.component';
+import { summarizeWorkout, draftFromWorkout } from './workout-editor-state';
 
 type Tab = 'exercises' | 'workouts' | 'programs' | 'tasks';
 type Direction = 'all' | 'strength' | 'speed' | 'agility' | 'cardio';
 type ExerciseDirection = Exclude<Direction, 'all'>;
 
-interface WorkoutRow extends WorkoutPreview { id: string; tone: 'lime' | 'blue'; }
 interface ProgramRow { id: string; title: string; meta: string; assigned: number; }
 
 const DIRECTIONS: readonly { key: Direction; label: string }[] = [
@@ -34,13 +34,6 @@ const DIRECTIONS: readonly { key: Direction; label: string }[] = [
 const MUSCLES: readonly { name: string; count: number }[] = [
   { name: 'Ноги', count: 42 }, { name: 'Грудь', count: 28 }, { name: 'Спина', count: 34 },
   { name: 'Плечи', count: 21 }, { name: 'Руки', count: 30 }, { name: 'Кор', count: 26 }, { name: 'Всё тело', count: 33 },
-];
-
-const WORKOUTS: readonly WorkoutRow[] = [
-  { id: 'legs', title: 'Ноги + кор', description: 'База на квадрицепс и заднюю поверхность, в конце — упражнения на кор.', tags: ['Сила', 'Ноги', 'Кор'], exerciseCount: 6, durationMinutes: 55, tone: 'lime' },
-  { id: 'chest', title: 'Грудь + трицепс', description: 'Жимовые движения для груди и трицепса с полным отдыхом между подходами.', tags: ['Сила', 'Грудь', 'Руки'], exerciseCount: 5, durationMinutes: 50, tone: 'lime' },
-  { id: 'back', title: 'Спина + бицепс', description: 'Тяговая тренировка для спины и рук с акцентом на технику.', tags: ['Сила', 'Спина', 'Руки'], exerciseCount: 6, durationMinutes: 55, tone: 'lime' },
-  { id: 'cardio', title: 'Кардио + мобильность', description: 'Кардио в комфортном темпе и упражнения на подвижность суставов.', tags: ['Кардио', 'Мобильность'], exerciseCount: 4, durationMinutes: 35, tone: 'blue' },
 ];
 
 const PROGRAMS: readonly ProgramRow[] = [
@@ -72,7 +65,7 @@ const PROGRAMS: readonly ProgramRow[] = [
           </div>
           <div class="tabs">
             <button type="button" [class.is-active]="tab() === 'exercises'" (click)="tab.set('exercises')">Упражнения <b>{{ exercises().length }}</b></button>
-            <button type="button" [class.is-active]="tab() === 'workouts'" (click)="tab.set('workouts')">Тренировки <b>{{ workouts.length }}</b></button>
+            <button type="button" [class.is-active]="tab() === 'workouts'" (click)="tab.set('workouts')">Тренировки <b>{{ workouts().length }}</b></button>
             <button type="button" [class.is-active]="tab() === 'programs'" (click)="tab.set('programs')">Программы <b>9</b></button>
             <button type="button" [class.is-active]="tab() === 'tasks'" (click)="tab.set('tasks')">Задачи <b>12</b></button>
           </div>
@@ -140,9 +133,10 @@ const PROGRAMS: readonly ProgramRow[] = [
           }
           @case ('workouts') {
             <div class="rows workout-rows">
+              @if (workoutsError()) { <p role="alert">Не удалось загрузить тренировки. <button type="button" (click)="retryWorkouts()">Повторить</button></p> }
               <div class="workout-header" aria-hidden="true"><span>ТРЕНИРОВКА</span><span>ТЕГИ</span><span>УПРАЖНЕНИЙ</span><span>ВРЕМЯ</span></div>
-              @for (w of workouts; track w.id) {
-                <button type="button" class="workout-row" (click)="openWorkoutModal(w)" [attr.aria-label]="'Открыть тренировку ' + w.title">
+              @for (w of workoutRows(); track w.id) {
+                <button type="button" class="workout-row" (click)="openWorkoutModal(w.workout)" [attr.aria-label]="'Открыть тренировку ' + w.title">
                   <span class="workout-title-cell"><span class="row-bar" [attr.data-tone]="w.tone"></span><span class="row-text"><span class="row-name">{{ w.title }}</span><span class="workout-description" [title]="w.description">{{ w.description }}</span></span></span>
                   <span class="workout-tags">@for (tag of w.tags; track tag) { <span class="workout-tag">{{ tag }}</span> }</span>
                   <span class="workout-exercise-count">{{ w.exerciseCount }}</span>
@@ -181,7 +175,7 @@ const PROGRAMS: readonly ProgramRow[] = [
       @if (workoutModalOpen()) {
         <div class="workout-overlay" (click)="closeWorkoutModal()">
           <div class="workout-dialog" role="dialog" aria-modal="true" [attr.aria-label]="selectedWorkout() ? 'Тренировка ' + selectedWorkout()!.title : 'Новая тренировка'" (click)="$event.stopPropagation()">
-            <tt-workout-constructor [embedded]="true" [workout]="selectedWorkout()" [availableExercises]="exercises()" [exerciseThumbnailUrls]="thumbnailUrls()" (closeRequested)="closeWorkoutModal()" />
+            <tt-workout-constructor [embedded]="true" [workout]="selectedWorkout()" [availableExercises]="exercises()" [exerciseThumbnailUrls]="thumbnailUrls()" [programs]="programResponses()" (closeRequested)="closeWorkoutModal()" (saved)="saveWorkout($event)" />
           </div>
         </div>
       }
@@ -322,15 +316,26 @@ const PROGRAMS: readonly ProgramRow[] = [
 })
 export class LibraryHubComponent {
   private readonly exercisesApi = inject(ExercisesApi);
+  private readonly workoutsApi = inject(WorkoutsApi);
+  private readonly programsApi = inject(ProgramsApi);
 
   protected readonly directions = DIRECTIONS;
   protected readonly muscles = MUSCLES;
   protected readonly exercises = signal<readonly ExerciseResponse[]>([]);
   protected readonly thumbnailUrls = signal<Readonly<Record<string, string>>>({});
-  protected readonly workouts = WORKOUTS;
+  protected readonly workouts = signal<WorkoutResponse[]>([]);
+  protected readonly workoutsError = signal(false);
+  protected readonly programResponses = signal<ProgramResponse[]>([]);
+  protected readonly workoutRows = computed(() => this.workouts().map((workout) => ({
+    ...workout,
+    workout,
+    ...summarizeWorkout(draftFromWorkout(workout), this.exercises()),
+    tone: workout.blocks.some((block) => block.exercises.some((item) =>
+      this.exercises().find((exercise) => exercise.id === item.exercise_id)?.direction === 'cardio')) ? 'blue' : 'lime',
+  })));
   protected readonly programs = PROGRAMS;
   protected readonly workoutModalOpen = signal(false);
-  protected readonly selectedWorkout = signal<WorkoutRow | null>(null);
+  protected readonly selectedWorkout = signal<WorkoutResponse | null>(null);
 
   protected readonly tab = signal<Tab>('exercises');
   protected readonly exerciseModal = signal<ExerciseModalState | null>(null);
@@ -373,6 +378,8 @@ export class LibraryHubComponent {
 
   constructor() {
     void this.loadExercises();
+    void this.loadWorkouts();
+    void this.loadPrograms();
   }
 
   protected openExerciseModal(mode: ExerciseModalMode, exercise: ExerciseResponse | null = null): void {
@@ -385,7 +392,7 @@ export class LibraryHubComponent {
     this.selectedExercise.set(null);
   }
 
-  protected openWorkoutModal(workout: WorkoutRow | null = null): void {
+  protected openWorkoutModal(workout: WorkoutResponse | null = null): void {
     this.selectedWorkout.set(workout);
     this.workoutModalOpen.set(true);
   }
@@ -393,6 +400,15 @@ export class LibraryHubComponent {
   protected closeWorkoutModal(): void {
     this.workoutModalOpen.set(false);
     this.selectedWorkout.set(null);
+  }
+
+  protected saveWorkout(workout: WorkoutResponse): void {
+    this.workoutsError.set(false);
+    this.workouts.update((current) => {
+      const index = current.findIndex((item) => item.id === workout.id);
+      return index < 0 ? [...current, workout] : current.map((item) => item.id === workout.id ? workout : item);
+    });
+    this.closeWorkoutModal();
   }
 
   protected closeModalOnEscape(): void {
@@ -443,5 +459,19 @@ export class LibraryHubComponent {
     } catch {
       this.exercises.set([]);
     }
+  }
+
+  private async loadWorkouts(): Promise<void> {
+    try {
+      this.workouts.set(await firstValueFrom(this.workoutsApi.list()));
+      this.workoutsError.set(false);
+    } catch { this.workoutsError.set(true); }
+  }
+
+  protected retryWorkouts(): void { void this.loadWorkouts(); }
+
+  private async loadPrograms(): Promise<void> {
+    try { this.programResponses.set(await firstValueFrom(this.programsApi.list())); }
+    catch { this.programResponses.set([]); }
   }
 }

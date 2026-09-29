@@ -3305,6 +3305,63 @@ export const openApiDocument = {
           }
         ]
       }
+    },
+    "/api/v1/workouts/{workout_id}": {
+      "put": {
+        "tags": [
+          "workouts"
+        ],
+        "summary": "Replace Workout",
+        "operationId": "replace_workout_api_v1_workouts__workout_id__put",
+        "security": [
+          {
+            "HTTPBearer": []
+          }
+        ],
+        "parameters": [
+          {
+            "name": "workout_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "title": "Workout Id"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/WorkoutCreate"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/WorkoutResponse"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
     }
   },
   "components": {
@@ -5018,6 +5075,12 @@ export const openApiDocument = {
             ],
             "title": "Kind"
           },
+          "title": {
+            "type": "string",
+            "maxLength": 160,
+            "title": "Title",
+            "default": ""
+          },
           "exercises": {
             "items": {
               "$ref": "#/components/schemas/WorkoutExerciseCreate"
@@ -5050,6 +5113,10 @@ export const openApiDocument = {
             ],
             "title": "Kind"
           },
+          "title": {
+            "type": "string",
+            "title": "Title"
+          },
           "exercises": {
             "items": {
               "$ref": "#/components/schemas/WorkoutExerciseResponse"
@@ -5062,6 +5129,7 @@ export const openApiDocument = {
         "required": [
           "id",
           "kind",
+          "title",
           "exercises"
         ],
         "title": "WorkoutBlockResponse"
@@ -5259,6 +5327,13 @@ export const openApiDocument = {
             "maximum": 1000,
             "minimum": 1,
             "title": "Reps"
+          },
+          "rest_seconds": {
+            "type": "integer",
+            "maximum": 3600,
+            "minimum": 0,
+            "title": "Rest Seconds",
+            "default": 60
           }
         },
         "type": "object",
@@ -5301,6 +5376,13 @@ export const openApiDocument = {
             "maximum": 1000,
             "minimum": 1,
             "title": "Reps"
+          },
+          "rest_seconds": {
+            "type": "integer",
+            "maximum": 3600,
+            "minimum": 0,
+            "title": "Rest Seconds",
+            "default": 60
           },
           "id": {
             "type": "string",
@@ -5442,6 +5524,11 @@ export const openApiDocument = {
           "position": {
             "type": "integer",
             "title": "Position"
+          },
+          "title": {
+            "type": "string",
+            "title": "Title",
+            "default": ""
           },
           "exercises": {
             "items": {
@@ -5594,6 +5681,11 @@ export const openApiDocument = {
           "reps": {
             "type": "integer",
             "title": "Reps"
+          },
+          "rest_seconds": {
+            "type": "integer",
+            "title": "Rest Seconds",
+            "default": 60
           }
         },
         "type": "object",

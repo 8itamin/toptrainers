@@ -35,11 +35,13 @@ class WorkoutSnapshotExerciseV1(BaseModel):
     weight_kg: float | None = None
     sets: int
     reps: int
+    rest_seconds: int = 60
 
 
 class WorkoutSnapshotBlockV1(BaseModel):
     kind: str
     position: int
+    title: str = ""
     exercises: list[WorkoutSnapshotExerciseV1]
 
 
