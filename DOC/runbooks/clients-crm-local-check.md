@@ -2,6 +2,12 @@
 
 Дата: 2026-10-13. Ветка: codex/clients-crm. Production не изменялся.
 
+## Production release preflight 2026-10-13
+
+Владелец поручил migration/deploy. Production до выпуска: commit `42fb1fa`, revision `20260929_0017`. Свежий backup на сервере `/srv/toptrainers-backups/toptrainers-pre-clients-20261013T063742Z.dump`: 69 543 байт, mode 600; pg_restore list/checksum прошли. Восстановление выполнено в отдельной private PostgreSQL 17 без host ports; upgrade до `20261013_0018` прошёл. Upgrade всех миграций на пустой тестовой БД также прошёл.
+
+Linux/Python 3.13 с настоящей PostgreSQL: полный backend suite — 222 passed, без пропусков. Дополнительный test_client_join_concurrency.py — 4 passed. Первые два конфигурационных теста не видели infra из-за неверного layout mount; полный повтор с правильным layout зелёный. Все операции выполнялись в отдельном временном контуре; production БД до webhook не менялась. Full mypy src (84 source files) и Ruff прошли.
+
 ## Проверено
 
 - Backend: 146 tests passed, 76 skipped. Новые проверки покрывают контракт/валидацию, owner isolation, выдачу hash-токена на 7 дней, несовпадающий email, повторное принятие, ошибку SMTP, перенос invite в письмо подтверждения, legacy card sync, SQL read-side и обновление отменённого приглашения в реальной SQLAlchemy identity map.
