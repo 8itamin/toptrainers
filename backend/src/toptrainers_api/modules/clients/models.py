@@ -22,6 +22,42 @@ class RelationshipStatus(StrEnum):
     TERMINATED = "TERMINATED"
 
 
+class TrainerClientCard(Base):
+    __tablename__ = "trainer_client_cards"
+    __table_args__ = (
+        UniqueConstraint("trainer_id", "client_account_id", name="uq_client_card_account"),
+        UniqueConstraint("trainer_id", "contact_email", name="uq_client_card_email"),
+    )
+    id: Mapped[str] = mapped_column(String(36), primary_key=True)
+    trainer_id: Mapped[str] = mapped_column(ForeignKey("accounts.id"), index=True)
+    display_name: Mapped[str] = mapped_column(String(120))
+    contact_email: Mapped[str | None] = mapped_column(String(320), nullable=True)
+    client_account_id: Mapped[str | None] = mapped_column(ForeignKey("accounts.id"), nullable=True)
+    created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), server_default=func.now())
+
+
+class ClientJoinInvitation(Base):
+    __tablename__ = "client_join_invitations"
+    __table_args__ = (
+        CheckConstraint("status IN ('PENDING', 'ACCEPTED', 'CANCELLED')", name="ck_join_status"),
+        Index(
+            "uq_join_pending_card",
+            "card_id",
+            unique=True,
+            postgresql_where=text("status = 'PENDING'"),
+        ),
+    )
+    id: Mapped[str] = mapped_column(String(36), primary_key=True)
+    card_id: Mapped[str] = mapped_column(ForeignKey("trainer_client_cards.id"), index=True)
+    token_hash: Mapped[str] = mapped_column(String(64), unique=True)
+    status: Mapped[str] = mapped_column(String(16))
+    expires_at: Mapped[datetime] = mapped_column(DateTime(timezone=True))
+    created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), server_default=func.now())
+    relationship_id: Mapped[str | None] = mapped_column(
+        ForeignKey("trainer_client_relationships.id"), nullable=True
+    )
+
+
 class TrainerClientInvitation(Base):
     __tablename__ = "trainer_client_invitations"
     __table_args__ = (
@@ -96,9 +132,7 @@ class TrainerClientRelationship(Base):
     id: Mapped[str] = mapped_column(String(36), primary_key=True)
     trainer_id: Mapped[str] = mapped_column(ForeignKey("accounts.id"), index=True)
     client_id: Mapped[str] = mapped_column(ForeignKey("accounts.id"), index=True)
-    invitation_id: Mapped[str] = mapped_column(
-        ForeignKey("trainer_client_invitations.id")
-    )
+    invitation_id: Mapped[str] = mapped_column(ForeignKey("trainer_client_invitations.id"))
     status: Mapped[str] = mapped_column(String(16), index=True)
     created_at: Mapped[datetime] = mapped_column(
         DateTime(timezone=True), server_default=func.now(), nullable=False

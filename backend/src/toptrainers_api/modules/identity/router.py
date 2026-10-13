@@ -79,10 +79,15 @@ def _set_session_cookie(response: Response, token: str) -> None:
     )
 
 
-async def _send_verification(session: AsyncSession, account: Account) -> None:
+async def _send_verification(
+    session: AsyncSession, account: Account, invitation_token: str | None = None
+) -> None:
     token = await issue_one_time_token(session, account.id, VERIFY_EMAIL, timedelta(hours=24))
     await session.commit()
-    await send_verification_email(account.email, token)
+    if invitation_token:
+        await send_verification_email(account.email, token, invitation_token)
+    else:
+        await send_verification_email(account.email, token)
 
 
 @router.post("/register", response_model=MessageResponse, status_code=status.HTTP_202_ACCEPTED)
@@ -93,6 +98,14 @@ async def register(
     redis: Redis = Depends(get_redis),
 ) -> MessageResponse:
     email = str(payload.email).lower()
+    if payload.invitation_token:
+        from toptrainers_api.core.errors import BusinessRuleError, as_http_exception
+        from toptrainers_api.modules.clients.join_service import preview_join_invitation
+
+        try:
+            await preview_join_invitation(session, payload.invitation_token)
+        except BusinessRuleError as error:
+            raise as_http_exception(error) from error
     await enforce_rate_limit(redis, request, "register", email, limit=5, window=3600)
     account = await session.scalar(select(Account).where(Account.email == email))
     if account and account.email_verified_at is not None:
@@ -108,7 +121,7 @@ async def register(
         )
         session.add(account)
         await session.flush()
-    await _send_verification(session, account)
+    await _send_verification(session, account, payload.invitation_token)
     return MessageResponse(
         message="If this email can be registered, a verification message has been sent."
     )

@@ -2,6 +2,7 @@ from __future__ import annotations
 
 from types import SimpleNamespace
 from typing import cast
+from unittest.mock import AsyncMock
 
 import pytest
 from sqlalchemy.exc import IntegrityError
@@ -12,6 +13,13 @@ from toptrainers_api.modules.clients import repository, service
 from toptrainers_api.modules.clients.models import InvitationStatus
 
 pytestmark = pytest.mark.asyncio
+
+
+@pytest.fixture(autouse=True)
+def isolate_card_sync(monkeypatch):
+    monkeypatch.setattr(
+        "toptrainers_api.modules.clients.card_service.prepare_legacy_accept_card", AsyncMock()
+    )
 
 
 class _ConstraintViolation(Exception):
@@ -83,9 +91,7 @@ async def test_create_invitation_maps_only_pending_pair_constraint(
     monkeypatch: pytest.MonkeyPatch,
 ) -> None:
     _prepare_create_invitation(monkeypatch)
-    session = _FailingSession(
-        _integrity_error("uq_trainer_client_invitations_pending_pair")
-    )
+    session = _FailingSession(_integrity_error("uq_trainer_client_invitations_pending_pair"))
 
     with pytest.raises(BusinessRuleError) as captured:
         await service.create_invitation(cast(AsyncSession, session), "trainer-1", "client-1")
@@ -112,9 +118,7 @@ async def test_accept_invitation_maps_only_active_pair_constraint(
     monkeypatch: pytest.MonkeyPatch,
 ) -> None:
     _prepare_accept_invitation(monkeypatch)
-    session = _FailingSession(
-        _integrity_error("uq_trainer_client_relationships_active_pair")
-    )
+    session = _FailingSession(_integrity_error("uq_trainer_client_relationships_active_pair"))
 
     with pytest.raises(BusinessRuleError) as captured:
         await service.accept_invitation(cast(AsyncSession, session), "client-1", "invitation-1")

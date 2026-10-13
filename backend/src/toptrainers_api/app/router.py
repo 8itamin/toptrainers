@@ -1,5 +1,6 @@
 from fastapi import APIRouter
 
+from toptrainers_api.modules.assignments.crm_summary import router as crm_summary_router
 from toptrainers_api.modules.assignments.history_router import router as workout_history_router
 from toptrainers_api.modules.assignments.router import router as assignments_router
 from toptrainers_api.modules.clients.router import router as clients_router
@@ -14,6 +15,7 @@ from toptrainers_api.modules.tasks.router import router as tasks_router
 from toptrainers_api.modules.workouts.router import router as workouts_router
 
 api_router = APIRouter()
+api_router.include_router(crm_summary_router)
 api_router.include_router(health_router)
 api_router.include_router(showcase_router)
 api_router.include_router(identity_router)

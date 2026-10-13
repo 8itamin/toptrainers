@@ -75,9 +75,7 @@ async def accept_invitation(
 ) -> RelationshipResponse:
     _require_role(account, "client")
     try:
-        relationship = await service.accept_invitation(
-            session, str(account["sub"]), invitation_id
-        )
+        relationship = await service.accept_invitation(session, str(account["sub"]), invitation_id)
     except BusinessRuleError as error:
         raise as_http_exception(error) from error
     return RelationshipResponse.model_validate(relationship)
@@ -154,3 +152,8 @@ async def terminate_relationship(
     except BusinessRuleError as error:
         raise as_http_exception(error) from error
     return RelationshipResponse.model_validate(relationship)
+
+
+from toptrainers_api.modules.clients.card_router import router as card_router  # noqa: E402
+
+router.include_router(card_router)

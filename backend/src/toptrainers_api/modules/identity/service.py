@@ -3,19 +3,26 @@ from __future__ import annotations
 import asyncio
 import hashlib
 import secrets
-import smtplib
-import ssl
 from datetime import UTC, datetime, timedelta
-from email.message import EmailMessage
+from typing import cast
 from urllib.parse import urlencode
 
 from fastapi import HTTPException, Request, status
 from redis.asyncio import Redis
-from sqlalchemy import update
+from sqlalchemy import select, update
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from toptrainers_api.core.config import settings
-from toptrainers_api.modules.identity.models import AuthSession, AuthToken
+from toptrainers_api.core.mail import send_smtp
+from toptrainers_api.modules.identity.models import Account, AuthSession, AuthToken
+
+
+async def lock_account_for_client_join(session: AsyncSession, account_id: str) -> Account | None:
+    return cast(
+        Account | None,
+        await session.scalar(select(Account).where(Account.id == account_id).with_for_update()),
+    )
+
 
 VERIFY_EMAIL = "verify_email"
 RESET_PASSWORD = "reset_password"
@@ -71,40 +78,21 @@ def _build_link(path: str, token: str) -> str:
 
 
 def _send_smtp(recipient: str, subject: str, html: str) -> None:
-    smtp_host = settings.smtp_host
-    smtp_username = settings.smtp_username
-    smtp_password = settings.smtp_password
-    smtp_from_email = settings.smtp_from_email
-    if not smtp_host or not smtp_username or not smtp_password or not smtp_from_email:
-        raise RuntimeError("SMTP is not configured")
-
-    message = EmailMessage()
-    message["From"] = smtp_from_email
-    message["To"] = recipient
-    message["Subject"] = subject
-    message.set_content("Откройте письмо в почтовом клиенте с поддержкой HTML.")
-    message.add_alternative(html, subtype="html")
-    if settings.smtp_use_starttls:
-        with smtplib.SMTP(smtp_host, settings.smtp_port, timeout=15) as client:
-            client.starttls(context=ssl.create_default_context())
-            client.login(smtp_username, smtp_password)
-            client.send_message(message)
-    else:
-        with smtplib.SMTP_SSL(smtp_host, settings.smtp_port, timeout=15) as client:
-            client.login(smtp_username, smtp_password)
-            client.send_message(message)
+    send_smtp(recipient, subject, html)
 
 
-async def send_verification_email(recipient: str, token: str) -> None:
+async def send_verification_email(
+    recipient: str, token: str, invitation_token: str | None = None
+) -> None:
     link = _build_link("/auth/verify-email", token)
+    if invitation_token:
+        link += "#" + urlencode({"invite": invitation_token})
     html = (
         "<p>Подтвердите email для TopTrainers:</p>"
         f'<p><a href="{link}">Подтвердить email</a></p>'
         "<p>Ссылка действует 24 часа.</p>"
     )
-    await asyncio.to_thread(
-        _send_smtp, recipient, "Подтвердите email в TopTrainers", html
-    )
+    await asyncio.to_thread(_send_smtp, recipient, "Подтвердите email в TopTrainers", html)
 
 
 async def send_password_reset_email(recipient: str, token: str) -> None:

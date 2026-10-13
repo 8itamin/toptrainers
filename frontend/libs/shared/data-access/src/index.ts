@@ -6,3 +6,4 @@ export * from './lib/workout-history';
 export * from './lib/programs';
 export * from './lib/tasks';
 export * from './lib/workouts';
+export * from './lib/clients';

@@ -60,6 +60,14 @@ async def has_client_p0_footprint(session: AsyncSession, client_id: str) -> bool
     return await repository.has_client_footprint(session, client_id)
 
 
+async def list_relationships_for_trainer_client(
+    session: AsyncSession, trainer_id: str, client_id: str
+) -> list[TrainerClientRelationship]:
+    from toptrainers_api.modules.clients.card_repository import relationships
+
+    return await relationships(session, trainer_id, client_id)
+
+
 async def cancel_pending_inbound_invitations_for_role_change(
     session: AsyncSession,
     client_id: str,
@@ -188,6 +196,9 @@ async def accept_invitation(
     actor_id: str,
     invitation_id: str,
 ) -> TrainerClientRelationship:
+    from toptrainers_api.modules.clients.card_service import prepare_legacy_accept_card
+
+    await prepare_legacy_accept_card(session, actor_id, invitation_id)
     invitation = await _lock_invitation_with_client(session, invitation_id)
     if invitation.client_id != actor_id:
         raise _forbidden("INVITATION_CLIENT_REQUIRED", "Only the invited client can accept")

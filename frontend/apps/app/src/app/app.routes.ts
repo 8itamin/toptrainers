@@ -3,6 +3,8 @@ import { Routes } from '@angular/router';
 import { clientGuard, trainerGuard } from './auth.guard';
 
 export const APP_ROUTES: Routes = [
+  { path: 'client-invite', title: 'TopTrainers — Приглашение', loadComponent: () =>
+    import('@toptrainers/pwa/feature-role-shell').then(module => module.ClientJoinComponent) },
   {
     path: 'auth',
     pathMatch: 'full',

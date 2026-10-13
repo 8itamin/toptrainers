@@ -20,6 +20,7 @@ class RegisterAccountRequest(BaseModel):
     email: EmailStr
     password: str = Field(min_length=12, max_length=256)
     role: PublicUserRole
+    invitation_token: str | None = Field(default=None, min_length=32, max_length=128)
 
     @field_validator("password")
     @classmethod

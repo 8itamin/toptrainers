@@ -1,12 +1,21 @@
 from __future__ import annotations
 
 from types import SimpleNamespace
+from unittest.mock import AsyncMock
 
 import pytest
 
 from toptrainers_api.core.errors import BusinessRuleError
 from toptrainers_api.modules.clients import service
 from toptrainers_api.modules.clients.models import InvitationStatus, RelationshipStatus
+
+
+@pytest.fixture(autouse=True)
+def isolate_card_sync(monkeypatch):
+    # Card synchronization has its own repository/service tests.
+    monkeypatch.setattr(
+        "toptrainers_api.modules.clients.card_service.prepare_legacy_accept_card", AsyncMock()
+    )
 
 
 class DummySession:
@@ -200,9 +209,7 @@ async def test_reject_and_cancel_idempotency_is_state_specific(
         monkeypatch.setattr(
             service.repository,
             "lock_account",
-            lambda *_args: _async_value(
-                SimpleNamespace(id="client-1", role="client")
-            ),
+            lambda *_args: _async_value(SimpleNamespace(id="client-1", role="client")),
         )
         monkeypatch.setattr(
             service.repository,

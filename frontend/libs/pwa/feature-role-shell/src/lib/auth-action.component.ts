@@ -4,6 +4,7 @@ import { FormsModule } from '@angular/forms';
 import { ActivatedRoute, RouterLink } from '@angular/router';
 
 import { RUNTIME_CONFIG, type RuntimeConfig } from '@toptrainers/shared/config';
+import { invitationToken } from './client-invitation-context';
 
 interface MessageResponse { message: string; }
 
@@ -27,7 +28,7 @@ interface MessageResponse { message: string; }
         </form>
       }
       @if (message()) { <p class="message">{{ message() }}</p> }
-      <a routerLink="/auth">К входу</a>
+      <a routerLink="/auth" [queryParams]="{mode:'login'}" [fragment]="invite ? 'invite='+invite : undefined">К входу</a>
     </main>
   `,
   styles: `:host{display:grid;min-height:100dvh;place-items:center;background:#14181d;color:#f5f7fa;font-family:system-ui}.shell{width:min(100% - 2rem,28rem);display:grid;gap:1rem;padding:2rem;border:1px solid #2b3340;border-radius:1rem;background:#1c222b}.brand,a{color:#c9f24b}h1,p{margin:0}p{color:#b6bfcc;line-height:1.5}input,button{box-sizing:border-box;width:100%;min-height:3rem;border-radius:.75rem;font:inherit}input{padding:0 .9rem;border:1px solid #586273;background:#14181d;color:#f5f7fa}button{border:0;background:#c9f24b;color:#14181d;font-weight:700;cursor:pointer}button:disabled{opacity:.6;cursor:default}form{display:grid;gap:.75rem}.message{color:#c9f24b}`,
@@ -43,6 +44,7 @@ export class AuthActionComponent {
   protected readonly message = signal('');
   protected readonly token = this.route.snapshot.queryParamMap.get('token') ?? '';
   protected password = '';
+  protected readonly invite = invitationToken(new URLSearchParams(this.route.snapshot.fragment ?? '').get('invite'));
 
   protected verify(): void {
     this.submit('/auth/verify-email', { token: this.token });

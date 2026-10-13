@@ -9,3 +9,4 @@ export * from './generated/workout-history';
 export * from './generated/programs';
 export * from './generated/tasks';
 export * from './generated/exercises';
+export * from './generated/clients';

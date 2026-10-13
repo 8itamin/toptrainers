@@ -20,10 +20,10 @@ from toptrainers_api.modules.workouts import models as _workout_models  # noqa: 
 
 @pytest_asyncio.fixture
 async def p0_session_factory() -> AsyncIterator[async_sessionmaker[AsyncSession]]:
-    pytest.importorskip("asyncpg")
     database_url = os.getenv("TT_TEST_DATABASE_URL")
     if not database_url:
         pytest.skip("TT_TEST_DATABASE_URL is required for PostgreSQL P0 integration tests")
+    pytest.importorskip("asyncpg")
     if "/toptrainers_test" not in database_url:
         pytest.fail("TT_TEST_DATABASE_URL must point to a dedicated toptrainers_test database")
 

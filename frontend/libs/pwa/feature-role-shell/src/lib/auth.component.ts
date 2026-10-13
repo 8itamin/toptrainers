@@ -209,6 +209,7 @@ const ROLE_HOME: Record<UserRole, string> = {
   changeDetection: ChangeDetectionStrategy.OnPush,
 })
 export class AuthComponent {
+  protected readonly invitation = invitationToken(new URLSearchParams(inject(ActivatedRoute).snapshot.fragment ?? '').get('invite'));
   private readonly http = inject(HttpClient);
   private readonly router = inject(Router);
   private readonly route = inject(ActivatedRoute);
@@ -251,7 +252,7 @@ export class AuthComponent {
     const path = this.mode() === 'register' ? 'register' : 'login';
     const body =
       this.mode() === 'register'
-        ? { email: this.email, password: this.password, role: this.role() }
+        ? { email: this.email, password: this.password, role: this.role(), invitation_token: this.invitation }
         : { email: this.email, password: this.password };
 
     this.http.post<AuthResponse | MessageResponse>(`${this.config.apiBaseUrl}/auth/${path}`, body).subscribe({
@@ -261,7 +262,7 @@ export class AuthComponent {
           return;
         }
         const { role } = result as AuthResponse;
-        const destination = isUserRole(role) ? ROLE_HOME[role] : '/trainer';
+        const destination = this.invitation ? inviteDestination(this.invitation) : isUserRole(role) ? ROLE_HOME[role] : '/trainer';
         this.router.navigateByUrl(destination);
       },
       error: () => {
@@ -289,3 +290,4 @@ export class AuthComponent {
     });
   }
 }
+import { invitationToken, inviteDestination } from './client-invitation-context';
