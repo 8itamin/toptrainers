@@ -1,6 +1,10 @@
 # Локальная проверка CRM клиентов
 
-Дата: 2026-10-13. Ветка: codex/clients-crm. Production не изменялся.
+Дата: 2026-10-13. Разработка: codex/clients-crm; релиз: main.
+
+## Production release
+
+Commit `45c879788c0b870f0441b1013584f565b5c9a3d2` выпущен GitHub webhook; CI run `38358755925` success. Systemd deploy Result=success, ExecMainStatus=0; новый API подтвердил Alembic `20261013_0018 (head)`. Все healthchecked контейнеры healthy; video-worker running. Публичные app clients route, API ready, gateway и сайт — HTTP 200; clients/cards без сессии — 401. Backup сохранён; временные test-контейнер/volume/network/image удалены. Подтверждение настоящего письма клиенту и ручной account-based E2E остаются пользовательской проверкой после выпуска.
 
 ## Production release preflight 2026-10-13
 
